@@ -1,0 +1,1833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>DuukaList+ — Buy, Sell & Find Services</title>
+<meta name="description" content="DuukaList+ marketplace — buy, sell and find services.">
+<meta name="theme-color" content="#FF6A00">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:ital,wght@0,700;0,900;1,700&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<meta name="google-signin-client_id" content="103731782063-skp1gui990cb64rvtmresjfkmvne4n3a.apps.googleusercontent.com">
+
+<style>
+/* ═══════════════════════ TOKENS ═══════════════════════ */
+:root {
+  --orange:#FF6A00; --orange-d:#dd5500; --orange-glow:rgba(255,106,0,0.16); --orange-light:#fff5ee;
+  --blue:#0B2E6E; --blue-mid:#1445A8; --blue-light:#EEF3FF;
+  --ink:#0f0f1a; --ink2:#2a2a3d; --muted:#737390; --muted2:#a0a0ba;
+  --border:#e8e8f2; --border2:#f0f0f8; --bg:#f8f8fc; --white:#fff;
+  --green:#0dab5b; --green-light:#e8faf2; --red:#e53e3e;
+  --r:8px; --rm:14px; --rl:20px; --rxl:28px;
+  --sh:0 1px 4px rgba(0,0,0,.06); --shm:0 4px 20px rgba(0,0,0,.08); --shl:0 12px 48px rgba(0,0,0,.12);
+  --sho:0 8px 32px rgba(255,106,0,.28);
+  --fd:'Fraunces',Georgia,serif; --fb:'Plus Jakarta Sans',sans-serif;
+  --nav:60px; --bnav:64px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{font-family:var(--fb);background:var(--bg);color:var(--ink);line-height:1.6;min-height:100vh;overflow-x:hidden;padding-bottom:var(--bnav)}
+img{max-width:100%;display:block}
+a{text-decoration:none;color:inherit;cursor:pointer}
+button{font-family:var(--fb);cursor:pointer;border:none;background:none}
+input,select,textarea{font-family:var(--fb)}
+
+/* ═══════════════════════ UTILS ═══════════════════════ */
+.container{max-width:1200px;margin:0 auto;padding:0 16px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+
+/* ═══════════════════════ ANIMATIONS ═══════════════════════ */
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.15);opacity:0}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.fu{animation:fadeUp .45s ease both}
+.fu2{animation:fadeUp .45s .08s ease both}
+.fu3{animation:fadeUp .45s .16s ease both}
+.fu4{animation:fadeUp .45s .24s ease both}
+
+/* ═══════════════════════ SKELETON ═══════════════════════ */
+.sk{background:linear-gradient(90deg,var(--border2) 25%,var(--border) 50%,var(--border2) 75%);background-size:400px 100%;animation:shimmer 1.4s infinite;border-radius:var(--r)}
+
+/* ═══════════════════════ BUTTONS ═══════════════════════ */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 22px;border-radius:100px;font-weight:700;font-size:14px;transition:all .18s;cursor:pointer;border:none;font-family:var(--fb)}
+.btn-orange{background:var(--orange);color:#fff;box-shadow:var(--sho)}
+.btn-orange:hover{background:var(--orange-d);transform:translateY(-1px);box-shadow:0 10px 32px rgba(255,106,0,.35)}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-blue:hover{background:var(--blue-mid);transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--orange);border:1.5px solid var(--orange)}
+.btn-ghost:hover{background:var(--orange-light)}
+.btn-outline{background:transparent;color:var(--ink2);border:1.5px solid var(--border)}
+.btn-outline:hover{border-color:var(--orange);color:var(--orange)}
+.btn-sm{padding:7px 16px;font-size:13px}
+.btn-lg{padding:14px 32px;font-size:16px}
+.btn-full{width:100%;justify-content:center}
+
+/* ═══════════════════════ ANNOUNCEMENT ═══════════════════════ */
+.announce{background:var(--blue);color:rgba(255,255,255,.8);font-size:12px;font-weight:500;text-align:center;padding:6px 16px;letter-spacing:.02em}
+.announce strong{color:var(--orange)}
+
+/* ═══════════════════════ HEADER ═══════════════════════ */
+:root{--nav:104px} /* two-row mobile header height */
+.site-header{background:var(--white);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:500;box-shadow:var(--sh)}
+/* Row 1: logo + actions */
+.header-row1{display:flex;align-items:center;gap:8px;padding:10px 14px 6px}
+.logo{display:flex;flex-direction:column;line-height:1;flex-shrink:0;cursor:pointer}
+.logo-name{font-family:var(--fd);font-weight:900;font-size:22px;color:var(--orange);letter-spacing:-.5px}
+.logo-name em{font-style:normal;color:var(--blue)}
+.logo-tag{font-size:8px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:1px}
+.hactions{display:flex;align-items:center;gap:4px;flex-shrink:0;margin-left:auto}
+.icon-btn{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--ink2);font-size:18px;transition:background .15s;position:relative;cursor:pointer}
+.icon-btn:hover{background:var(--bg)}
+.badge-dot{position:absolute;top:5px;right:5px;width:8px;height:8px;background:var(--orange);border-radius:50%;border:2px solid #fff}
+/* Sign In button — compact on mobile */
+.auth-desktop-btn{display:flex;align-items:center;gap:6px;background:var(--blue-light);color:var(--blue);font-weight:700;font-size:12px;padding:0 12px;height:34px;border-radius:100px;cursor:pointer;transition:all .15s;border:none;font-family:var(--fb);white-space:nowrap}
+.auth-desktop-btn:hover{background:var(--blue);color:#fff}
+/* Post Free — hidden on mobile, shown on desktop */
+.post-header-btn{display:none;align-items:center;gap:5px;background:var(--orange);color:#fff;font-weight:700;font-size:13px;padding:0 14px;height:36px;border-radius:100px;transition:all .18s;cursor:pointer;box-shadow:var(--sho);border:none;font-family:var(--fb);white-space:nowrap}
+.post-header-btn:hover{background:var(--orange-d);transform:translateY(-1px)}
+/* Row 2: full-width search */
+.header-row2{padding:0 14px 10px}
+.header-search{position:relative;width:100%}
+.header-search input{width:100%;height:38px;border:1.5px solid var(--border);border-radius:100px;padding:0 46px 0 16px;font-size:14px;color:var(--ink);background:var(--bg);outline:none;transition:all .15s}
+.header-search input:focus{border-color:var(--orange);box-shadow:0 0 0 3px var(--orange-glow);background:var(--white)}
+.header-search input::placeholder{color:var(--muted2)}
+.hsearch-btn{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:30px;height:30px;background:var(--orange);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;transition:all .15s;border:none;cursor:pointer}
+.hsearch-btn:hover{background:var(--orange-d)}
+
+/* ═══════════════════════ BOTTOM NAV ═══════════════════════ */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;height:var(--bnav);background:var(--white);border-top:1px solid var(--border);display:flex;align-items:center;z-index:400;box-shadow:0 -4px 24px rgba(0,0,0,.06)}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;padding:8px 0;transition:color .15s;color:var(--muted);text-decoration:none}
+.nav-item.active{color:var(--orange)}
+.nav-icon{font-size:21px;line-height:1}
+.nav-label{font-size:10px;font-weight:700;letter-spacing:.02em}
+.nav-post-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer}
+.nav-post-circle{width:46px;height:46px;background:var(--orange);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;box-shadow:var(--sho);transition:all .18s;margin-top:-16px;font-weight:300}
+.nav-post-wrap:hover .nav-post-circle{transform:scale(1.08) rotate(45deg);background:var(--orange-d)}
+.nav-post-lbl{font-size:10px;font-weight:700;color:var(--orange)}
+
+/* ═══════════════════════ APP CONTAINER ═══════════════════════ */
+#app{min-height:calc(100vh - var(--nav) - var(--bnav));animation:fadeIn .25s ease}
+
+/* ═══════════════════════ SECTION HEADERS ═══════════════════════ */
+.sec-hd{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px}
+.sec-title{font-family:var(--fd);font-weight:700;font-size:22px;color:var(--ink);letter-spacing:-.5px}
+.sec-title span{color:var(--orange)}
+.sec-link{font-size:13px;font-weight:700;color:var(--orange);cursor:pointer}
+.sec-link:hover{color:var(--orange-d)}
+
+/* ═══════════════════════ HOME — HERO ═══════════════════════ */
+.hero{background:var(--blue);position:relative;overflow:hidden;padding:40px 0 0}
+.hero::before{content:'';position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(255,106,0,.22) 0%,transparent 70%);top:-200px;right:-100px;pointer-events:none}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none}
+.hero-content{position:relative;z-index:2;padding:0 16px 36px;max-width:1200px;margin:0 auto}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:100px;padding:5px 14px 5px 8px;margin-bottom:18px}
+.hero-dot{width:8px;height:8px;background:var(--green);border-radius:50%;position:relative}
+.hero-dot::after{content:'';position:absolute;inset:-3px;border-radius:50%;background:var(--green);opacity:.4;animation:pulse 2s infinite}
+.hero-eyebrow span{font-size:12px;font-weight:600;color:rgba(255,255,255,.85);letter-spacing:.04em}
+.hero-h1{font-family:var(--fd);font-weight:900;font-size:clamp(32px,8vw,56px);color:#fff;line-height:1.05;letter-spacing:-1.5px;margin-bottom:14px}
+.hero-h1 .accent{color:var(--orange)}
+.hero-sub{font-size:15px;color:rgba(255,255,255,.68);max-width:400px;margin-bottom:26px;line-height:1.65}
+.hero-cta{display:flex;gap:10px;flex-direction:column;margin-bottom:24px}
+.hero-cta .btn{justify-content:center;padding:14px 24px;font-size:15px}
+.hero-stats{display:flex;background:rgba(255,255,255,.07);border-radius:var(--rm);overflow:hidden;margin-bottom:4px}
+.hero-stats>div{flex:1;padding:12px 8px;text-align:center;border-right:1px solid rgba(255,255,255,.1)}
+.hero-stats>div:last-child{border-right:none}
+.hstat-num{font-family:var(--fd);font-weight:900;font-size:20px;color:#fff;line-height:1;margin-bottom:2px}
+.hstat-lbl{font-size:10px;color:rgba(255,255,255,.5);font-weight:500;letter-spacing:.04em}
+.hero-search-box{background:#fff;border-radius:var(--rl);padding:5px 5px 5px 14px;display:flex;align-items:center;gap:8px;box-shadow:var(--shl);margin-top:24px}
+.hero-search-box input{flex:1;border:none;outline:none;font-size:15px;color:var(--ink);background:transparent;font-family:var(--fb)}
+.hero-search-box input::placeholder{color:var(--muted2)}
+.hero-wave{height:36px;background:var(--blue);position:relative}
+.hero-wave::after{content:'';position:absolute;bottom:0;left:0;right:0;height:36px;background:var(--bg);border-radius:50% 50% 0 0/100% 100% 0 0}
+
+/* ═══════════════════════ CATEGORIES ═══════════════════════ */
+.cats-scroll{display:flex;gap:10px;overflow-x:auto;padding:4px 16px 10px;scrollbar-width:none;scroll-snap-type:x mandatory}
+.cats-scroll::-webkit-scrollbar{display:none}
+.cat-chip{display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0;scroll-snap-align:start;cursor:pointer}
+.cat-icon{width:58px;height:58px;border-radius:var(--rm);display:flex;align-items:center;justify-content:center;font-size:26px;transition:transform .2s,box-shadow .2s}
+.cat-chip:hover .cat-icon{transform:translateY(-3px);box-shadow:var(--shm)}
+.cat-lbl{font-size:11px;font-weight:600;color:var(--ink2);text-align:center;max-width:62px;line-height:1.3}
+
+/* ═══════════════════════ FLASH BANNER ═══════════════════════ */
+.flash-banner{margin:16px;background:linear-gradient(135deg,#ff3d00 0%,var(--orange) 60%,#ffaa00 100%);border-radius:var(--rl);padding:18px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:relative;overflow:hidden;cursor:pointer;transition:transform .15s}
+.flash-banner:hover{transform:scale(1.01)}
+.flash-banner::before,.flash-banner::after{content:'';position:absolute;border-radius:50%;background:rgba(255,255,255,.1)}
+.flash-banner::before{width:120px;height:120px;right:-20px;top:-20px}
+.flash-banner::after{width:80px;height:80px;right:40px;bottom:-30px}
+.flash-lbl{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.2);border-radius:100px;padding:3px 10px;font-size:11px;font-weight:700;color:#fff;letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px;position:relative;z-index:1}
+.flash-title{font-family:var(--fd);font-weight:900;font-size:19px;color:#fff;line-height:1.1;margin-bottom:3px;position:relative;z-index:1}
+.flash-sub{font-size:12px;color:rgba(255,255,255,.8);font-weight:500;position:relative;z-index:1}
+.timer{display:flex;gap:5px;flex-shrink:0;position:relative;z-index:1}
+.tbox{background:rgba(0,0,0,.2);border-radius:var(--r);padding:6px 9px;text-align:center;min-width:42px;backdrop-filter:blur(4px)}
+.tnum{font-family:var(--fd);font-weight:700;font-size:17px;color:#fff;line-height:1;display:block}
+.tlbl{font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.08em;text-transform:uppercase}
+
+/* ═══════════════════════ LISTING CARDS ═══════════════════════ */
+.listings-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:0 16px}
+.lcard{background:var(--white);border-radius:var(--rm);overflow:hidden;box-shadow:var(--sh);border:1px solid var(--border2);transition:transform .2s,box-shadow .2s;cursor:pointer;position:relative}
+.lcard:hover{transform:translateY(-3px);box-shadow:var(--shm)}
+.lcard:active{transform:scale(.97)}
+.lcard-img{width:100%;aspect-ratio:1/1;background:var(--border2);display:flex;align-items:center;justify-content:center;font-size:36px;position:relative;overflow:hidden}
+.lcard-img img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.lbadge{position:absolute;top:8px;left:8px;font-size:10px;font-weight:700;padding:3px 8px;border-radius:100px;letter-spacing:.04em;text-transform:uppercase}
+.lbadge-boost{background:var(--orange);color:#fff}
+.lbadge-new{background:var(--green);color:#fff}
+.lfav{position:absolute;top:8px;right:8px;width:30px;height:30px;background:rgba(255,255,255,.9);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:var(--sh);transition:transform .15s;backdrop-filter:blur(4px);cursor:pointer;border:none}
+.lfav:hover{transform:scale(1.15)}
+.lcard-body{padding:10px 12px 12px}
+.lcard-title{font-weight:700;font-size:13px;color:var(--ink);margin-bottom:4px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.lcard-price{font-family:var(--fd);font-weight:700;font-size:15px;color:var(--orange);margin-bottom:5px}
+.lcard-meta{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--muted)}
+.lcard-loc{display:flex;align-items:center;gap:3px;font-weight:500}
+.lcard-cond{background:var(--blue-light);color:var(--blue-mid);font-weight:700;font-size:10px;padding:2px 7px;border-radius:100px}
+
+/* ═══════════════════════ EMPTY STATE ═══════════════════════ */
+.empty-state{padding:60px 24px;text-align:center}
+.empty-icon{font-size:56px;margin-bottom:16px;opacity:.6}
+.empty-title{font-family:var(--fd);font-weight:700;font-size:20px;color:var(--ink2);margin-bottom:8px}
+.empty-sub{font-size:14px;color:var(--muted);margin-bottom:24px;line-height:1.6}
+
+/* ═══════════════════════ TRUST STRIP ═══════════════════════ */
+.trust-strip{margin:8px 16px 20px;background:var(--white);border:1px solid var(--border);border-radius:var(--rl);padding:18px 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.trust-item{display:flex;flex-direction:column;align-items:center;text-align:center;gap:5px}
+.trust-icon{width:42px;height:42px;border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:21px;margin-bottom:2px}
+.trust-lbl{font-weight:700;font-size:12px;color:var(--ink2);line-height:1.3}
+.trust-desc{font-size:10px;color:var(--muted);line-height:1.4}
+
+/* ═══════════════════════ GIG CARDS ═══════════════════════ */
+.gigs-scroll{display:flex;gap:12px;overflow-x:auto;padding:4px 16px 8px;scrollbar-width:none}
+.gigs-scroll::-webkit-scrollbar{display:none}
+.gcard{flex-shrink:0;width:195px;background:var(--bg);border-radius:var(--rm);border:1px solid var(--border);overflow:hidden;cursor:pointer;transition:transform .2s,box-shadow .2s}
+.gcard:hover{transform:translateY(-3px);box-shadow:var(--shm)}
+.gcard-img{width:100%;height:105px;display:flex;align-items:center;justify-content:center;font-size:34px;position:relative;overflow:hidden}
+.gcat-tag{position:absolute;bottom:7px;left:7px;background:rgba(11,46,110,.85);color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:100px;backdrop-filter:blur(4px)}
+.gcard-body{padding:11px}
+.gcard-seller{display:flex;align-items:center;gap:6px;margin-bottom:7px}
+.gavatar{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--orange),#ffaa00);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0}
+.gcard-sname{font-size:12px;font-weight:600;color:var(--ink2)}
+.gcard-title{font-weight:700;font-size:13px;color:var(--ink);line-height:1.4;margin-bottom:7px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.gcard-rating{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);margin-bottom:7px}
+.gstars{color:#f59e0b;font-size:11px}
+.gcard-price{display:flex;align-items:baseline;gap:3px}
+.gfrom{font-size:10px;color:var(--muted)}
+.gamount{font-family:var(--fd);font-weight:700;font-size:15px;color:var(--orange)}
+
+/* ═══════════════════════ SELLER CTA ═══════════════════════ */
+.seller-cta{margin:20px 16px;background:linear-gradient(130deg,var(--blue) 0%,#1445A8 100%);border-radius:var(--rl);padding:26px 20px;position:relative;overflow:hidden}
+.seller-cta::before{content:'🏪';position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:68px;opacity:.13;animation:float 3s ease-in-out infinite}
+.scta-eye{font-size:11px;font-weight:700;color:rgba(255,255,255,.55);letter-spacing:.1em;text-transform:uppercase;margin-bottom:7px}
+.scta-title{font-family:var(--fd);font-weight:900;font-size:23px;color:#fff;letter-spacing:-.5px;margin-bottom:7px;line-height:1.15}
+.scta-sub{font-size:13px;color:rgba(255,255,255,.65);margin-bottom:18px;max-width:210px}
+
+/* ═══════════════════════ BROWSE PAGE ═══════════════════════ */
+.browse-header{background:var(--blue);padding:20px 16px 16px;position:sticky;top:var(--nav);z-index:300}
+.browse-search{background:#fff;border-radius:100px;padding:0 6px 0 14px;display:flex;align-items:center;gap:8px;height:42px;margin-bottom:12px}
+.browse-search input{flex:1;border:none;outline:none;font-size:14px;color:var(--ink);background:transparent;font-family:var(--fb)}
+.browse-filters{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.browse-filters::-webkit-scrollbar{display:none}
+.filter-chip{flex-shrink:0;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:5px 14px;font-size:12px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;transition:all .15s;white-space:nowrap}
+.filter-chip.active,.filter-chip:hover{background:var(--orange);border-color:var(--orange);color:#fff}
+.browse-body{padding:16px}
+.browse-sort{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sort-label{font-size:13px;color:var(--muted);font-weight:500}
+.sort-select{border:1.5px solid var(--border);border-radius:var(--r);padding:6px 10px;font-size:13px;color:var(--ink);background:var(--white);outline:none;cursor:pointer;font-family:var(--fb)}
+.sort-select:focus{border-color:var(--orange)}
+
+/* ═══════════════════════ LISTING DETAIL ═══════════════════════ */
+.detail-back{display:flex;align-items:center;gap:8px;padding:14px 16px 0;font-size:14px;font-weight:600;color:var(--blue);cursor:pointer}
+.detail-back:hover{color:var(--orange)}
+.detail-imgs{position:relative;overflow:hidden}
+.detail-imgs-scroll{display:flex;overflow-x:auto;scrollbar-width:none;scroll-snap-type:x mandatory}
+.detail-imgs-scroll::-webkit-scrollbar{display:none}
+.detail-img{flex-shrink:0;width:100%;aspect-ratio:4/3;background:var(--border2);display:flex;align-items:center;justify-content:center;font-size:60px;scroll-snap-align:start;overflow:hidden}
+.detail-img img{width:100%;height:100%;object-fit:cover}
+.detail-dots{display:flex;justify-content:center;gap:5px;padding:10px 0 4px}
+.detail-dot{width:6px;height:6px;border-radius:50%;background:var(--border);transition:background .15s}
+.detail-dot.active{background:var(--orange)}
+.detail-body{padding:16px}
+.detail-badges{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.detail-title{font-family:var(--fd);font-weight:700;font-size:22px;color:var(--ink);letter-spacing:-.5px;margin-bottom:8px;line-height:1.2}
+.detail-price{font-family:var(--fd);font-weight:900;font-size:28px;color:var(--orange);margin-bottom:14px}
+.detail-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+.dmeta-item{background:var(--bg);border-radius:var(--r);padding:10px 12px}
+.dmeta-lbl{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px}
+.dmeta-val{font-size:14px;font-weight:600;color:var(--ink2)}
+.detail-desc{font-size:14px;color:var(--ink2);line-height:1.7;margin-bottom:20px}
+.detail-seller-card{background:var(--white);border:1px solid var(--border);border-radius:var(--rm);padding:16px;margin-bottom:18px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color .15s}
+.detail-seller-card:hover{border-color:var(--orange)}
+.seller-av-lg{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--orange),#ffaa00);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;flex-shrink:0}
+.seller-info h4{font-weight:700;font-size:15px;color:var(--ink);margin-bottom:2px}
+.seller-info p{font-size:12px;color:var(--muted)}
+.detail-ctas{display:grid;grid-template-columns:1fr 1fr;gap:10px;position:sticky;bottom:var(--bnav);background:var(--white);padding:12px 16px;border-top:1px solid var(--border);margin:0 -16px -16px;z-index:10}
+.wa-btn{display:flex;align-items:center;justify-content:center;gap:7px;background:#25D366;color:#fff;font-weight:700;font-size:14px;padding:13px;border-radius:var(--rm);transition:all .18s;cursor:pointer;border:none;font-family:var(--fb)}
+.wa-btn:hover{background:#1da851;transform:translateY(-1px)}
+.buy-btn{display:flex;align-items:center;justify-content:center;gap:7px;background:var(--orange);color:#fff;font-weight:700;font-size:14px;padding:13px;border-radius:var(--rm);transition:all .18s;cursor:pointer;border:none;font-family:var(--fb);box-shadow:var(--sho)}
+.buy-btn:hover{background:var(--orange-d);transform:translateY(-1px)}
+
+/* ═══════════════════════ GIG DETAIL ═══════════════════════ */
+.gig-packages{display:flex;gap:10px;overflow-x:auto;padding:4px 0 8px;scrollbar-width:none;margin-bottom:18px}
+.gig-packages::-webkit-scrollbar{display:none}
+.pkg-card{flex-shrink:0;width:200px;border:2px solid var(--border);border-radius:var(--rm);padding:16px;cursor:pointer;transition:all .15s}
+.pkg-card.selected{border-color:var(--orange);background:var(--orange-light)}
+.pkg-tier{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.pkg-card.selected .pkg-tier{color:var(--orange)}
+.pkg-price{font-family:var(--fd);font-weight:700;font-size:20px;color:var(--ink);margin-bottom:4px}
+.pkg-card.selected .pkg-price{color:var(--orange)}
+.pkg-dur{font-size:12px;color:var(--muted);margin-bottom:10px}
+.pkg-features{list-style:none;display:flex;flex-direction:column;gap:4px}
+.pkg-features li{font-size:12px;color:var(--ink2);display:flex;gap:6px;align-items:baseline}
+.pkg-features li::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0}
+.review-card{background:var(--bg);border-radius:var(--rm);padding:14px;margin-bottom:10px}
+.review-header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.review-meta p{font-size:11px;color:var(--muted)}
+.review-meta strong{font-size:14px;font-weight:600;color:var(--ink)}
+.review-stars{color:#f59e0b;font-size:12px;margin-bottom:4px}
+.review-text{font-size:13px;color:var(--ink2);line-height:1.6}
+
+/* ═══════════════════════ POST FORM ═══════════════════════ */
+.post-form{padding:16px}
+.form-section{margin-bottom:24px}
+.form-section-title{font-weight:800;font-size:15px;color:var(--blue);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.field{margin-bottom:16px}
+.field label{display:block;font-weight:700;font-size:13px;color:var(--ink2);margin-bottom:6px}
+.field label span{color:var(--orange)}
+.field input,.field select,.field textarea{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--rm);font-size:14px;color:var(--ink);background:var(--white);outline:none;transition:all .15s;font-family:var(--fb)}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--orange);box-shadow:0 0 0 3px var(--orange-glow)}
+.field textarea{resize:vertical;min-height:100px}
+.field select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6b85' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+.photo-upload{border:2px dashed var(--border);border-radius:var(--rm);padding:28px 20px;text-align:center;cursor:pointer;transition:all .15s}
+.photo-upload:hover{border-color:var(--orange);background:var(--orange-light)}
+.photo-upload input{display:none}
+.photo-upload-icon{font-size:32px;margin-bottom:8px}
+.photo-upload p{font-size:14px;color:var(--muted);font-weight:500}
+.photo-upload small{font-size:12px;color:var(--muted2)}
+.photo-previews{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.photo-preview{width:72px;height:72px;border-radius:var(--r);overflow:hidden;position:relative;border:1px solid var(--border)}
+.photo-preview img{width:100%;height:100%;object-fit:cover}
+.photo-remove{position:absolute;top:2px;right:2px;width:18px;height:18px;background:rgba(0,0,0,.6);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;cursor:pointer}
+.boost-options{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.boost-opt{border:2px solid var(--border);border-radius:var(--rm);padding:14px;cursor:pointer;transition:all .15s;text-align:center}
+.boost-opt:hover{border-color:var(--orange)}
+.boost-opt.selected{border-color:var(--orange);background:var(--orange-light)}
+.boost-opt-name{font-weight:700;font-size:14px;color:var(--ink);margin-bottom:3px}
+.boost-opt-price{font-size:12px;color:var(--orange);font-weight:700}
+.boost-opt-desc{font-size:11px;color:var(--muted);margin-top:3px}
+
+/* ═══════════════════════ CHECKOUT ═══════════════════════ */
+.checkout-body{padding:16px}
+.checkout-summary{background:var(--white);border:1px solid var(--border);border-radius:var(--rm);padding:16px;margin-bottom:18px}
+.checkout-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border2);font-size:14px}
+.checkout-row:last-child{border-bottom:none;padding-top:12px;margin-top:4px}
+.checkout-row.total{font-weight:800;font-size:16px;color:var(--orange)}
+.payment-methods{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.pmethod{border:2px solid var(--border);border-radius:var(--rm);padding:14px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:12px}
+.pmethod.selected{border-color:var(--orange);background:var(--orange-light)}
+.pmethod-icon{font-size:24px;flex-shrink:0}
+.pmethod-info strong{display:block;font-weight:700;font-size:14px;color:var(--ink);margin-bottom:2px}
+.pmethod-info span{font-size:12px;color:var(--muted)}
+.pmethod-radio{margin-left:auto;width:18px;height:18px;border:2px solid var(--border);border-radius:50%;transition:all .15s;flex-shrink:0}
+.pmethod.selected .pmethod-radio{border-color:var(--orange);background:var(--orange)}
+.amount-warning{background:#fffbeb;border:1px solid #fde68a;border-left:4px solid #f59e0b;border-radius:var(--r);padding:12px 14px;font-size:13px;color:#78350f;margin-bottom:16px}
+
+/* ═══════════════════════ DASHBOARD ═══════════════════════ */
+.dash-header{background:linear-gradient(130deg,var(--blue),#1445A8);padding:24px 16px;color:#fff}
+.dash-user{display:flex;align-items:center;gap:14px;margin-bottom:20px}
+.dash-avatar{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--orange),#ffaa00);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;flex-shrink:0;border:3px solid rgba(255,255,255,.3)}
+.dash-user-info h2{font-weight:800;font-size:18px;margin-bottom:2px}
+.dash-user-info p{font-size:13px;color:rgba(255,255,255,.65)}
+.dash-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.dstat{background:rgba(255,255,255,.1);border-radius:var(--rm);padding:14px 10px;text-align:center;backdrop-filter:blur(8px)}
+.dstat-num{font-family:var(--fd);font-weight:700;font-size:22px;color:#fff;line-height:1;margin-bottom:3px}
+.dstat-lbl{font-size:10px;color:rgba(255,255,255,.6);letter-spacing:.06em}
+.dash-body{padding:16px}
+.dash-section{margin-bottom:24px}
+.dash-section-title{font-weight:800;font-size:15px;color:var(--blue);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.dash-listing-row{display:flex;align-items:center;gap:12px;background:var(--white);border:1px solid var(--border);border-radius:var(--rm);padding:12px;margin-bottom:8px;cursor:pointer;transition:border-color .15s}
+.dash-listing-row:hover{border-color:var(--orange)}
+.dash-listing-img{width:52px;height:52px;border-radius:var(--r);background:var(--border2);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:22px}
+.dash-listing-img img{width:100%;height:100%;object-fit:cover}
+.dash-listing-info{flex:1;min-width:0}
+.dash-listing-info h4{font-weight:700;font-size:14px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
+.dash-listing-info p{font-size:12px;color:var(--muted)}
+.dash-listing-actions{display:flex;gap:6px;flex-shrink:0}
+.status-pill{font-size:10px;font-weight:700;padding:3px 8px;border-radius:100px;letter-spacing:.04em;text-transform:uppercase}
+.status-active{background:var(--green-light);color:var(--green)}
+.status-sold{background:var(--blue-light);color:var(--blue-mid)}
+.status-expired{background:#fef2f2;color:var(--red)}
+.boost-badge{background:rgba(255,106,0,.1);color:var(--orange);font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px}
+
+/* ═══════════════════════ ORDERS ═══════════════════════ */
+.order-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);padding:0 16px;background:var(--white)}
+.otab{flex:1;text-align:center;padding:12px 8px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.otab.active{color:var(--orange);border-bottom-color:var(--orange)}
+.order-card{background:var(--white);border:1px solid var(--border);border-radius:var(--rm);padding:14px;margin-bottom:10px}
+.order-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.order-id{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.04em}
+.order-title{font-weight:700;font-size:14px;color:var(--ink);margin-bottom:4px}
+.order-meta{font-size:12px;color:var(--muted);margin-bottom:10px}
+.order-progress{display:flex;align-items:center;gap:0;margin-bottom:12px;overflow-x:auto;scrollbar-width:none}
+.order-progress::-webkit-scrollbar{display:none}
+.prog-step{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;min-width:52px}
+.prog-dot{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);background:var(--white);display:flex;align-items:center;justify-content:center;font-size:10px;position:relative;z-index:1}
+.prog-step.done .prog-dot{background:var(--green);border-color:var(--green);color:#fff}
+.prog-step.active .prog-dot{background:var(--orange);border-color:var(--orange);color:#fff}
+.prog-lbl{font-size:9px;font-weight:600;color:var(--muted2);text-align:center;letter-spacing:.03em}
+.prog-step.done .prog-lbl,.prog-step.active .prog-lbl{color:var(--ink2)}
+.prog-line{flex:1;height:2px;background:var(--border);margin-top:-11px}
+.prog-line.done{background:var(--green)}
+
+/* ═══════════════════════ SELLER PROFILE ═══════════════════════ */
+.seller-hero{background:linear-gradient(130deg,var(--blue),#1445A8);padding:28px 16px;text-align:center;color:#fff}
+.seller-hero-av{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--orange),#ffaa00);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#fff;margin:0 auto 12px;border:3px solid rgba(255,255,255,.3)}
+.seller-hero h1{font-family:var(--fd);font-weight:700;font-size:22px;margin-bottom:4px}
+.seller-hero p{font-size:13px;color:rgba(255,255,255,.65)}
+.seller-badges{display:flex;justify-content:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+.seller-badge{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:4px 12px;font-size:11px;font-weight:600;color:rgba(255,255,255,.85)}
+.seller-stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:0;background:var(--white);border-bottom:1px solid var(--border)}
+.sstat{padding:16px 8px;text-align:center;border-right:1px solid var(--border)}
+.sstat:last-child{border-right:none}
+.sstat-num{font-family:var(--fd);font-weight:700;font-size:18px;color:var(--orange);line-height:1;margin-bottom:3px}
+.sstat-lbl{font-size:10px;color:var(--muted);letter-spacing:.05em}
+.seller-tabs{display:flex;border-bottom:1px solid var(--border);background:var(--white);padding:0 16px}
+.stab{flex:1;text-align:center;padding:12px 6px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.stab.active{color:var(--orange);border-bottom-color:var(--orange)}
+
+/* ═══════════════════════ AUTH MODAL ═══════════════════════ */
+.auth-overlay{position:fixed;inset:0;background:rgba(11,46,110,.7);backdrop-filter:blur(6px);z-index:1000;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+.auth-overlay.open{opacity:1;pointer-events:all}
+.auth-sheet{background:var(--white);border-radius:var(--rxl) var(--rxl) 0 0;padding:8px 24px 40px;width:100%;max-width:440px;transform:translateY(100%);transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+.auth-overlay.open .auth-sheet{transform:translateY(0)}
+.auth-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 22px}
+.auth-logo{font-family:var(--fd);font-weight:900;font-size:28px;color:var(--orange);text-align:center;margin-bottom:5px}
+.auth-logo em{font-style:normal;color:var(--blue)}
+.auth-title{font-weight:800;font-size:20px;color:var(--ink);text-align:center;margin-bottom:5px}
+.auth-sub{font-size:14px;color:var(--muted);text-align:center;margin-bottom:26px}
+.google-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:12px;background:#fff;border:1.5px solid var(--border);border-radius:var(--rm);padding:14px;font-weight:700;font-size:15px;color:var(--ink);cursor:pointer;transition:all .15s;box-shadow:var(--sh);margin-bottom:14px;font-family:var(--fb)}
+.google-btn:hover{border-color:var(--blue-mid);box-shadow:var(--shm);transform:translateY(-1px)}
+.google-btn svg{width:20px;height:20px;flex-shrink:0}
+.auth-divider{display:flex;align-items:center;gap:12px;margin:14px 0;color:var(--muted2);font-size:12px;font-weight:600}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.auth-guest{width:100%;padding:13px;border-radius:var(--rm);border:1.5px solid var(--border);font-weight:700;font-size:14px;color:var(--muted);background:var(--bg);cursor:pointer;transition:all .15s;font-family:var(--fb)}
+.auth-guest:hover{border-color:var(--orange);color:var(--orange)}
+.auth-terms{font-size:11px;color:var(--muted2);text-align:center;margin-top:14px;line-height:1.6}
+.auth-terms a{color:var(--orange);font-weight:600}
+
+/* ═══════════════════════ TOAST ═══════════════════════ */
+.toast{position:fixed;bottom:calc(var(--bnav) + 12px);left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 20px;border-radius:100px;font-size:13px;font-weight:600;white-space:nowrap;z-index:2000;opacity:0;transition:all .25s;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ═══════════════════════ LOADING SPINNER ═══════════════════════ */
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--orange);border-radius:50%;animation:spin .7s linear infinite;margin:40px auto}
+
+/* ═══════════════════════ PAGE HERO (info pages) ═══════════════════════ */
+.page-hero{background:linear-gradient(130deg,var(--blue),#1a3a6e);color:#fff;padding:44px 20px;text-align:center;position:relative;overflow:hidden}
+.page-hero::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 75% 40%,rgba(255,106,0,.2) 0%,transparent 60%);pointer-events:none}
+.page-hero h1{font-family:var(--fd);font-weight:900;font-size:clamp(24px,6vw,38px);letter-spacing:-1px;margin-bottom:8px;position:relative}
+.page-hero p{color:rgba(255,255,255,.72);font-size:14px;position:relative}
+
+/* ═══════════════════════ FOOTER ═══════════════════════ */
+.site-footer{background:var(--blue);padding:44px 16px 28px;color:rgba(255,255,255,.65)}
+.footer-logo{font-family:var(--fd);font-weight:900;font-size:24px;color:var(--orange);margin-bottom:8px}
+.footer-logo em{font-style:normal;color:rgba(255,255,255,.6)}
+.footer-tagline{font-size:13px;color:rgba(255,255,255,.45);line-height:1.6;max-width:220px;margin-bottom:28px}
+.footer-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:28px}
+.fcol h4{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:12px}
+.fcol a{display:block;font-size:13px;color:rgba(255,255,255,.6);margin-bottom:8px;font-weight:500;cursor:pointer;transition:color .14s}
+.fcol a:hover{color:var(--orange)}
+.footer-bottom{border-top:1px solid rgba(255,255,255,.1);padding-top:18px;font-size:12px;color:rgba(255,255,255,.35)}
+.footer-badges{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.fbadge{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:5px;padding:3px 9px;font-size:10px;color:rgba(255,255,255,.4);font-weight:600}
+
+/* ═══════════════════════ MOBILE-FIRST HEADER ═══════════════════════ */
+/* Mobile: two-row header. Row1 = logo+actions, Row2 = search */
+.site-header{display:flex;flex-direction:column;position:sticky;top:0;z-index:500;background:var(--white);border-bottom:1px solid var(--border);box-shadow:var(--sh)}
+.header-row1{display:flex;align-items:center;height:52px;padding:0 12px;gap:8px}
+.header-row2{padding:6px 12px 8px}
+.header-row2 .header-search{display:block;max-width:100%}
+.header-search input{height:36px;font-size:14px}
+/* Hide Sign In text on mobile — show icon only */
+.auth-desktop-btn .signin-text{display:none}
+.auth-desktop-btn{padding:0 10px;gap:4px;font-size:12px}
+/* Post Free — icon + short text on mobile */
+.post-header-btn{padding:0 10px;font-size:12px}
+
+/* ═══════════════════════ RESPONSIVE ═══════════════════════ */
+@media(min-width:640px){
+  .listings-grid{grid-template-columns:repeat(3,1fr);gap:14px}
+  body{padding-bottom:0}
+  .bottom-nav{display:none}
+  .hero-cta{flex-direction:row}
+  .hero-cta .btn{width:auto}
+}
+@media(min-width:768px){
+  /* Collapse back to single row on tablet+ */
+  .site-header{flex-direction:row;height:60px;padding:0 20px;gap:14px}
+  .header-row1{height:60px;padding:0;flex:0 0 auto}
+  .header-row2{padding:0;flex:1}
+  .header-row2 .header-search{max-width:460px}
+  .auth-desktop-btn .signin-text{display:inline}
+  .auth-desktop-btn{padding:0 14px;gap:7px;font-size:13px}
+  .post-header-btn{padding:0 14px;font-size:13px}
+}
+@media(min-width:1024px){
+  .listings-grid{grid-template-columns:repeat(4,1fr)}
+  .footer-grid{grid-template-columns:repeat(4,1fr)}
+  .hero-content{display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:48px;padding-bottom:52px}
+  .hero-search-box{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ANNOUNCEMENT -->
+<div class="announce">🎉 <strong>Post your first listing free</strong> — reach thousands of buyers today</div>
+
+<!-- HEADER -->
+<header class="site-header">
+  <!-- Row 1: Logo + Actions -->
+  <div class="header-row1">
+    <div class="logo" onclick="navigate('/')">
+      <span class="logo-name">DuukaList<em>+</em></span>
+      <span class="logo-tag">Online Marketplace</span>
+    </div>
+    <div class="hactions">
+      <div class="icon-btn" onclick="navigate('/messages')" title="Messages">💬</div>
+      <div class="icon-btn" id="notifBtn" title="Notifications">🔔<span class="badge-dot" id="notifDot" style="display:none"></span></div>
+      <button class="auth-desktop-btn" id="authDesktopBtn" onclick="openAuth()">
+        <svg width="14" height="14" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        <span class="signin-text">Sign In</span>
+      </button>
+      <div id="userAvatarWrap" style="display:none">
+        <div class="icon-btn" onclick="navigate('/dashboard')" id="userAvatar" style="font-weight:700;font-size:14px;background:linear-gradient(135deg,var(--orange),#ffaa00);color:#fff;width:34px;height:34px;border-radius:50%"></div>
+      </div>
+      <button class="post-header-btn" onclick="requireAuth(()=>navigate('/post'))">+ Post Free</button>
+    </div>
+  </div>
+  <!-- Row 2: Search (full width always) -->
+  <div class="header-row2">
+    <div class="header-search">
+      <input type="search" id="headerSearch" placeholder="Search listings, gigs, services…" autocomplete="off">
+      <button class="hsearch-btn" onclick="doSearch()">🔍</button>
+    </div>
+  </div>
+</header>
+
+<!-- APP ROOT -->
+<div id="app"></div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <div class="nav-item" id="nav-home" onclick="navigate('/')"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></div>
+  <div class="nav-item" id="nav-browse" onclick="navigate('/browse')"><span class="nav-icon">🔍</span><span class="nav-label">Browse</span></div>
+  <div class="nav-post-wrap" onclick="requireAuth(()=>navigate('/post'))">
+    <div class="nav-post-circle">+</div>
+    <span class="nav-post-lbl">Post</span>
+  </div>
+  <div class="nav-item" id="nav-gigs" onclick="navigate('/gigs')"><span class="nav-icon">💼</span><span class="nav-label">Gigs</span></div>
+  <div class="nav-item" id="nav-account" onclick="currentUser?navigate('/dashboard'):openAuth()"><span class="nav-icon">👤</span><span class="nav-label">Account</span></div>
+</nav>
+
+<!-- AUTH MODAL -->
+<div class="auth-overlay" id="authOverlay" onclick="closeAuth()">
+  <div class="auth-sheet" onclick="event.stopPropagation()">
+    <div class="auth-handle"></div>
+    <div class="auth-logo">DuukaList<em>+</em></div>
+    <div class="auth-title">Welcome 👋</div>
+    <div class="auth-sub">Sign in to post, message sellers and track orders.</div>
+    <button class="google-btn" onclick="handleGoogleSignIn()">
+      <svg viewBox="0 0 24 24" width="20" height="20"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      Continue with Google
+    </button>
+    <!-- Rendered Google button fallback (shown if One Tap is suppressed) -->
+    <div id="googleBtnFallback" style="display:none;margin-bottom:14px;display:flex;justify-content:center"></div>
+    <div class="auth-divider">or</div>
+    <button class="auth-guest" onclick="closeAuth()">Browse as Guest</button>
+    <div class="auth-terms">By signing in you agree to our <a href="https://keromisec9-prog.github.io/Duukalist-termsandconeitions/" target="_blank">Terms</a> and <a href="https://keromisec9-prog.github.io/duukalist-privacy-policy/" target="_blank">Privacy Policy</a></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════
+   CONFIG
+═══════════════════════════════════════ */
+const API = 'https://duuka-worker.kerosoftz522.workers.dev';
+const PAY_API = 'https://duuka-payments.kerosoftz522.workers.dev';
+const GOOGLE_CLIENT_ID = '103731782063-skp1gui990cb64rvtmresjfkmvne4n3a.apps.googleusercontent.com';
+
+/* ═══════════════════════════════════════
+   AUTH
+═══════════════════════════════════════ */
+let currentUser = null;
+
+const getToken = () => localStorage.getItem('duuka_token');
+const setToken = t => localStorage.setItem('duuka_token', t);
+const clearToken = () => localStorage.removeItem('duuka_token');
+
+function updateAuthUI(user) {
+  currentUser = user;
+  const desktopBtn = document.getElementById('authDesktopBtn');
+  const avatarWrap = document.getElementById('userAvatarWrap');
+  const avatar = document.getElementById('userAvatar');
+  if (user) {
+    desktopBtn.style.display = 'none';
+    avatarWrap.style.display = 'block';
+    avatar.textContent = (user.name || user.email || 'U')[0].toUpperCase();
+  } else {
+    desktopBtn.style.display = 'flex';
+    avatarWrap.style.display = 'none';
+  }
+}
+
+async function checkAuth() {
+  const token = getToken();
+  if (!token) return;
+  try {
+    const res = await fetch(`${API}/me`, { headers: { Authorization: `Bearer ${token}` } });
+    if (res.ok) { const d = await res.json(); updateAuthUI(d.user || d); }
+    else clearToken();
+  } catch {}
+}
+
+function openAuth() {
+  document.getElementById('authOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeAuth() {
+  document.getElementById('authOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function requireAuth(cb) {
+  if (currentUser) cb();
+  else { openAuth(); pendingAuthCallback = cb; }
+}
+let pendingAuthCallback = null;
+
+function handleGoogleSignIn() {
+  // Trigger Google One Tap / Sign-In prompt programmatically
+  if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+    google.accounts.id.prompt((notification) => {
+      if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+        // One Tap suppressed — fall back to renderButton flow
+        renderGoogleBtn();
+      }
+    });
+  } else {
+    showToast('Google Sign-In loading… try again in a moment.');
+  }
+}
+
+// Renders a real Google Sign-In button inside the auth sheet as fallback
+function renderGoogleBtn() {
+  const container = document.getElementById('googleBtnFallback');
+  if (!container || container.children.length > 0) return;
+  container.style.display = 'block';
+  if (typeof google !== 'undefined') {
+    google.accounts.id.renderButton(container, {
+      type: 'standard',
+      shape: 'pill',
+      theme: 'outline',
+      text: 'continue_with',
+      size: 'large',
+      width: Math.min(window.innerWidth - 48, 392)
+    });
+  }
+}
+
+async function handleCredentialResponse(response) {
+  // Called by both One Tap and rendered button
+  try {
+    const res = await fetch(`${API}/auth/google`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credential: response.credential, id_token: response.credential })
+    });
+    if (!res.ok) throw new Error(`Auth failed: ${res.status}`);
+    const d = await res.json();
+    if (d.token) {
+      setToken(d.token);
+      updateAuthUI(d.user || { name: d.name, email: d.email });
+      closeAuth();
+      showToast('Signed in ✓');
+      if (pendingAuthCallback) { pendingAuthCallback(); pendingAuthCallback = null; }
+    } else {
+      throw new Error('No token in response');
+    }
+  } catch (err) {
+    console.error('Auth error:', err);
+    showToast('Sign-in failed. Check console for details.');
+  }
+}
+
+/* ═══════════════════════════════════════
+   TOAST
+═══════════════════════════════════════ */
+function showToast(msg, dur = 2800) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+
+/* ═══════════════════════════════════════
+   ROUTER
+═══════════════════════════════════════ */
+const routes = {
+  '/':          renderHome,
+  '/browse':    renderBrowse,
+  '/listing':   renderListing,
+  '/gigs':      renderGigs,
+  '/gig':       renderGigDetail,
+  '/post':      renderPost,
+  '/seller':    renderSeller,
+  '/orders':    renderOrders,
+  '/dashboard': renderDashboard,
+  '/checkout':  renderCheckout,
+  '/messages':  renderMessages,
+};
+
+function parseRoute() {
+  const hash = window.location.hash.replace('#', '') || '/';
+  const [path, ...rest] = hash.split('?');
+  const parts = path.split('/').filter(Boolean);
+  const params = {};
+  rest.join('?').split('&').forEach(p => { const [k,v] = p.split('='); if(k) params[k] = decodeURIComponent(v||''); });
+  return { path: '/' + (parts[0] || ''), id: parts[1] || null, params };
+}
+
+function navigate(path) {
+  window.location.hash = path;
+}
+
+function setActiveNav(path) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const map = { '/': 'nav-home', '/browse': 'nav-browse', '/gigs': 'nav-gigs', '/dashboard': 'nav-account', '/orders': 'nav-account' };
+  const id = map[path];
+  if (id) document.getElementById(id)?.classList.add('active');
+}
+
+window.addEventListener('hashchange', handleRoute);
+function handleRoute() {
+  const { path, id, params } = parseRoute();
+  setActiveNav(path);
+  const app = document.getElementById('app');
+  app.style.animation = 'none';
+  void app.offsetWidth;
+  app.style.animation = 'fadeIn .22s ease';
+  const fn = routes[path];
+  if (fn) fn(id, params);
+  else renderHome();
+  window.scrollTo(0, 0);
+}
+
+/* ═══════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════ */
+const CAT_META = {
+  'phones-tablets':    { icon:'📱', bg:'#eff6ff', color:'#3b82f6' },
+  'electronics':       { icon:'💻', bg:'#f0fdf4', color:'#16a34a' },
+  'vehicles':          { icon:'🚗', bg:'#fffbeb', color:'#f59e0b' },
+  'property':          { icon:'🏠', bg:'#ecfdf5', color:'#10b981' },
+  'home-furniture':    { icon:'🛋️', bg:'#f5f3ff', color:'#8b5cf6' },
+  'fashion':           { icon:'👗', bg:'#fdf2f8', color:'#ec4899' },
+  'beauty':            { icon:'💄', bg:'#fdf2f8', color:'#db2777' },
+  'babies-kids':       { icon:'👶', bg:'#fff7ed', color:'#f97316' },
+  'food-agriculture':  { icon:'🌾', bg:'#f7fee7', color:'#65a30d' },
+  'repair-construction':{ icon:'🔧', bg:'#fff7ed', color:'#ea580c' },
+  'commercial':        { icon:'⚙️', bg:'#f1f5f9', color:'#64748b' },
+  'gigs-services':     { icon:'🎯', bg:'#eef3ff', color:'#1445A8' },
+};
+
+function fmtPrice(p, currency = 'UGX') {
+  if (!p && p !== 0) return 'Negotiable';
+  return currency + ' ' + Number(p).toLocaleString();
+}
+
+function skeletonCards(n = 4) {
+  return Array(n).fill(0).map(() => `
+    <div class="lcard">
+      <div class="sk" style="aspect-ratio:1/1;border-radius:0"></div>
+      <div style="padding:10px 12px 12px">
+        <div class="sk" style="height:13px;margin-bottom:6px;width:80%"></div>
+        <div class="sk" style="height:15px;margin-bottom:7px;width:50%"></div>
+        <div class="sk" style="height:11px;width:55%"></div>
+      </div>
+    </div>`).join('');
+}
+
+function listingCard(l) {
+  const meta = CAT_META[l.category] || { icon:'📦', bg:'#f0f0f0', color:'#888' };
+  const isBoosted = l.boost_tier && l.boost_tier !== 'none';
+  const badge = isBoosted
+    ? `<span class="lbadge lbadge-boost">⭐ Featured</span>`
+    : l.condition === 'new' ? `<span class="lbadge lbadge-new">New</span>` : '';
+  const imgContent = l.images && l.images[0]
+    ? `<img src="${l.images[0]}" alt="${l.title}" loading="lazy">`
+    : `<span style="font-size:36px">${meta.icon}</span>`;
+  const favKey = `fav_${l.id}`;
+  const isFav = localStorage.getItem(favKey);
+  return `
+    <article class="lcard" onclick="navigate('/listing/${l.id}')">
+      <div class="lcard-img" style="background:${meta.bg}">
+        ${imgContent}${badge}
+        <button class="lfav" onclick="toggleFav(event,'${l.id}')" id="fav_${l.id}">${isFav?'❤️':'🤍'}</button>
+      </div>
+      <div class="lcard-body">
+        <div class="lcard-title">${l.title||'Listing'}</div>
+        <div class="lcard-price">${fmtPrice(l.price, l.currency||'UGX')}</div>
+        <div class="lcard-meta">
+          <span class="lcard-loc">📍 ${l.location||'Uganda'}</span>
+          ${l.condition?`<span class="lcard-cond">${l.condition}</span>`:''}
+        </div>
+      </div>
+    </article>`;
+}
+
+function gigCard(g, i) {
+  const colors = [['#eef3ff','#dbeafe'],['#fff5ee','#fed7aa'],['#f0fdf4','#bbf7d0'],['#fdf2f8','#fbcfe8'],['#fffbeb','#fef08a']];
+  const icons = ['🎨','💻','📸','🎬','✍️','🎵','📊','🔧'];
+  const [bg1, bg2] = colors[i % colors.length];
+  const stars = '★'.repeat(Math.min(5, Math.round(g.rating_avg || g.rating || 4.5)));
+  const price = g.packages?.[0]?.price || g.starting_price || 50000;
+  return `
+    <article class="gcard" onclick="navigate('/gig/${g.id}')">
+      <div class="gcard-img" style="background:linear-gradient(135deg,${bg1},${bg2})">
+        ${icons[i % icons.length]}
+        <span class="gcat-tag">${g.category||'Services'}</span>
+      </div>
+      <div class="gcard-body">
+        <div class="gcard-seller">
+          <div class="gavatar">${(g.seller_name||'S')[0].toUpperCase()}</div>
+          <span class="gcard-sname">${g.seller_name||'Seller'}</span>
+        </div>
+        <div class="gcard-title">${g.title||'Service'}</div>
+        <div class="gcard-rating">
+          <span class="gstars">${stars}</span>
+          <strong>${(g.rating_avg||g.rating||4.5).toFixed(1)}</strong>
+          <span>(${g.ratings_count||g.reviews||0})</span>
+        </div>
+        <div class="gcard-price"><span class="gfrom">From</span><span class="gamount">${fmtPrice(price,'UGX')}</span></div>
+      </div>
+    </article>`;
+}
+
+function countdownTimer() {
+  const update = () => {
+    const now = new Date(), mid = new Date();
+    mid.setHours(24,0,0,0);
+    const d = mid - now;
+    const h = String(Math.floor(d/3600000)).padStart(2,'0');
+    const m = String(Math.floor((d%3600000)/60000)).padStart(2,'0');
+    const s = String(Math.floor((d%60000)/1000)).padStart(2,'0');
+    const hEl = document.getElementById('timerH');
+    const mEl = document.getElementById('timerM');
+    const sEl = document.getElementById('timerS');
+    if (hEl) hEl.textContent = h;
+    if (mEl) mEl.textContent = m;
+    if (sEl) sEl.textContent = s;
+  };
+  update();
+  return setInterval(update, 1000);
+}
+
+function toggleFav(e, id) {
+  e.stopPropagation();
+  const btn = e.currentTarget;
+  const key = `fav_${id}`;
+  if (localStorage.getItem(key)) { localStorage.removeItem(key); btn.textContent = '🤍'; }
+  else { localStorage.setItem(key, '1'); btn.textContent = '❤️'; btn.style.transform = 'scale(1.3)'; setTimeout(()=>{btn.style.transform=''},200); }
+}
+
+function doSearch() {
+  const q = document.getElementById('headerSearch').value.trim();
+  if (q) navigate(`/browse?q=${encodeURIComponent(q)}`);
+}
+document.getElementById('headerSearch').addEventListener('keydown', e => { if(e.key==='Enter') doSearch(); });
+
+/* ═══════════════════════════════════════
+   HOME VIEW
+═══════════════════════════════════════ */
+function renderHome() {
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-grid"></div>
+      <div class="hero-content">
+        <div>
+          <div class="hero-eyebrow fu"><span class="hero-dot"></span><span>Live marketplace — listings updated daily</span></div>
+          <h1 class="hero-h1 fu2">Buy Smart.<br>Sell <span class="accent">Fast.</span><br>Hire Better.</h1>
+          <p class="hero-sub fu3">One platform for classifieds, gigs and services. Post for free and reach buyers instantly.</p>
+          <div class="hero-cta fu4">
+            <button class="btn btn-orange btn-lg" onclick="navigate('/browse')">🛍️ Start Shopping</button>
+            <button class="btn" style="background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.25);color:#fff;backdrop-filter:blur(6px)" onclick="requireAuth(()=>navigate('/post'))">+ Post a Listing</button>
+          </div>
+          <div class="hero-stats fu4">
+            <div><div class="hstat-num" id="statListings">—</div><div class="hstat-lbl">Listings</div></div>
+            <div><div class="hstat-num">14</div><div class="hstat-lbl">Categories</div></div>
+            <div><div class="hstat-num" id="statGigs">—</div><div class="hstat-lbl">Gigs</div></div>
+          </div>
+        </div>
+        <div class="hero-search-box">
+          <span style="color:var(--muted);font-size:18px">🔍</span>
+          <input type="search" id="heroSearchInput" placeholder="What are you looking for?" style="flex:1;border:none;outline:none;font-size:15px;background:transparent;font-family:var(--fb)">
+          <button class="btn btn-orange btn-sm" onclick="doHeroSearch()">Search</button>
+        </div>
+      </div>
+    </section>
+    <div class="hero-wave"></div>
+
+    <!-- CATEGORIES -->
+    <section style="padding:24px 0 4px">
+      <div class="container"><div class="sec-hd" style="margin-bottom:12px">
+        <span class="sec-title">Browse <span>Categories</span></span>
+        <span class="sec-link" onclick="navigate('/browse')">All →</span>
+      </div></div>
+      <div class="cats-scroll" id="catsRow"></div>
+    </section>
+
+    <!-- FLASH BANNER -->
+    <div class="flash-banner" onclick="navigate('/browse?sort=newest')">
+      <div>
+        <div class="flash-lbl">⚡ Today's Deals</div>
+        <div class="flash-title">Latest Listings</div>
+        <div class="flash-sub">Fresh items added daily</div>
+      </div>
+      <div class="timer">
+        <div class="tbox"><span class="tnum" id="timerH">00</span><span class="tlbl">hrs</span></div>
+        <div class="tbox"><span class="tnum" id="timerM">00</span><span class="tlbl">min</span></div>
+        <div class="tbox"><span class="tnum" id="timerS">00</span><span class="tlbl">sec</span></div>
+      </div>
+    </div>
+
+    <!-- LISTINGS -->
+    <section style="padding:20px 0">
+      <div class="container"><div class="sec-hd">
+        <span class="sec-title">Featured <span>Listings</span></span>
+        <span class="sec-link" onclick="navigate('/browse')">View all →</span>
+      </div></div>
+      <div class="listings-grid" id="homeListings">${skeletonCards(4)}</div>
+    </section>
+
+    <!-- TRUST -->
+    <div class="trust-strip">
+      <div class="trust-item"><div class="trust-icon" style="background:#fff5ee">🛡️</div><div class="trust-lbl">Secure Platform</div><div class="trust-desc">Your data stays private</div></div>
+      <div class="trust-item"><div class="trust-icon" style="background:#eef3ff">⚡</div><div class="trust-lbl">Post in Minutes</div><div class="trust-desc">Free, instant live</div></div>
+      <div class="trust-item"><div class="trust-icon" style="background:#e8faf2">💬</div><div class="trust-lbl">Direct Chat</div><div class="trust-desc">Talk to sellers instantly</div></div>
+    </div>
+
+    <!-- GIGS -->
+    <section style="padding:20px 0;background:var(--white);border-top:1px solid var(--border2);border-bottom:1px solid var(--border2)">
+      <div class="container"><div class="sec-hd">
+        <span class="sec-title">Top <span>Gigs</span></span>
+        <span class="sec-link" onclick="navigate('/gigs')">All gigs →</span>
+      </div></div>
+      <div class="gigs-scroll" id="homeGigs">
+        ${Array(3).fill(0).map(()=>`<div class="gcard"><div class="sk" style="height:105px;border-radius:0"></div><div style="padding:11px"><div class="sk" style="height:11px;margin-bottom:7px;width:60%"></div><div class="sk" style="height:13px;margin-bottom:6px"></div><div class="sk" style="height:13px;margin-bottom:8px;width:75%"></div><div class="sk" style="height:15px;width:45%"></div></div></div>`).join('')}
+      </div>
+    </section>
+
+    <!-- SELLER CTA -->
+    <div class="seller-cta">
+      <div class="scta-eye">For Sellers</div>
+      <div class="scta-title">Start selling<br>today for free</div>
+      <div class="scta-sub">Reach thousands of buyers. Post your first listing in under 2 minutes.</div>
+      <button class="btn btn-orange" onclick="requireAuth(()=>navigate('/post'))">Start Selling →</button>
+    </div>
+
+    ${renderFooter()}`;
+
+  // Load data
+  loadHomeListings();
+  loadHomeGigs();
+  loadCategories();
+  countdownTimer();
+
+  document.getElementById('heroSearchInput')?.addEventListener('keydown', e => { if(e.key==='Enter') doHeroSearch(); });
+}
+
+function doHeroSearch() {
+  const q = document.getElementById('heroSearchInput')?.value.trim();
+  if (q) navigate(`/browse?q=${encodeURIComponent(q)}`);
+}
+
+async function loadCategories() {
+  const row = document.getElementById('catsRow');
+  if (!row) return;
+  const cats = Object.entries(CAT_META);
+  row.innerHTML = cats.map(([slug, m]) => {
+    const label = slug.replace(/-/g,' ').replace(/\b\w/g, c=>c.toUpperCase());
+    return `<div class="cat-chip" onclick="navigate('/browse?category=${slug}')">
+      <div class="cat-icon" style="background:${m.bg};color:${m.color}">${m.icon}</div>
+      <span class="cat-lbl">${label}</span>
+    </div>`;
+  }).join('');
+}
+
+async function loadHomeListings() {
+  const grid = document.getElementById('homeListings');
+  if (!grid) return;
+  try {
+    const res = await fetch(`${API}/api/listings?limit=8&sort=boost`);
+    if (!res.ok) throw new Error();
+    const d = await res.json();
+    const items = d.listings || d.items || (Array.isArray(d) ? d : []);
+    if (!items.length) {
+      grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state">
+        <div class="empty-icon">🏪</div>
+        <div class="empty-title">No listings yet</div>
+        <div class="empty-sub">Be the first to post a listing on DuukaList+!</div>
+        <button class="btn btn-orange" onclick="requireAuth(()=>navigate('/post'))">Post First Listing</button>
+      </div></div>`;
+      return;
+    }
+    grid.innerHTML = items.map(listingCard).join('');
+    const total = d.total || items.length;
+    const el = document.getElementById('statListings');
+    if (el) el.textContent = total > 999 ? Math.floor(total/1000)+'k+' : total;
+  } catch {
+    grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state">
+      <div class="empty-icon">📭</div>
+      <div class="empty-title">No listings yet</div>
+      <div class="empty-sub">Be the first to post something on DuukaList+</div>
+      <button class="btn btn-orange" onclick="requireAuth(()=>navigate('/post'))">Post a Listing</button>
+    </div></div>`;
+  }
+}
+
+async function loadHomeGigs() {
+  const scroll = document.getElementById('homeGigs');
+  if (!scroll) return;
+  try {
+    const res = await fetch(`${API}/api/gigs?limit=6`);
+    if (!res.ok) throw new Error();
+    const d = await res.json();
+    const items = d.gigs || d.items || (Array.isArray(d) ? d : []);
+    if (!items.length) {
+      scroll.innerHTML = `<div style="padding:30px 20px;color:var(--muted);font-size:14px;text-align:center;min-width:200px">No gigs posted yet. <span style="color:var(--orange);cursor:pointer;font-weight:700" onclick="requireAuth(()=>navigate('/post'))">Post a gig →</span></div>`;
+      return;
+    }
+    scroll.innerHTML = items.map((g,i) => gigCard(g,i)).join('');
+    const total = d.total || items.length;
+    const el = document.getElementById('statGigs');
+    if (el) el.textContent = total > 99 ? Math.floor(total/100)*100+'+' : total;
+  } catch {
+    scroll.innerHTML = `<div style="padding:30px 20px;color:var(--muted);font-size:14px;text-align:center;min-width:220px">No gigs yet. <span style="color:var(--orange);cursor:pointer;font-weight:700" onclick="requireAuth(()=>navigate('/post'))">Offer your services →</span></div>`;
+  }
+}
+
+/* ═══════════════════════════════════════
+   BROWSE VIEW
+═══════════════════════════════════════ */
+let browseTimer;
+function renderBrowse(_, params = {}) {
+  const q = params.q || '';
+  const cat = params.category || '';
+  const sort = params.sort || 'newest';
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="browse-header">
+      <div class="browse-search">
+        <span style="color:var(--muted2);font-size:16px">🔍</span>
+        <input id="browseQ" type="search" placeholder="Search listings…" value="${q}" style="flex:1;border:none;outline:none;font-size:14px;background:transparent;font-family:var(--fb)">
+        <button class="btn btn-orange btn-sm" onclick="doBrowseSearch()">Go</button>
+      </div>
+      <div class="browse-filters" id="browseFilters"></div>
+    </div>
+    <div class="browse-body">
+      <div class="browse-sort">
+        <span class="sort-label" id="browseCount">Loading…</span>
+        <select class="sort-select" id="sortSelect" onchange="changeBrowseSort(this.value)">
+          <option value="newest" ${sort==='newest'?'selected':''}>Newest</option>
+          <option value="price_asc" ${sort==='price_asc'?'selected':''}>Price: Low–High</option>
+          <option value="price_desc" ${sort==='price_desc'?'selected':''}>Price: High–Low</option>
+          <option value="boost" ${sort==='boost'?'selected':''}>Featured First</option>
+        </select>
+      </div>
+      <div class="listings-grid" id="browseGrid">${skeletonCards(6)}</div>
+    </div>`;
+
+  // Build filter chips
+  const filters = document.getElementById('browseFilters');
+  const chips = [['','All'], ...Object.entries(CAT_META).map(([s,m])=>[s, m.icon+' '+s.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase())])];
+  filters.innerHTML = chips.map(([s,l]) => `<div class="filter-chip${cat===s?' active':''}" onclick="navigate('/browse?category=${s}&sort=${sort}')">${l}</div>`).join('');
+
+  document.getElementById('browseQ').addEventListener('input', () => {
+    clearTimeout(browseTimer);
+    browseTimer = setTimeout(doBrowseSearch, 400);
+  });
+  document.getElementById('browseQ').addEventListener('keydown', e => { if(e.key==='Enter') doBrowseSearch(); });
+
+  fetchBrowseListings(q, cat, sort);
+}
+
+function doBrowseSearch() {
+  const q = document.getElementById('browseQ')?.value.trim() || '';
+  const sort = document.getElementById('sortSelect')?.value || 'newest';
+  navigate(`/browse?q=${encodeURIComponent(q)}&sort=${sort}`);
+}
+
+function changeBrowseSort(sort) {
+  const q = document.getElementById('browseQ')?.value.trim() || '';
+  navigate(`/browse?q=${encodeURIComponent(q)}&sort=${sort}`);
+}
+
+async function fetchBrowseListings(q, category, sort) {
+  const grid = document.getElementById('browseGrid');
+  const countEl = document.getElementById('browseCount');
+  if (!grid) return;
+  try {
+    const params = new URLSearchParams({ limit: 20, sort });
+    if (q) params.set('q', q);
+    if (category) params.set('category', category);
+    const res = await fetch(`${API}/api/listings?${params}`);
+    if (!res.ok) throw new Error();
+    const d = await res.json();
+    const items = d.listings || d.items || (Array.isArray(d) ? d : []);
+    const total = d.total || items.length;
+    if (countEl) countEl.textContent = `${total} listing${total !== 1 ? 's' : ''}`;
+    if (!items.length) {
+      grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state">
+        <div class="empty-icon">🔍</div>
+        <div class="empty-title">No listings found</div>
+        <div class="empty-sub">${q ? `No results for "${q}"` : 'No listings in this category yet.'}<br>Be the first to post!</div>
+        <button class="btn btn-orange" onclick="requireAuth(()=>navigate('/post'))">Post a Listing</button>
+      </div></div>`;
+      return;
+    }
+    grid.innerHTML = items.map(listingCard).join('');
+  } catch {
+    if (countEl) countEl.textContent = '0 listings';
+    grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state">
+      <div class="empty-icon">📭</div>
+      <div class="empty-title">Nothing here yet</div>
+      <div class="empty-sub">Be the first to post a listing!</div>
+      <button class="btn btn-orange" onclick="requireAuth(()=>navigate('/post'))">Post a Listing</button>
+    </div></div>`;
+  }
+}
+
+/* ═══════════════════════════════════════
+   LISTING DETAIL VIEW
+═══════════════════════════════════════ */
+async function renderListing(id) {
+  const app = document.getElementById('app');
+  app.innerHTML = `<div style="padding:20px"><div class="spinner"></div></div>`;
+  try {
+    const res = await fetch(`${API}/api/listings/${id}`);
+    if (!res.ok) throw new Error();
+    const l = await res.json();
+    const listing = l.listing || l;
+    const meta = CAT_META[listing.category] || { icon:'📦', bg:'#f0f0f0' };
+    const images = listing.images || [];
+    const imgSlides = images.length
+      ? images.map((src,i) => `<div class="detail-img"><img src="${src}" alt="${listing.title}" loading="lazy"></div>`).join('')
+      : `<div class="detail-img" style="background:${meta.bg}"><span style="font-size:60px">${meta.icon}</span></div>`;
+    const dots = images.length > 1
+      ? `<div class="detail-dots">${images.map((_,i)=>`<div class="detail-dot${i===0?' active':''}" id="dot_${i}"></div>`).join('')}</div>` : '';
+
+    app.innerHTML = `
+      <div onclick="history.back()" class="detail-back">← Back</div>
+      <div class="detail-imgs">
+        <div class="detail-imgs-scroll" id="imgScroll">${imgSlides}</div>
+        ${dots}
+      </div>
+      <div class="detail-body">
+        <div class="detail-badges">
+          ${listing.boost_tier && listing.boost_tier!=='none' ? '<span class="lbadge lbadge-boost">⭐ Featured</span>' : ''}
+          ${listing.condition ? `<span class="lbadge" style="background:var(--blue-light);color:var(--blue-mid)">${listing.condition}</span>` : ''}
+          ${listing.status === 'sold' ? '<span class="lbadge" style="background:#fef2f2;color:var(--red)">SOLD</span>' : ''}
+        </div>
+        <div class="detail-title">${listing.title}</div>
+        <div class="detail-price">${fmtPrice(listing.price, listing.currency||'UGX')}</div>
+        <div class="detail-meta-grid">
+          <div class="dmeta-item"><div class="dmeta-lbl">Category</div><div class="dmeta-val">${listing.category||'—'}</div></div>
+          <div class="dmeta-item"><div class="dmeta-lbl">Condition</div><div class="dmeta-val">${listing.condition||'—'}</div></div>
+          <div class="dmeta-item"><div class="dmeta-lbl">Location</div><div class="dmeta-val">📍 ${listing.location||'Uganda'}</div></div>
+          <div class="dmeta-item"><div class="dmeta-lbl">Posted</div><div class="dmeta-val">${listing.created_at ? new Date(listing.created_at).toLocaleDateString() : '—'}</div></div>
+        </div>
+        ${listing.description ? `<div class="detail-desc">${listing.description}</div>` : ''}
+        ${listing.seller_id ? `
+        <div class="detail-seller-card" onclick="navigate('/seller/${listing.seller_id}')">
+          <div class="seller-av-lg">${(listing.seller_name||'S')[0].toUpperCase()}</div>
+          <div class="seller-info">
+            <h4>${listing.seller_name||'Seller'}</h4>
+            <p>View profile & other listings →</p>
+          </div>
+        </div>` : ''}
+        <div class="detail-ctas">
+          ${listing.whatsapp_number
+            ? `<button class="wa-btn" onclick="window.open('https://wa.me/${listing.whatsapp_number.replace(/[^0-9]/g,'')}?text=Hi, I saw your listing on DuukaList+: ${encodeURIComponent(listing.title)}','_blank')">💬 WhatsApp</button>`
+            : `<button class="btn btn-outline btn-full" onclick="showToast('Contact seller through messages')">💬 Message</button>`}
+          ${listing.status !== 'sold'
+            ? `<button class="buy-btn" onclick="requireAuth(()=>navigate('/checkout/${listing.id}'))">Buy Now</button>`
+            : `<button class="buy-btn" style="background:var(--muted);cursor:not-allowed;box-shadow:none" disabled>Sold Out</button>`}
+        </div>
+      </div>`;
+
+    // Image scroll dots
+    if (images.length > 1) {
+      const scroll = document.getElementById('imgScroll');
+      scroll?.addEventListener('scroll', () => {
+        const idx = Math.round(scroll.scrollLeft / scroll.offsetWidth);
+        document.querySelectorAll('.detail-dot').forEach((d,i) => d.classList.toggle('active', i===idx));
+      });
+    }
+  } catch {
+    app.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">❌</div>
+      <div class="empty-title">Listing not found</div>
+      <div class="empty-sub">This listing may have been removed or expired.</div>
+      <button class="btn btn-orange" onclick="navigate('/browse')">Browse Listings</button>
+    </div>`;
+  }
+}
+
+/* ═══════════════════════════════════════
+   GIGS VIEW
+═══════════════════════════════════════ */
+async function renderGigs(_, params = {}) {
+  const cat = params.category || '';
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="page-hero">
+      <h1>Find a Service</h1>
+      <p>Hire skilled professionals for any project</p>
+    </div>
+    <div style="background:var(--white);border-bottom:1px solid var(--border);padding:10px 16px;overflow-x:auto;white-space:nowrap;scrollbar-width:none">
+      ${['','design','tech','writing','marketing','video','music'].map(c => {
+        const labels = {''  :'All','design':'Design','tech':'Tech & Dev','writing':'Writing','marketing':'Marketing','video':'Video','music':'Music & Audio'};
+        return `<span class="filter-chip${cat===c?' active':''}" onclick="navigate('/gigs?category=${c}')" style="display:inline-block;margin-right:6px">${labels[c]||c}</span>`;
+      }).join('')}
+    </div>
+    <div style="padding:16px">
+      <div class="listings-grid" id="gigsGrid">${skeletonCards(4)}</div>
+    </div>`;
+
+  try {
+    const params2 = new URLSearchParams({ limit: 20 });
+    if (cat) params2.set('category', cat);
+    const res = await fetch(`${API}/api/gigs?${params2}`);
+    if (!res.ok) throw new Error();
+    const d = await res.json();
+    const items = d.gigs || d.items || (Array.isArray(d) ? d : []);
+    const grid = document.getElementById('gigsGrid');
+    if (!items.length) {
+      grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state">
+        <div class="empty-icon">🎯</div>
+        <div class="empty-title">No gigs yet</div>
+        <div class="empty-sub">Be the first to offer your services on DuukaList+</div>
+        <button class="btn btn-orange" onclick="requireAuth(()=>navigate('/post'))">Post a Gig</button>
+      </div></div>`;
+    } else {
+      grid.innerHTML = items.map((g,i) => gigCard(g,i)).join('');
+    }
+  } catch {
+    const grid = document.getElementById('gigsGrid');
+    if (grid) grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state">
+      <div class="empty-icon">🎯</div>
+      <div class="empty-title">No gigs yet</div>
+      <div class="empty-sub">Be the first to offer a service!</div>
+      <button class="btn btn-orange" onclick="requireAuth(()=>navigate('/post'))">Post a Gig</button>
+    </div></div>`;
+  }
+}
+
+/* ═══════════════════════════════════════
+   GIG DETAIL VIEW
+═══════════════════════════════════════ */
+let selectedPackage = 0;
+async function renderGigDetail(id) {
+  const app = document.getElementById('app');
+  app.innerHTML = `<div style="padding:20px"><div class="spinner"></div></div>`;
+  try {
+    const res = await fetch(`${API}/api/gigs/${id}`);
+    if (!res.ok) throw new Error();
+    const d = await res.json();
+    const g = d.gig || d;
+    const packages = g.packages || [];
+    const stars = '★'.repeat(Math.min(5, Math.round(g.rating_avg||4.5)));
+
+    app.innerHTML = `
+      <div onclick="history.back()" class="detail-back">← Back</div>
+      <div style="padding:16px">
+        <div class="gcard-img" style="background:linear-gradient(135deg,#eef3ff,#dbeafe);height:180px;border-radius:var(--rm);font-size:56px;display:flex;align-items:center;justify-content:center;margin-bottom:16px">🎨</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <div class="gavatar" style="width:40px;height:40px;font-size:16px">${(g.seller_name||'S')[0].toUpperCase()}</div>
+          <div>
+            <div style="font-weight:700;font-size:14px;color:var(--ink)">${g.seller_name||'Seller'}</div>
+            <div class="gcard-rating"><span class="gstars">${stars}</span><strong>${(g.rating_avg||4.5).toFixed(1)}</strong><span>(${g.ratings_count||0} reviews)</span></div>
+          </div>
+        </div>
+        <h1 style="font-family:var(--fd);font-weight:700;font-size:22px;color:var(--ink);letter-spacing:-.5px;margin-bottom:12px;line-height:1.2">${g.title||'Service'}</h1>
+        <p style="font-size:14px;color:var(--ink2);line-height:1.7;margin-bottom:20px">${g.description||''}</p>
+
+        ${packages.length ? `
+        <h3 style="font-weight:800;font-size:15px;color:var(--blue);margin-bottom:12px">Choose a Package</h3>
+        <div class="gig-packages">
+          ${packages.map((p,i) => `
+            <div class="pkg-card${i===0?' selected':''}" id="pkg_${i}" onclick="selectPkg(${i})">
+              <div class="pkg-tier">${p.tier||'Package '+(i+1)}</div>
+              <div class="pkg-price">${fmtPrice(p.price,'UGX')}</div>
+              <div class="pkg-dur">⏱ ${p.duration_days||7} day${p.duration_days!==1?'s':''} delivery</div>
+              <ul class="pkg-features">${(p.features||[]).map(f=>`<li>${f}</li>`).join('')}</ul>
+            </div>`).join('')}
+        </div>` : ''}
+
+        ${g.faqs?.length ? `
+        <h3 style="font-weight:800;font-size:15px;color:var(--blue);margin-bottom:12px">FAQs</h3>
+        ${g.faqs.map(f => `
+          <div style="border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:8px">
+            <div style="font-weight:700;font-size:13px;color:var(--ink);margin-bottom:6px">Q: ${f.question}</div>
+            <div style="font-size:13px;color:var(--muted);line-height:1.6">A: ${f.answer}</div>
+          </div>`).join('')}` : ''}
+      </div>
+      <div style="position:sticky;bottom:var(--bnav);background:var(--white);padding:12px 16px;border-top:1px solid var(--border)">
+        <button class="btn btn-orange btn-full btn-lg" onclick="orderGig('${id}')">Order Now →</button>
+      </div>`;
+
+    window.selectPkg = (i) => {
+      selectedPackage = i;
+      document.querySelectorAll('.pkg-card').forEach((el,idx) => el.classList.toggle('selected', idx===i));
+    };
+    window.orderGig = (gigId) => requireAuth(() => navigate(`/checkout/${gigId}?type=gig&pkg=${selectedPackage}`));
+  } catch {
+    app.innerHTML = `<div class="empty-state"><div class="empty-icon">❌</div><div class="empty-title">Gig not found</div><button class="btn btn-orange" onclick="navigate('/gigs')">Browse Gigs</button></div>`;
+  }
+}
+
+/* ═══════════════════════════════════════
+   POST LISTING VIEW
+═══════════════════════════════════════ */
+function renderPost() {
+  if (!currentUser) { openAuth(); return; }
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="page-hero"><h1>Post a Listing</h1><p>Reach thousands of buyers — free</p></div>
+    <div class="post-form">
+      <div class="form-section">
+        <div class="form-section-title">📋 Listing Type</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px">
+          <div class="boost-opt selected" id="typeProduct" onclick="selectType('product')">
+            <div class="boost-opt-name">🛍️ Product</div>
+            <div class="boost-opt-desc">Sell a physical item</div>
+          </div>
+          <div class="boost-opt" id="typeGig" onclick="selectType('gig')">
+            <div class="boost-opt-name">🎯 Gig / Service</div>
+            <div class="boost-opt-desc">Offer your skills</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-title">📝 Details</div>
+        <div class="field"><label>Title <span>*</span></label><input type="text" id="fTitle" placeholder="e.g. iPhone 14 Pro Max 256GB"></div>
+        <div class="field"><label>Category <span>*</span></label>
+          <select id="fCat">
+            <option value="">Select category…</option>
+            ${Object.keys(CAT_META).map(s => `<option value="${s}">${s.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field"><label>Description <span>*</span></label><textarea id="fDesc" placeholder="Describe your item or service in detail…"></textarea></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="field"><label>Price (UGX) <span>*</span></label><input type="number" id="fPrice" placeholder="0"></div>
+          <div class="field" id="condField"><label>Condition</label>
+            <select id="fCond"><option value="">Select…</option><option value="new">New</option><option value="used">Used</option><option value="refurbished">Refurbished</option></select>
+          </div>
+        </div>
+        <div class="field"><label>Location <span>*</span></label><input type="text" id="fLoc" placeholder="e.g. Kampala, Ntinda"></div>
+        <div class="field" id="waField"><label>WhatsApp Number (optional)</label><input type="tel" id="fWa" placeholder="e.g. 256700000000"></div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-title">📸 Photos</div>
+        <div class="photo-upload" onclick="document.getElementById('photoInput').click()">
+          <input type="file" id="photoInput" multiple accept="image/*" onchange="previewPhotos(this)">
+          <div class="photo-upload-icon">📷</div>
+          <p>Tap to add photos</p>
+          <small>Up to 8 photos • JPG, PNG</small>
+        </div>
+        <div class="photo-previews" id="photoPreviews"></div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-title">⭐ Boost Your Listing <span style="font-size:11px;color:var(--muted);font-weight:400">(optional)</span></div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Boosted listings appear at the top of search results.</p>
+        <div class="boost-options">
+          <div class="boost-opt selected" id="boost_none" onclick="selectBoost('none')">
+            <div class="boost-opt-name">No Boost</div>
+            <div class="boost-opt-price">Free</div>
+            <div class="boost-opt-desc">Standard placement</div>
+          </div>
+          <div class="boost-opt" id="boost_standard" onclick="selectBoost('standard')">
+            <div class="boost-opt-name">Standard</div>
+            <div class="boost-opt-price">UGX 5,000</div>
+            <div class="boost-opt-desc">7 days boost</div>
+          </div>
+          <div class="boost-opt" id="boost_top" onclick="selectBoost('top')">
+            <div class="boost-opt-name">TOP Badge</div>
+            <div class="boost-opt-price">UGX 15,000</div>
+            <div class="boost-opt-desc">30 days · Top of category</div>
+          </div>
+          <div class="boost-opt" id="boost_diamond" onclick="selectBoost('diamond')">
+            <div class="boost-opt-name">💎 Diamond</div>
+            <div class="boost-opt-price">UGX 40,000</div>
+            <div class="boost-opt-desc">30 days · Homepage slot</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-orange btn-full btn-lg" onclick="submitListing()" id="submitBtn" style="margin-bottom:24px">Publish Listing →</button>
+    </div>`;
+
+  let selectedType = 'product', selectedBoostTier = 'none';
+  const photosData = [];
+
+  window.selectType = (t) => {
+    selectedType = t;
+    ['product','gig'].forEach(x => document.getElementById('type'+x.charAt(0).toUpperCase()+x.slice(1))?.classList.toggle('selected', x===t));
+    document.getElementById('condField').style.display = t === 'gig' ? 'none' : 'block';
+    document.getElementById('waField').style.display = t === 'gig' ? 'none' : 'block';
+  };
+  window.selectBoost = (tier) => {
+    selectedBoostTier = tier;
+    ['none','standard','top','diamond'].forEach(t => document.getElementById('boost_'+t)?.classList.toggle('selected', t===tier));
+  };
+  window.previewPhotos = (input) => {
+    const prev = document.getElementById('photoPreviews');
+    [...input.files].forEach(f => {
+      const r = new FileReader();
+      r.onload = e => {
+        photosData.push(e.target.result);
+        prev.innerHTML += `<div class="photo-preview"><img src="${e.target.result}"><span class="photo-remove" onclick="this.parentNode.remove()">✕</span></div>`;
+      };
+      r.readAsDataURL(f);
+    });
+  };
+  window.submitListing = async () => {
+    const title = document.getElementById('fTitle').value.trim();
+    const category = document.getElementById('fCat').value;
+    const description = document.getElementById('fDesc').value.trim();
+    const price = document.getElementById('fPrice').value;
+    const location = document.getElementById('fLoc').value.trim();
+    if (!title || !category || !description || !price || !location) { showToast('Please fill all required fields'); return; }
+    const btn = document.getElementById('submitBtn');
+    btn.textContent = 'Publishing…'; btn.disabled = true;
+    try {
+      const body = { title, category, description, price: Number(price), location, type: selectedType, condition: document.getElementById('fCond')?.value, whatsapp_number: document.getElementById('fWa')?.value, boost_tier: selectedBoostTier };
+      const res = await fetch(`${API}/api/listings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) throw new Error();
+      const d = await res.json();
+      showToast('Listing published! 🎉');
+      if (selectedBoostTier !== 'none' && d.listing?.id) navigate(`/checkout/${d.listing.id}?type=boost&tier=${selectedBoostTier}`);
+      else setTimeout(() => navigate('/dashboard'), 1200);
+    } catch { showToast('Failed to publish. Try again.'); btn.textContent = 'Publish Listing →'; btn.disabled = false; }
+  };
+}
+
+/* ═══════════════════════════════════════
+   CHECKOUT VIEW
+═══════════════════════════════════════ */
+async function renderCheckout(id, params = {}) {
+  if (!currentUser) { openAuth(); return; }
+  const type = params.type || 'product';
+  const app = document.getElementById('app');
+  app.innerHTML = `<div style="padding:20px"><div class="spinner"></div></div>`;
+
+  let title = 'Order', amount = 0;
+  try {
+    if (type === 'boost') {
+      const tierPrices = { standard: 5000, top: 15000, vip: 25000, diamond: 40000 };
+      amount = tierPrices[params.tier] || 5000;
+      title = `Boost — ${params.tier || 'standard'} tier`;
+    } else if (type === 'gig') {
+      const res = await fetch(`${API}/api/gigs/${id}`);
+      const d = await res.json();
+      const g = d.gig || d;
+      const pkg = g.packages?.[Number(params.pkg||0)];
+      title = g.title + (pkg ? ` — ${pkg.tier}` : '');
+      amount = pkg?.price || g.starting_price || 50000;
+    } else {
+      const res = await fetch(`${API}/api/listings/${id}`);
+      const d = await res.json();
+      const l = d.listing || d;
+      title = l.title; amount = l.price;
+    }
+  } catch {}
+
+  const commission = Math.round(amount * 0.03);
+  const total = amount + commission;
+  const useFlutter = amount > 28000; // Route large amounts to Flutterwave
+
+  app.innerHTML = `
+    <div onclick="history.back()" class="detail-back">← Back</div>
+    <div class="checkout-body">
+      <h2 style="font-family:var(--fd);font-weight:700;font-size:22px;color:var(--ink);margin-bottom:18px;letter-spacing:-.5px">Complete Order</h2>
+      <div class="checkout-summary">
+        <div class="checkout-row"><span>Item</span><span style="font-weight:600;max-width:55%;text-align:right;font-size:13px">${title}</span></div>
+        <div class="checkout-row"><span>Subtotal</span><span>${fmtPrice(amount,'UGX')}</span></div>
+        <div class="checkout-row"><span style="color:var(--muted)">Platform fee (3%)</span><span style="color:var(--muted)">${fmtPrice(commission,'UGX')}</span></div>
+        <div class="checkout-row total"><span>Total</span><span>${fmtPrice(total,'UGX')}</span></div>
+      </div>
+
+      ${useFlutter ? `
+      <div class="amount-warning">⚠️ <strong>Large payment:</strong> This amount will be processed via Mobile Money (MTN/Airtel). Card payments are available for smaller amounts.</div>` : ''}
+
+      <h3 style="font-weight:700;font-size:15px;color:var(--ink2);margin-bottom:12px">Payment Method</h3>
+      <div class="payment-methods">
+        ${!useFlutter ? `
+        <div class="pmethod selected" id="pm_pesapal" onclick="selectPM('pesapal')">
+          <span class="pmethod-icon">💳</span>
+          <div class="pmethod-info"><strong>Card Payment</strong><span>Visa, Mastercard</span></div>
+          <div class="pmethod-radio"></div>
+        </div>` : ''}
+        <div class="pmethod${useFlutter?' selected':''}" id="pm_mtn" onclick="selectPM('mtn')">
+          <span class="pmethod-icon">📱</span>
+          <div class="pmethod-info"><strong>MTN Mobile Money</strong><span>Pay with MTN MoMo</span></div>
+          <div class="pmethod-radio"></div>
+        </div>
+        <div class="pmethod" id="pm_airtel" onclick="selectPM('airtel')">
+          <span class="pmethod-icon">📱</span>
+          <div class="pmethod-info"><strong>Airtel Money</strong><span>Pay with Airtel Money</span></div>
+          <div class="pmethod-radio"></div>
+        </div>
+      </div>
+
+      <div id="pmDetails" style="margin-bottom:16px"></div>
+      <button class="btn btn-orange btn-full btn-lg" onclick="processPayment('${id}',${total},'${type}')" id="payBtn">Pay ${fmtPrice(total,'UGX')} →</button>
+      <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px">Payments processed by third-party providers. DuukaList+ does not store card details.</p>
+    </div>`;
+
+  let selectedPM = useFlutter ? 'mtn' : 'pesapal';
+  window.selectPM = (pm) => {
+    selectedPM = pm;
+    ['pesapal','mtn','airtel'].forEach(p => {
+      const el = document.getElementById('pm_'+p);
+      if (el) el.classList.toggle('selected', p===pm);
+    });
+    const det = document.getElementById('pmDetails');
+    if (pm === 'mtn' || pm === 'airtel') {
+      det.innerHTML = `<div class="field"><label>Mobile Number <span>*</span></label><input type="tel" id="momoNumber" placeholder="e.g. 256700000000"></div>`;
+    } else { det.innerHTML = ''; }
+  };
+  window.selectPM(selectedPM);
+
+  window.processPayment = async (listingId, totalAmt, orderType) => {
+    const btn = document.getElementById('payBtn');
+    btn.textContent = 'Processing…'; btn.disabled = true;
+    try {
+      if (selectedPM === 'pesapal') {
+        const res = await fetch(`${PAY_API}/api/payments/pesapal/init`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+          body: JSON.stringify({ listing_id: listingId, amount: totalAmt, type: orderType, currency: 'UGX' })
+        });
+        const d = await res.json();
+        if (d.redirect_url) window.location.href = d.redirect_url;
+        else throw new Error();
+      } else {
+        const phone = document.getElementById('momoNumber')?.value.trim();
+        if (!phone) { showToast('Enter your mobile number'); btn.textContent = `Pay ${fmtPrice(totalAmt,'UGX')} →`; btn.disabled = false; return; }
+        const res = await fetch(`${PAY_API}/api/payments/flutterwave/init`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+          body: JSON.stringify({ listing_id: listingId, amount: totalAmt, type: orderType, currency: 'UGX', phone, network: selectedPM === 'mtn' ? 'MTN' : 'AIRTEL' })
+        });
+        const d = await res.json();
+        if (d.redirect_url) window.location.href = d.redirect_url;
+        else if (d.status === 'pending') { showToast('Check your phone to confirm payment 📱'); setTimeout(() => navigate('/orders'), 2500); }
+        else throw new Error();
+      }
+    } catch { showToast('Payment failed. Try again.'); btn.textContent = `Pay ${fmtPrice(totalAmt,'UGX')} →`; btn.disabled = false; }
+  };
+}
+
+/* ═══════════════════════════════════════
+   ORDERS VIEW
+═══════════════════════════════════════ */
+async function renderOrders() {
+  if (!currentUser) { openAuth(); return; }
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="page-hero"><h1>My Orders</h1><p>Track your purchases and sales</p></div>
+    <div class="order-tabs">
+      <div class="otab active" id="tab_buying" onclick="switchOrderTab('buying')">Buying</div>
+      <div class="otab" id="tab_selling" onclick="switchOrderTab('selling')">Selling</div>
+    </div>
+    <div style="padding:16px" id="ordersBody"><div class="spinner"></div></div>`;
+
+  const stages = ['Placed','Started','Delivered','Completed'];
+  async function loadOrders(role) {
+    const body = document.getElementById('ordersBody');
+    if (!body) return;
+    body.innerHTML = `<div class="spinner"></div>`;
+    try {
+      const res = await fetch(`${API}/api/orders?role=${role}`, { headers: { Authorization: `Bearer ${getToken()}` } });
+      if (!res.ok) throw new Error();
+      const d = await res.json();
+      const orders = d.orders || d.items || (Array.isArray(d) ? d : []);
+      if (!orders.length) {
+        body.innerHTML = `<div class="empty-state"><div class="empty-icon">${role==='buyer'?'🛍️':'💼'}</div><div class="empty-title">No orders yet</div><div class="empty-sub">${role==='buyer'?'Browse listings and place your first order':'Start selling to see orders here'}</div><button class="btn btn-orange" onclick="navigate('${role==='buyer'?'/browse':'/post'}')">${role==='buyer'?'Browse Listings':'Post a Listing'}</button></div>`;
+        return;
+      }
+      body.innerHTML = orders.map(o => {
+        const stageIdx = stages.findIndex(s => o.status?.toLowerCase().includes(s.toLowerCase()));
+        const curIdx = Math.max(0, stageIdx);
+        return `<div class="order-card">
+          <div class="order-card-header">
+            <span class="order-id">ORDER #${o.id?.slice(-6).toUpperCase()||'—'}</span>
+            <span class="status-pill ${o.status==='completed'?'status-active':o.status==='cancelled'?'status-expired':'status-sold'}">${o.status||'—'}</span>
+          </div>
+          <div class="order-title">${o.title||o.listing_title||'Order'}</div>
+          <div class="order-meta">${fmtPrice(o.amount,'UGX')} · ${o.payment_method||'—'} · ${o.created_at?new Date(o.created_at).toLocaleDateString():'—'}</div>
+          <div class="order-progress">
+            ${stages.map((s,i) => `
+              <div class="prog-step${i<curIdx?' done':i===curIdx?' active':''}">
+                <div class="prog-dot">${i<curIdx?'✓':i+1}</div>
+                <div class="prog-lbl">${s}</div>
+              </div>
+              ${i<stages.length-1?`<div class="prog-line${i<curIdx?' done':''}"></div>`:''}
+            `).join('')}
+          </div>
+        </div>`;
+      }).join('');
+    } catch {
+      body.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No orders yet</div><button class="btn btn-outline" onclick="navigate('/browse')">Browse Listings</button></div>`;
+    }
+  }
+
+  let currentOrderTab = 'buying';
+  window.switchOrderTab = (tab) => {
+    currentOrderTab = tab;
+    document.querySelectorAll('.otab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab_'+tab)?.classList.add('active');
+    loadOrders(tab === 'buying' ? 'buyer' : 'seller');
+  };
+  loadOrders('buyer');
+}
+
+/* ═══════════════════════════════════════
+   DASHBOARD VIEW
+═══════════════════════════════════════ */
+async function renderDashboard() {
+  if (!currentUser) { openAuth(); return; }
+  const app = document.getElementById('app');
+  const initial = (currentUser.name||currentUser.email||'U')[0].toUpperCase();
+  app.innerHTML = `
+    <div class="dash-header">
+      <div class="dash-user">
+        <div class="dash-avatar">${initial}</div>
+        <div class="dash-user-info">
+          <h2>${currentUser.name||'Seller'}</h2>
+          <p>${currentUser.email||''} · ${currentUser.seller_level||'New Seller'}</p>
+        </div>
+        <button class="btn btn-sm" style="background:rgba(255,255,255,.1);color:#fff;margin-left:auto" onclick="logout()">Sign Out</button>
+      </div>
+      <div class="dash-stats">
+        <div class="dstat"><div class="dstat-num" id="dListings">—</div><div class="dstat-lbl">Listings</div></div>
+        <div class="dstat"><div class="dstat-num" id="dOrders">—</div><div class="dstat-lbl">Orders</div></div>
+        <div class="dstat"><div class="dstat-num" id="dRating">—</div><div class="dstat-lbl">Rating</div></div>
+      </div>
+    </div>
+    <div class="dash-body">
+      <div class="dash-section">
+        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+          <button class="btn btn-orange btn-sm" onclick="requireAuth(()=>navigate('/post'))">+ New Listing</button>
+          <button class="btn btn-outline btn-sm" onclick="navigate('/orders')">My Orders</button>
+          <button class="btn btn-outline btn-sm" onclick="navigate('/gigs')">Browse Gigs</button>
+        </div>
+      </div>
+      <div class="dash-section">
+        <div class="dash-section-title">📦 My Listings</div>
+        <div id="dashListings"><div class="spinner"></div></div>
+      </div>
+      <div class="dash-section">
+        <div class="dash-section-title">💳 Subscription</div>
+        <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--rm);padding:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div><div style="font-weight:700;font-size:15px;color:var(--ink)">${currentUser.subscription_tier||'Free'} Plan</div><div style="font-size:12px;color:var(--muted)">5 active listings</div></div>
+            <span class="status-pill status-active">${currentUser.subscription_tier||'FREE'}</span>
+          </div>
+          <button class="btn btn-orange btn-sm btn-full" onclick="navigate('/checkout/sub?type=subscription')">Upgrade to Pro — UGX 20,000/mo</button>
+        </div>
+      </div>
+    </div>`;
+
+  try {
+    const res = await fetch(`${API}/api/listings?seller_id=${currentUser.id}&limit=20`, { headers: { Authorization: `Bearer ${getToken()}` } });
+    const d = await res.json();
+    const items = d.listings || d.items || (Array.isArray(d) ? d : []);
+    document.getElementById('dListings').textContent = items.length;
+    const listingsEl = document.getElementById('dashListings');
+    if (!items.length) {
+      listingsEl.innerHTML = `<div style="text-align:center;padding:24px;color:var(--muted);font-size:14px">No listings yet. <span style="color:var(--orange);cursor:pointer;font-weight:700" onclick="navigate('/post')">Post your first →</span></div>`;
+    } else {
+      listingsEl.innerHTML = items.map(l => {
+        const meta = CAT_META[l.category] || { icon:'📦', bg:'#f0f0f0' };
+        return `<div class="dash-listing-row" onclick="navigate('/listing/${l.id}')">
+          <div class="dash-listing-img" style="background:${meta.bg}">
+            ${l.images?.[0] ? `<img src="${l.images[0]}" alt="${l.title}">` : meta.icon}
+          </div>
+          <div class="dash-listing-info">
+            <h4>${l.title}</h4>
+            <p>${fmtPrice(l.price,'UGX')} · 📍 ${l.location||'Uganda'}</p>
+          </div>
+          <div class="dash-listing-actions">
+            <span class="status-pill ${l.status==='active'?'status-active':l.status==='sold'?'status-sold':'status-expired'}">${l.status||'active'}</span>
+            ${l.boost_tier && l.boost_tier!=='none'?`<span class="boost-badge">⭐</span>`:''}
+          </div>
+        </div>`;
+      }).join('');
+    }
+  } catch { document.getElementById('dashListings').innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">Could not load listings.</div>`; }
+}
+
+function logout() {
+  clearToken();
+  updateAuthUI(null);
+  navigate('/');
+  showToast('Signed out');
+}
+
+/* ═══════════════════════════════════════
+   SELLER PROFILE VIEW
+═══════════════════════════════════════ */
+async function renderSeller(id) {
+  const app = document.getElementById('app');
+  app.innerHTML = `<div style="padding:20px"><div class="spinner"></div></div>`;
+  try {
+    const res = await fetch(`${API}/api/listings?seller_id=${id}&limit=20`);
+    const d = await res.json();
+    const listings = d.listings || d.items || [];
+    // Try to get seller info from first listing
+    const seller = listings[0] || {};
+    const name = seller.seller_name || 'Seller';
+    const initial = name[0].toUpperCase();
+
+    app.innerHTML = `
+      <div onclick="history.back()" class="detail-back">← Back</div>
+      <div class="seller-hero">
+        <div class="seller-hero-av">${initial}</div>
+        <h1>${name}</h1>
+        <p>Member since ${seller.created_at ? new Date(seller.created_at).getFullYear() : '2025'}</p>
+        <div class="seller-badges"><span class="seller-badge">✓ Active Seller</span></div>
+      </div>
+      <div class="seller-stats-row">
+        <div class="sstat"><div class="sstat-num">${listings.length}</div><div class="sstat-lbl">Listings</div></div>
+        <div class="sstat"><div class="sstat-num">—</div><div class="sstat-lbl">Orders</div></div>
+        <div class="sstat"><div class="sstat-num">—</div><div class="sstat-lbl">Rating</div></div>
+        <div class="sstat"><div class="sstat-num">—</div><div class="sstat-lbl">Reviews</div></div>
+      </div>
+      <div style="padding:16px">
+        <div class="sec-hd" style="margin-bottom:14px"><span class="sec-title">Listings</span></div>
+        ${listings.length
+          ? `<div class="listings-grid">${listings.map(listingCard).join('')}</div>`
+          : `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No listings</div></div>`}
+      </div>`;
+  } catch {
+    app.innerHTML = `<div class="empty-state"><div class="empty-icon">❌</div><div class="empty-title">Seller not found</div><button class="btn btn-orange" onclick="navigate('/browse')">Browse Listings</button></div>`;
+  }
+}
+
+/* ═══════════════════════════════════════
+   MESSAGES VIEW
+═══════════════════════════════════════ */
+function renderMessages() {
+  if (!currentUser) { openAuth(); return; }
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="page-hero"><h1>Messages</h1><p>Your conversations with buyers and sellers</p></div>
+    <div style="padding:16px">
+      <div class="empty-state">
+        <div class="empty-icon">💬</div>
+        <div class="empty-title">No messages yet</div>
+        <div class="empty-sub">Start a conversation by messaging a seller from any listing.</div>
+        <button class="btn btn-orange" onclick="navigate('/browse')">Browse Listings</button>
+      </div>
+    </div>`;
+}
+
+/* ═══════════════════════════════════════
+   FOOTER HTML
+═══════════════════════════════════════ */
+function renderFooter() {
+  return `<footer class="site-footer">
+    <div class="footer-logo">DuukaList<em>+</em></div>
+    <div class="footer-tagline">A digital platform connecting buyers, sellers and service providers.</div>
+    <div class="footer-grid">
+      <div class="fcol">
+        <h4>Marketplace</h4>
+        <a onclick="navigate('/')">Home</a>
+        <a onclick="navigate('/browse')">Browse Listings</a>
+        <a onclick="navigate('/gigs')">Browse Gigs</a>
+        <a onclick="requireAuth(()=>navigate('/post'))">Post a Listing</a>
+      </div>
+      <div class="fcol">
+        <h4>Account</h4>
+        <a onclick="requireAuth(()=>navigate('/dashboard'))">Dashboard</a>
+        <a onclick="requireAuth(()=>navigate('/orders'))">My Orders</a>
+        <a onclick="openAuth()">Sign In</a>
+        <a href="https://keromisec9-prog.github.io/duukalist-contactpage/" target="_blank">Contact Us</a>
+      </div>
+      <div class="fcol">
+        <h4>Legal</h4>
+        <a href="https://keromisec9-prog.github.io/duukalist-privacy-policy/" target="_blank">Privacy Policy</a>
+        <a href="https://keromisec9-prog.github.io/Duukalist-termsandconeitions/" target="_blank">Terms of Service</a>
+        <a href="https://keromisec9-prog.github.io/duukarefundpolicy/" target="_blank">Refund Policy</a>
+        <a href="https://keromisec9-prog.github.io/DuukaList-SellerPolicy/" target="_blank">Seller Policy</a>
+        <a href="https://keromisec9-prog.github.io/DuukaList-additional-legal-policies/" target="_blank">More Policies</a>
+      </div>
+      <div class="fcol">
+        <h4>Company</h4>
+        <a href="https://keromisec9-prog.github.io/DuukaList-buyer-protection-disclaimer-/" target="_blank">Buyer Protection</a>
+        <a href="https://keromisec9-prog.github.io/DuukaList-additional-legal-policies/" target="_blank">DMCA / IP</a>
+        <a href="https://keromisec9-prog.github.io/duukalist-contactpage/" target="_blank">Help & Support</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>© 2025 DuukaList+. All rights reserved. Platform only — not a party to any transaction.</div>
+      <div class="footer-badges">
+        <span class="fbadge">Platform Only</span>
+        <span class="fbadge">No Financial Storage</span>
+        <span class="fbadge">Free to Post</span>
+      </div>
+    </div>
+  </footer>`;
+}
+
+/* ═══════════════════════════════════════
+   INIT
+═══════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  checkAuth();
+  // Google One Tap init
+  if (typeof google !== 'undefined') {
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleCredentialResponse,
+      auto_select: false,
+      cancel_on_tap_outside: true,
+      context: 'signin'
+    });
+    if (!getToken()) {
+      // Small delay so page renders first
+      setTimeout(() => google.accounts.id.prompt(), 1200);
+    }
+  }
+  handleRoute();
+});
+</script>
+</body>
+</html>
