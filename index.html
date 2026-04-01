@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:ital,wght@0,700;0,900;1,700&display=swap" rel="stylesheet">
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://accounts.google.com/gsi/client"></script>
 <meta name="google-signin-client_id" content="103731782063-skp1gui990cb64rvtmresjfkmvne4n3a.apps.googleusercontent.com">
 
 <style>
@@ -1810,22 +1810,22 @@ function renderFooter() {
 /* ═══════════════════════════════════════
    INIT
 ═══════════════════════════════════════ */
+// Called by Google when gsi/client script is fully loaded
+window.onGoogleLibraryLoad = function() {
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleCredentialResponse,
+    auto_select: false,
+    cancel_on_tap_outside: true,
+    context: 'signin'
+  });
+  if (!getToken()) {
+    setTimeout(() => google.accounts.id.prompt(), 1200);
+  }
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   checkAuth();
-  // Google One Tap init
-  if (typeof google !== 'undefined') {
-    google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: handleCredentialResponse,
-      auto_select: false,
-      cancel_on_tap_outside: true,
-      context: 'signin'
-    });
-    if (!getToken()) {
-      // Small delay so page renders first
-      setTimeout(() => google.accounts.id.prompt(), 1200);
-    }
-  }
   handleRoute();
 });
 </script>
