@@ -1422,7 +1422,7 @@ function renderPost() {
     const btn = document.getElementById('submitBtn');
     btn.textContent = 'Publishing…'; btn.disabled = true;
     try {
-      const body = { title, category, description, price: Number(price), location, type: selectedType, condition: document.getElementById('fCond')?.value, whatsapp_number: document.getElementById('fWa')?.value, boost_tier: selectedBoostTier };
+      const body = { title, category_id: category, category_slug: category, description, price: Number(price), location, type: selectedType, condition: document.getElementById('fCond')?.value, whatsapp_number: document.getElementById('fWa')?.value, boost_tier: selectedBoostTier };
       const res = await fetch(`${API}/listings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
