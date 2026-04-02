@@ -976,7 +976,7 @@ async function loadHomeListings() {
   const grid = document.getElementById('homeListings');
   if (!grid) return;
   try {
-    const res = await fetch(`${API}/api/listings?limit=8&sort=boost`);
+    const res = await fetch(`${API}/listings?limit=8&sort=boost`);
     if (!res.ok) throw new Error();
     const d = await res.json();
     const items = d.listings || d.items || (Array.isArray(d) ? d : []);
@@ -1007,7 +1007,7 @@ async function loadHomeGigs() {
   const scroll = document.getElementById('homeGigs');
   if (!scroll) return;
   try {
-    const res = await fetch(`${API}/api/gigs?limit=6`);
+    const res = await fetch(`${API}/gigs?limit=6`);
     if (!res.ok) throw new Error();
     const d = await res.json();
     const items = d.gigs || d.items || (Array.isArray(d) ? d : []);
@@ -1088,7 +1088,7 @@ async function fetchBrowseListings(q, category, sort) {
     const params = new URLSearchParams({ limit: 20, sort });
     if (q) params.set('q', q);
     if (category) params.set('category', category);
-    const res = await fetch(`${API}/api/listings?${params}`);
+    const res = await fetch(`${API}/listings?${params}`);
     if (!res.ok) throw new Error();
     const d = await res.json();
     const items = d.listings || d.items || (Array.isArray(d) ? d : []);
@@ -1122,7 +1122,7 @@ async function renderListing(id) {
   const app = document.getElementById('app');
   app.innerHTML = `<div style="padding:20px"><div class="spinner"></div></div>`;
   try {
-    const res = await fetch(`${API}/api/listings/${id}`);
+    const res = await fetch(`${API}/listings/${id}`);
     if (!res.ok) throw new Error();
     const l = await res.json();
     const listing = l.listing || l;
@@ -1215,7 +1215,7 @@ async function renderGigs(_, params = {}) {
   try {
     const params2 = new URLSearchParams({ limit: 20 });
     if (cat) params2.set('category', cat);
-    const res = await fetch(`${API}/api/gigs?${params2}`);
+    const res = await fetch(`${API}/gigs?${params2}`);
     if (!res.ok) throw new Error();
     const d = await res.json();
     const items = d.gigs || d.items || (Array.isArray(d) ? d : []);
@@ -1249,7 +1249,7 @@ async function renderGigDetail(id) {
   const app = document.getElementById('app');
   app.innerHTML = `<div style="padding:20px"><div class="spinner"></div></div>`;
   try {
-    const res = await fetch(`${API}/api/gigs/${id}`);
+    const res = await fetch(`${API}/gigs/${id}`);
     if (!res.ok) throw new Error();
     const d = await res.json();
     const g = d.gig || d;
@@ -1423,7 +1423,7 @@ function renderPost() {
     btn.textContent = 'Publishing…'; btn.disabled = true;
     try {
       const body = { title, category, description, price: Number(price), location, type: selectedType, condition: document.getElementById('fCond')?.value, whatsapp_number: document.getElementById('fWa')?.value, boost_tier: selectedBoostTier };
-      const res = await fetch(`${API}/api/listings`, {
+      const res = await fetch(`${API}/listings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
         body: JSON.stringify(body)
@@ -1453,14 +1453,14 @@ async function renderCheckout(id, params = {}) {
       amount = tierPrices[params.tier] || 5000;
       title = `Boost — ${params.tier || 'standard'} tier`;
     } else if (type === 'gig') {
-      const res = await fetch(`${API}/api/gigs/${id}`);
+      const res = await fetch(`${API}/gigs/${id}`);
       const d = await res.json();
       const g = d.gig || d;
       const pkg = g.packages?.[Number(params.pkg||0)];
       title = g.title + (pkg ? ` — ${pkg.tier}` : '');
       amount = pkg?.price || g.starting_price || 50000;
     } else {
-      const res = await fetch(`${API}/api/listings/${id}`);
+      const res = await fetch(`${API}/listings/${id}`);
       const d = await res.json();
       const l = d.listing || d;
       title = l.title; amount = l.price;
@@ -1469,8 +1469,6 @@ async function renderCheckout(id, params = {}) {
 
   const commission = Math.round(amount * 0.03);
   const total = amount + commission;
-  const useFlutter = amount > 28000; // Route large amounts to Flutterwave
-
   app.innerHTML = `
     <div onclick="history.back()" class="detail-back">← Back</div>
     <div class="checkout-body">
@@ -1482,75 +1480,56 @@ async function renderCheckout(id, params = {}) {
         <div class="checkout-row total"><span>Total</span><span>${fmtPrice(total,'UGX')}</span></div>
       </div>
 
-      ${useFlutter ? `
-      <div class="amount-warning">⚠️ <strong>Large payment:</strong> This amount will be processed via Mobile Money (MTN/Airtel). Card payments are available for smaller amounts.</div>` : ''}
-
-      <h3 style="font-weight:700;font-size:15px;color:var(--ink2);margin-bottom:12px">Payment Method</h3>
+      <h3 style="font-weight:700;font-size:15px;color:var(--ink2);margin-bottom:8px">Payment Method</h3>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Choose how you want to pay — card, MTN MoMo, or Airtel Money all supported.</p>
       <div class="payment-methods">
-        ${!useFlutter ? `
-        <div class="pmethod selected" id="pm_pesapal" onclick="selectPM('pesapal')">
+        <div class="pmethod selected" id="pm_pesapal">
           <span class="pmethod-icon">💳</span>
-          <div class="pmethod-info"><strong>Card Payment</strong><span>Visa, Mastercard</span></div>
-          <div class="pmethod-radio"></div>
-        </div>` : ''}
-        <div class="pmethod${useFlutter?' selected':''}" id="pm_mtn" onclick="selectPM('mtn')">
-          <span class="pmethod-icon">📱</span>
-          <div class="pmethod-info"><strong>MTN Mobile Money</strong><span>Pay with MTN MoMo</span></div>
-          <div class="pmethod-radio"></div>
-        </div>
-        <div class="pmethod" id="pm_airtel" onclick="selectPM('airtel')">
-          <span class="pmethod-icon">📱</span>
-          <div class="pmethod-info"><strong>Airtel Money</strong><span>Pay with Airtel Money</span></div>
-          <div class="pmethod-radio"></div>
+          <div class="pmethod-info"><strong>All Payment Methods</strong><span>Card · MTN MoMo · Airtel Money</span></div>
+          <div class="pmethod-radio" style="background:var(--orange);border-color:var(--orange)"></div>
         </div>
       </div>
 
-      <div id="pmDetails" style="margin-bottom:16px"></div>
-      <button class="btn btn-orange btn-full btn-lg" onclick="processPayment('${id}',${total},'${type}')" id="payBtn">Pay ${fmtPrice(total,'UGX')} →</button>
-      <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px">Payments processed by third-party providers. DuukaList+ does not store card details.</p>
-    </div>`;
+      <div class="green-box" style="background:#e8faf2;border:1px solid #b7f5d8;border-left:3px solid #0dab5b;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:12px;color:#065f46">
+        ✅ You will be redirected to a secure payment page where you can choose Card, MTN Mobile Money, or Airtel Money.
+      </div>
 
-  let selectedPM = useFlutter ? 'mtn' : 'pesapal';
-  window.selectPM = (pm) => {
-    selectedPM = pm;
-    ['pesapal','mtn','airtel'].forEach(p => {
-      const el = document.getElementById('pm_'+p);
-      if (el) el.classList.toggle('selected', p===pm);
-    });
-    const det = document.getElementById('pmDetails');
-    if (pm === 'mtn' || pm === 'airtel') {
-      det.innerHTML = `<div class="field"><label>Mobile Number <span>*</span></label><input type="tel" id="momoNumber" placeholder="e.g. 256700000000"></div>`;
-    } else { det.innerHTML = ''; }
-  };
-  window.selectPM(selectedPM);
+      <button class="btn btn-orange btn-full btn-lg" onclick="processPayment('${id}',${total},'${type}')" id="payBtn">Pay ${fmtPrice(total,'UGX')} →</button>
+      <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px">Payments processed by a licensed third-party provider. DuukaList+ does not store card details.</p>
+    </div>`;
 
   window.processPayment = async (listingId, totalAmt, orderType) => {
     const btn = document.getElementById('payBtn');
     btn.textContent = 'Processing…'; btn.disabled = true;
     try {
-      if (selectedPM === 'pesapal') {
-        const res = await fetch(`${PAY_API}/api/payments/pesapal/init`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-          body: JSON.stringify({ listing_id: listingId, amount: totalAmt, type: orderType, currency: 'UGX' })
-        });
-        const d = await res.json();
-        if (d.redirect_url) window.location.href = d.redirect_url;
-        else throw new Error();
+      // All payments go through PesaPal (handles cards + MTN + Airtel)
+      const orderId = 'DL-' + Date.now() + '-' + Math.random().toString(36).slice(2,7).toUpperCase();
+      const res = await fetch(`${PAY_API}/payments/initiate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({
+          order_id: orderId,
+          amount: totalAmt,
+          currency: 'UGX',
+          description: orderType === 'boost' ? 'Listing Boost' : 'DuukaList+ Order',
+          buyer_name: currentUser?.name || 'Customer',
+          buyer_email: currentUser?.email || '',
+          payment_type: orderType,
+          meta: { listing_id: listingId }
+        })
+      });
+      const d = await res.json();
+      if (d.redirect_url) {
+        window.location.href = d.redirect_url;
       } else {
-        const phone = document.getElementById('momoNumber')?.value.trim();
-        if (!phone) { showToast('Enter your mobile number'); btn.textContent = `Pay ${fmtPrice(totalAmt,'UGX')} →`; btn.disabled = false; return; }
-        const res = await fetch(`${PAY_API}/api/payments/flutterwave/init`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-          body: JSON.stringify({ listing_id: listingId, amount: totalAmt, type: orderType, currency: 'UGX', phone, network: selectedPM === 'mtn' ? 'MTN' : 'AIRTEL' })
-        });
-        const d = await res.json();
-        if (d.redirect_url) window.location.href = d.redirect_url;
-        else if (d.status === 'pending') { showToast('Check your phone to confirm payment 📱'); setTimeout(() => navigate('/orders'), 2500); }
-        else throw new Error();
+        throw new Error(d.error || 'No redirect URL');
       }
-    } catch { showToast('Payment failed. Try again.'); btn.textContent = `Pay ${fmtPrice(totalAmt,'UGX')} →`; btn.disabled = false; }
+    } catch (e) {
+      console.error('Payment error:', e);
+      showToast('Payment failed. Try again.');
+      btn.textContent = `Pay ${fmtPrice(totalAmt,'UGX')} →`;
+      btn.disabled = false;
+    }
   };
 }
 
@@ -1574,7 +1553,7 @@ async function renderOrders() {
     if (!body) return;
     body.innerHTML = `<div class="spinner"></div>`;
     try {
-      const res = await fetch(`${API}/api/orders?role=${role}`, { headers: { Authorization: `Bearer ${getToken()}` } });
+      const res = await fetch(`${API}/orders?role=${role}`, { headers: { Authorization: `Bearer ${getToken()}` } });
       if (!res.ok) throw new Error();
       const d = await res.json();
       const orders = d.orders || d.items || (Array.isArray(d) ? d : []);
@@ -1666,7 +1645,7 @@ async function renderDashboard() {
     </div>`;
 
   try {
-    const res = await fetch(`${API}/api/listings?seller_id=${currentUser.id}&limit=20`, { headers: { Authorization: `Bearer ${getToken()}` } });
+    const res = await fetch(`${API}/listings?seller_id=${currentUser.id}&limit=20`, { headers: { Authorization: `Bearer ${getToken()}` } });
     const d = await res.json();
     const items = d.listings || d.items || (Array.isArray(d) ? d : []);
     document.getElementById('dListings').textContent = items.length;
@@ -1708,7 +1687,7 @@ async function renderSeller(id) {
   const app = document.getElementById('app');
   app.innerHTML = `<div style="padding:20px"><div class="spinner"></div></div>`;
   try {
-    const res = await fetch(`${API}/api/listings?seller_id=${id}&limit=20`);
+    const res = await fetch(`${API}/listings?seller_id=${id}&limit=20`);
     const d = await res.json();
     const listings = d.listings || d.items || [];
     // Try to get seller info from first listing
