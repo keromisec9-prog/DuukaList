@@ -4,13 +4,31 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>DuukaList+ — Buy, Sell & Find Services</title>
-<meta name="description" content="DuukaList+ marketplace — buy, sell and find services.">
+<meta name="description" content="DuukaList+ is Uganda's all-in-one marketplace. Buy & sell products, hire skilled professionals, find resources, and build business partnerships. PesaPal payments. Free to post.">
+<meta name="keywords" content="Uganda marketplace, buy sell Uganda, gigs Uganda, classifieds Kampala, jobs Uganda, MTN mobile money, Jiji Uganda alternative, freelance Uganda">
 <meta name="theme-color" content="#FF6A00">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://duuka.co.ug/">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="DuukaList+ — Buy, Sell & Find Services">
+<meta property="og:description" content="Uganda's all-in-one marketplace. Products, Gigs, Resources & Partnerships. Free to post. Pay with PesaPal.">
+<meta property="og:image" content="https://duuka.co.ug/og-image.png">
+<meta property="og:url" content="https://duuka.co.ug/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="DuukaList+ — Uganda's Marketplace">
+<meta name="twitter:description" content="Buy, sell, hire and find business partners. Uganda's most complete marketplace.">
+
+<!-- JSON-LD Structured Data -->
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebSite","name":"DuukaList+","url":"https://duuka.co.ug","description":"Uganda's all-in-one marketplace for products, gigs, and business partnerships","potentialAction":{"@type":"SearchAction","target":"https://duuka.co.ug/#/browse?q={search_term_string}","query-input":"required name=search_term_string"}}
+</script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:ital,wght@0,700;0,900;1,700&display=swap" rel="stylesheet">
-<script src="https://accounts.google.com/gsi/client"></script>
-<meta name="google-signin-client_id" content="103731782063-skp1gui990cb64rvtmresjfkmvne4n3a.apps.googleusercontent.com">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 
 <style>
 /* ═══════════════════════ TOKENS ═══════════════════════ */
@@ -20,11 +38,13 @@
   --ink:#0f0f1a; --ink2:#2a2a3d; --muted:#737390; --muted2:#a0a0ba;
   --border:#e8e8f2; --border2:#f0f0f8; --bg:#f8f8fc; --white:#fff;
   --green:#0dab5b; --green-light:#e8faf2; --red:#e53e3e;
+  --purple:#7c3aed; --purple-light:#f5f3ff;
+  --teal:#0891b2; --teal-light:#ecfeff;
   --r:8px; --rm:14px; --rl:20px; --rxl:28px;
   --sh:0 1px 4px rgba(0,0,0,.06); --shm:0 4px 20px rgba(0,0,0,.08); --shl:0 12px 48px rgba(0,0,0,.12);
   --sho:0 8px 32px rgba(255,106,0,.28);
   --fd:'Fraunces',Georgia,serif; --fb:'Plus Jakarta Sans',sans-serif;
-  --nav:60px; --bnav:64px;
+  --nav:104px; --bnav:64px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{scroll-behavior:smooth}
@@ -45,6 +65,7 @@ input,select,textarea{font-family:var(--fb)}
 @keyframes pulse{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.15);opacity:0}}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 @keyframes spin{to{transform:rotate(360deg)}}
+@keyframes slideDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
 .fu{animation:fadeUp .45s ease both}
 .fu2{animation:fadeUp .45s .08s ease both}
 .fu3{animation:fadeUp .45s .16s ease both}
@@ -59,6 +80,7 @@ input,select,textarea{font-family:var(--fb)}
 .btn-orange:hover{background:var(--orange-d);transform:translateY(-1px);box-shadow:0 10px 32px rgba(255,106,0,.35)}
 .btn-blue{background:var(--blue);color:#fff}
 .btn-blue:hover{background:var(--blue-mid);transform:translateY(-1px)}
+.btn-green{background:var(--green);color:#fff}
 .btn-ghost{background:transparent;color:var(--orange);border:1.5px solid var(--orange)}
 .btn-ghost:hover{background:var(--orange-light)}
 .btn-outline{background:transparent;color:var(--ink2);border:1.5px solid var(--border)}
@@ -72,10 +94,9 @@ input,select,textarea{font-family:var(--fb)}
 .announce strong{color:var(--orange)}
 
 /* ═══════════════════════ HEADER ═══════════════════════ */
-:root{--nav:104px} /* two-row mobile header height */
-.site-header{background:var(--white);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:500;box-shadow:var(--sh)}
-/* Row 1: logo + actions */
-.header-row1{display:flex;align-items:center;gap:8px;padding:10px 14px 6px}
+.site-header{display:flex;flex-direction:column;position:sticky;top:0;z-index:500;background:var(--white);border-bottom:1px solid var(--border);box-shadow:var(--sh)}
+.header-row1{display:flex;align-items:center;height:52px;padding:0 12px;gap:8px}
+.header-row2{padding:6px 12px 8px}
 .logo{display:flex;flex-direction:column;line-height:1;flex-shrink:0;cursor:pointer}
 .logo-name{font-family:var(--fd);font-weight:900;font-size:22px;color:var(--orange);letter-spacing:-.5px}
 .logo-name em{font-style:normal;color:var(--blue)}
@@ -84,26 +105,25 @@ input,select,textarea{font-family:var(--fb)}
 .icon-btn{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--ink2);font-size:18px;transition:background .15s;position:relative;cursor:pointer}
 .icon-btn:hover{background:var(--bg)}
 .badge-dot{position:absolute;top:5px;right:5px;width:8px;height:8px;background:var(--orange);border-radius:50%;border:2px solid #fff}
-/* Sign In button — compact on mobile */
 .auth-desktop-btn{display:flex;align-items:center;gap:6px;background:var(--blue-light);color:var(--blue);font-weight:700;font-size:12px;padding:0 12px;height:34px;border-radius:100px;cursor:pointer;transition:all .15s;border:none;font-family:var(--fb);white-space:nowrap}
 .auth-desktop-btn:hover{background:var(--blue);color:#fff}
-/* Post Free — hidden on mobile, shown on desktop */
-.post-header-btn{display:none;align-items:center;gap:5px;background:var(--orange);color:#fff;font-weight:700;font-size:13px;padding:0 14px;height:36px;border-radius:100px;transition:all .18s;cursor:pointer;box-shadow:var(--sho);border:none;font-family:var(--fb);white-space:nowrap}
-.post-header-btn:hover{background:var(--orange-d);transform:translateY(-1px)}
-/* Row 2: full-width search */
-.header-row2{padding:0 14px 10px}
+.auth-desktop-btn .signin-text{display:none}
+.post-header-btn{display:none;align-items:center;gap:5px;background:var(--orange);color:#fff;font-weight:700;font-size:12px;padding:0 10px;height:36px;border-radius:100px;transition:all .18s;cursor:pointer;box-shadow:var(--sho);border:none;font-family:var(--fb);white-space:nowrap}
+.post-header-btn:hover{background:var(--orange-d)}
 .header-search{position:relative;width:100%}
 .header-search input{width:100%;height:38px;border:1.5px solid var(--border);border-radius:100px;padding:0 46px 0 16px;font-size:14px;color:var(--ink);background:var(--bg);outline:none;transition:all .15s}
 .header-search input:focus{border-color:var(--orange);box-shadow:0 0 0 3px var(--orange-glow);background:var(--white)}
 .header-search input::placeholder{color:var(--muted2)}
 .hsearch-btn{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:30px;height:30px;background:var(--orange);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;transition:all .15s;border:none;cursor:pointer}
 .hsearch-btn:hover{background:var(--orange-d)}
+.user-avatar-wrap{display:none;cursor:pointer}
+.user-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--orange),#ffaa00);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;border:2px solid var(--orange-light)}
 
 /* ═══════════════════════ BOTTOM NAV ═══════════════════════ */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;height:var(--bnav);background:var(--white);border-top:1px solid var(--border);display:flex;align-items:center;z-index:400;box-shadow:0 -4px 24px rgba(0,0,0,.06)}
-.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;padding:8px 0;transition:color .15s;color:var(--muted);text-decoration:none}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;padding:8px 0;transition:color .15s;color:var(--muted)}
 .nav-item.active{color:var(--orange)}
-.nav-icon{font-size:21px;line-height:1}
+.nav-icon{font-size:20px;line-height:1}
 .nav-label{font-size:10px;font-weight:700;letter-spacing:.02em}
 .nav-post-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer}
 .nav-post-circle{width:46px;height:46px;background:var(--orange);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;box-shadow:var(--sho);transition:all .18s;margin-top:-16px;font-weight:300}
@@ -120,13 +140,13 @@ input,select,textarea{font-family:var(--fb)}
 .sec-link{font-size:13px;font-weight:700;color:var(--orange);cursor:pointer}
 .sec-link:hover{color:var(--orange-d)}
 
-/* ═══════════════════════ HOME — HERO ═══════════════════════ */
+/* ═══════════════════════ HERO ═══════════════════════ */
 .hero{background:var(--blue);position:relative;overflow:hidden;padding:40px 0 0}
 .hero::before{content:'';position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(255,106,0,.22) 0%,transparent 70%);top:-200px;right:-100px;pointer-events:none}
 .hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none}
 .hero-content{position:relative;z-index:2;padding:0 16px 36px;max-width:1200px;margin:0 auto}
 .hero-eyebrow{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:100px;padding:5px 14px 5px 8px;margin-bottom:18px}
-.hero-dot{width:8px;height:8px;background:var(--green);border-radius:50%;position:relative}
+.hero-dot{width:8px;height:8px;background:var(--green);border-radius:50%;position:relative;flex-shrink:0}
 .hero-dot::after{content:'';position:absolute;inset:-3px;border-radius:50%;background:var(--green);opacity:.4;animation:pulse 2s infinite}
 .hero-eyebrow span{font-size:12px;font-weight:600;color:rgba(255,255,255,.85);letter-spacing:.04em}
 .hero-h1{font-family:var(--fd);font-weight:900;font-size:clamp(32px,8vw,56px);color:#fff;line-height:1.05;letter-spacing:-1.5px;margin-bottom:14px}
@@ -144,6 +164,12 @@ input,select,textarea{font-family:var(--fb)}
 .hero-search-box input::placeholder{color:var(--muted2)}
 .hero-wave{height:36px;background:var(--blue);position:relative}
 .hero-wave::after{content:'';position:absolute;bottom:0;left:0;right:0;height:36px;background:var(--bg);border-radius:50% 50% 0 0/100% 100% 0 0}
+
+/* ═══════════════════════ MODE TABS (home) ═══════════════════════ */
+.mode-tabs{display:flex;gap:0;background:var(--white);border-bottom:1px solid var(--border);padding:0 16px;overflow-x:auto;scrollbar-width:none}
+.mode-tabs::-webkit-scrollbar{display:none}
+.mode-tab{flex-shrink:0;padding:12px 16px;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:5px}
+.mode-tab.active{color:var(--orange);border-bottom-color:var(--orange)}
 
 /* ═══════════════════════ CATEGORIES ═══════════════════════ */
 .cats-scroll{display:flex;gap:10px;overflow-x:auto;padding:4px 16px 10px;scrollbar-width:none;scroll-snap-type:x mandatory}
@@ -177,6 +203,8 @@ input,select,textarea{font-family:var(--fb)}
 .lbadge{position:absolute;top:8px;left:8px;font-size:10px;font-weight:700;padding:3px 8px;border-radius:100px;letter-spacing:.04em;text-transform:uppercase}
 .lbadge-boost{background:var(--orange);color:#fff}
 .lbadge-new{background:var(--green);color:#fff}
+.lbadge-resource{background:var(--purple);color:#fff}
+.lbadge-need{background:var(--teal);color:#fff}
 .lfav{position:absolute;top:8px;right:8px;width:30px;height:30px;background:rgba(255,255,255,.9);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:var(--sh);transition:transform .15s;backdrop-filter:blur(4px);cursor:pointer;border:none}
 .lfav:hover{transform:scale(1.15)}
 .lcard-body{padding:10px 12px 12px}
@@ -185,6 +213,17 @@ input,select,textarea{font-family:var(--fb)}
 .lcard-meta{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--muted)}
 .lcard-loc{display:flex;align-items:center;gap:3px;font-weight:500}
 .lcard-cond{background:var(--blue-light);color:var(--blue-mid);font-weight:700;font-size:10px;padding:2px 7px;border-radius:100px}
+
+/* Resource card variant */
+.rcard{background:var(--white);border-radius:var(--rm);overflow:hidden;box-shadow:var(--sh);border:1px solid var(--border2);transition:transform .2s,box-shadow .2s;cursor:pointer;position:relative;border-top:3px solid var(--purple)}
+.rcard:hover{transform:translateY(-3px);box-shadow:var(--shm)}
+
+/* Need board card */
+.need-card{background:var(--white);border:1px solid var(--border);border-radius:var(--rm);padding:16px;margin-bottom:10px;cursor:pointer;transition:border-color .15s,box-shadow .15s;border-left:4px solid var(--teal)}
+.need-card:hover{border-color:var(--teal);box-shadow:var(--shm)}
+.need-title{font-weight:700;font-size:14px;color:var(--ink);margin-bottom:6px}
+.need-meta{display:flex;flex-wrap:wrap;gap:6px;font-size:11px;color:var(--muted);margin-bottom:8px}
+.need-budget{background:var(--teal-light);color:var(--teal);font-weight:700;padding:2px 8px;border-radius:100px;font-size:11px}
 
 /* ═══════════════════════ EMPTY STATE ═══════════════════════ */
 .empty-state{padding:60px 24px;text-align:center}
@@ -217,12 +256,14 @@ input,select,textarea{font-family:var(--fb)}
 .gfrom{font-size:10px;color:var(--muted)}
 .gamount{font-family:var(--fd);font-weight:700;font-size:15px;color:var(--orange)}
 
-/* ═══════════════════════ SELLER CTA ═══════════════════════ */
+/* ═══════════════════════ PARTNER / RESOURCE BANNER ═══════════════════════ */
+.partner-cta{margin:20px 16px;background:linear-gradient(130deg,var(--purple) 0%,#5b21b6 100%);border-radius:var(--rl);padding:26px 20px;position:relative;overflow:hidden}
+.partner-cta::before{content:'🤝';position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:68px;opacity:.13;animation:float 3s ease-in-out infinite}
 .seller-cta{margin:20px 16px;background:linear-gradient(130deg,var(--blue) 0%,#1445A8 100%);border-radius:var(--rl);padding:26px 20px;position:relative;overflow:hidden}
 .seller-cta::before{content:'🏪';position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:68px;opacity:.13;animation:float 3s ease-in-out infinite}
 .scta-eye{font-size:11px;font-weight:700;color:rgba(255,255,255,.55);letter-spacing:.1em;text-transform:uppercase;margin-bottom:7px}
 .scta-title{font-family:var(--fd);font-weight:900;font-size:23px;color:#fff;letter-spacing:-.5px;margin-bottom:7px;line-height:1.15}
-.scta-sub{font-size:13px;color:rgba(255,255,255,.65);margin-bottom:18px;max-width:210px}
+.scta-sub{font-size:13px;color:rgba(255,255,255,.65);margin-bottom:18px;max-width:240px}
 
 /* ═══════════════════════ BROWSE PAGE ═══════════════════════ */
 .browse-header{background:var(--blue);padding:20px 16px 16px;position:sticky;top:var(--nav);z-index:300}
@@ -317,22 +358,40 @@ input,select,textarea{font-family:var(--fb)}
 .boost-opt-name{font-weight:700;font-size:14px;color:var(--ink);margin-bottom:3px}
 .boost-opt-price{font-size:12px;color:var(--orange);font-weight:700}
 .boost-opt-desc{font-size:11px;color:var(--muted);margin-top:3px}
+.type-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px}
+.type-opt{border:2px solid var(--border);border-radius:var(--rm);padding:14px 10px;cursor:pointer;transition:all .15s;text-align:center}
+.type-opt:hover{border-color:var(--orange)}
+.type-opt.selected{border-color:var(--orange);background:var(--orange-light)}
+.type-opt.selected-purple{border-color:var(--purple);background:var(--purple-light)}
+.type-opt.selected-teal{border-color:var(--teal);background:var(--teal-light)}
+.type-opt-icon{font-size:24px;margin-bottom:6px}
+.type-opt-name{font-weight:700;font-size:13px;color:var(--ink)}
+.type-opt-desc{font-size:11px;color:var(--muted);margin-top:2px}
+.location-btn{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--rm);font-size:14px;color:var(--muted);background:var(--white);outline:none;cursor:pointer;transition:all .15s;font-family:var(--fb);display:flex;align-items:center;gap:8px;font-weight:500}
+.location-btn:hover,.location-btn.active{border-color:var(--green);color:var(--green)}
 
-/* ═══════════════════════ CHECKOUT ═══════════════════════ */
+/* ═══════════════════════ CHECKOUT / PAYMENT ═══════════════════════ */
 .checkout-body{padding:16px}
 .checkout-summary{background:var(--white);border:1px solid var(--border);border-radius:var(--rm);padding:16px;margin-bottom:18px}
 .checkout-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border2);font-size:14px}
 .checkout-row:last-child{border-bottom:none;padding-top:12px;margin-top:4px}
 .checkout-row.total{font-weight:800;font-size:16px;color:var(--orange)}
-.payment-methods{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.pesapal-modal{background:var(--white);border:1px solid var(--border);border-radius:var(--rl);padding:24px;margin-bottom:20px;text-align:center}
+.pesapal-logo{font-family:var(--fd);font-weight:900;font-size:22px;color:#1a1a2e;margin-bottom:4px}
+.pesapal-logo span{color:var(--orange)}
+.pesapal-regulated{font-size:11px;color:var(--muted);margin-bottom:20px}
+.pesapal-methods{display:flex;gap:10px;flex-direction:column;margin-bottom:16px;text-align:left}
 .pmethod{border:2px solid var(--border);border-radius:var(--rm);padding:14px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:12px}
 .pmethod.selected{border-color:var(--orange);background:var(--orange-light)}
-.pmethod-icon{font-size:24px;flex-shrink:0}
-.pmethod-info strong{display:block;font-weight:700;font-size:14px;color:var(--ink);margin-bottom:2px}
-.pmethod-info span{font-size:12px;color:var(--muted)}
 .pmethod-radio{margin-left:auto;width:18px;height:18px;border:2px solid var(--border);border-radius:50%;transition:all .15s;flex-shrink:0}
 .pmethod.selected .pmethod-radio{border-color:var(--orange);background:var(--orange)}
-.amount-warning{background:#fffbeb;border:1px solid #fde68a;border-left:4px solid #f59e0b;border-radius:var(--r);padding:12px 14px;font-size:13px;color:#78350f;margin-bottom:16px}
+.pmethod-info strong{display:block;font-weight:700;font-size:14px;color:var(--ink);margin-bottom:2px}
+.pmethod-info span{font-size:12px;color:var(--muted)}
+.phone-input-row{display:flex;gap:0;border:1.5px solid var(--border);border-radius:var(--rm);overflow:hidden;margin-top:12px;transition:border-color .15s}
+.phone-input-row:focus-within{border-color:var(--orange);box-shadow:0 0 0 3px var(--orange-glow)}
+.phone-country{padding:11px 12px;background:var(--bg);border-right:1px solid var(--border);font-size:14px;font-weight:600;color:var(--ink2);white-space:nowrap;display:flex;align-items:center;gap:6px}
+.phone-input-row input{flex:1;border:none;padding:11px 14px;font-size:14px;color:var(--ink);background:transparent;outline:none;font-family:var(--fb)}
+.security-note{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--r);padding:10px 12px;font-size:12px;color:#14532d;display:flex;align-items:center;gap:8px;margin-bottom:16px}
 
 /* ═══════════════════════ DASHBOARD ═══════════════════════ */
 .dash-header{background:linear-gradient(130deg,var(--blue),#1445A8);padding:24px 16px;color:#fff}
@@ -393,9 +452,6 @@ input,select,textarea{font-family:var(--fb)}
 .sstat:last-child{border-right:none}
 .sstat-num{font-family:var(--fd);font-weight:700;font-size:18px;color:var(--orange);line-height:1;margin-bottom:3px}
 .sstat-lbl{font-size:10px;color:var(--muted);letter-spacing:.05em}
-.seller-tabs{display:flex;border-bottom:1px solid var(--border);background:var(--white);padding:0 16px}
-.stab{flex:1;text-align:center;padding:12px 6px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
-.stab.active{color:var(--orange);border-bottom-color:var(--orange)}
 
 /* ═══════════════════════ AUTH MODAL ═══════════════════════ */
 .auth-overlay{position:fixed;inset:0;background:rgba(11,46,110,.7);backdrop-filter:blur(6px);z-index:1000;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
@@ -421,10 +477,10 @@ input,select,textarea{font-family:var(--fb)}
 .toast{position:fixed;bottom:calc(var(--bnav) + 12px);left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 20px;border-radius:100px;font-size:13px;font-weight:600;white-space:nowrap;z-index:2000;opacity:0;transition:all .25s;pointer-events:none}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* ═══════════════════════ LOADING SPINNER ═══════════════════════ */
+/* ═══════════════════════ SPINNER ═══════════════════════ */
 .spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--orange);border-radius:50%;animation:spin .7s linear infinite;margin:40px auto}
 
-/* ═══════════════════════ PAGE HERO (info pages) ═══════════════════════ */
+/* ═══════════════════════ PAGE HERO ═══════════════════════ */
 .page-hero{background:linear-gradient(130deg,var(--blue),#1a3a6e);color:#fff;padding:44px 20px;text-align:center;position:relative;overflow:hidden}
 .page-hero::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 75% 40%,rgba(255,106,0,.2) 0%,transparent 60%);pointer-events:none}
 .page-hero h1{font-family:var(--fd);font-weight:900;font-size:clamp(24px,6vw,38px);letter-spacing:-1px;margin-bottom:8px;position:relative}
@@ -434,7 +490,7 @@ input,select,textarea{font-family:var(--fb)}
 .site-footer{background:var(--blue);padding:44px 16px 28px;color:rgba(255,255,255,.65)}
 .footer-logo{font-family:var(--fd);font-weight:900;font-size:24px;color:var(--orange);margin-bottom:8px}
 .footer-logo em{font-style:normal;color:rgba(255,255,255,.6)}
-.footer-tagline{font-size:13px;color:rgba(255,255,255,.45);line-height:1.6;max-width:220px;margin-bottom:28px}
+.footer-tagline{font-size:13px;color:rgba(255,255,255,.45);line-height:1.6;max-width:240px;margin-bottom:28px}
 .footer-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:28px}
 .fcol h4{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:12px}
 .fcol a{display:block;font-size:13px;color:rgba(255,255,255,.6);margin-bottom:8px;font-weight:500;cursor:pointer;transition:color .14s}
@@ -443,19 +499,6 @@ input,select,textarea{font-family:var(--fb)}
 .footer-badges{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
 .fbadge{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:5px;padding:3px 9px;font-size:10px;color:rgba(255,255,255,.4);font-weight:600}
 
-/* ═══════════════════════ MOBILE-FIRST HEADER ═══════════════════════ */
-/* Mobile: two-row header. Row1 = logo+actions, Row2 = search */
-.site-header{display:flex;flex-direction:column;position:sticky;top:0;z-index:500;background:var(--white);border-bottom:1px solid var(--border);box-shadow:var(--sh)}
-.header-row1{display:flex;align-items:center;height:52px;padding:0 12px;gap:8px}
-.header-row2{padding:6px 12px 8px}
-.header-row2 .header-search{display:block;max-width:100%}
-.header-search input{height:36px;font-size:14px}
-/* Hide Sign In text on mobile — show icon only */
-.auth-desktop-btn .signin-text{display:none}
-.auth-desktop-btn{padding:0 10px;gap:4px;font-size:12px}
-/* Post Free — icon + short text on mobile */
-.post-header-btn{padding:0 10px;font-size:12px}
-
 /* ═══════════════════════ RESPONSIVE ═══════════════════════ */
 @media(min-width:640px){
   .listings-grid{grid-template-columns:repeat(3,1fr);gap:14px}
@@ -463,16 +506,16 @@ input,select,textarea{font-family:var(--fb)}
   .bottom-nav{display:none}
   .hero-cta{flex-direction:row}
   .hero-cta .btn{width:auto}
+  .post-header-btn{display:flex}
 }
 @media(min-width:768px){
-  /* Collapse back to single row on tablet+ */
   .site-header{flex-direction:row;height:60px;padding:0 20px;gap:14px}
   .header-row1{height:60px;padding:0;flex:0 0 auto}
   .header-row2{padding:0;flex:1}
   .header-row2 .header-search{max-width:460px}
   .auth-desktop-btn .signin-text{display:inline}
   .auth-desktop-btn{padding:0 14px;gap:7px;font-size:13px}
-  .post-header-btn{padding:0 14px;font-size:13px}
+  .post-header-btn{display:flex;font-size:13px;padding:0 14px}
 }
 @media(min-width:1024px){
   .listings-grid{grid-template-columns:repeat(4,1fr)}
@@ -484,31 +527,29 @@ input,select,textarea{font-family:var(--fb)}
 </head>
 <body>
 
-<!-- ANNOUNCEMENT -->
+<!-- ANNOUNCEMENT BAR -->
 <div class="announce">🎉 <strong>Post your first listing free</strong> — reach thousands of buyers today</div>
 
 <!-- HEADER -->
 <header class="site-header">
-  <!-- Row 1: Logo + Actions -->
   <div class="header-row1">
     <div class="logo" onclick="navigate('/')">
       <span class="logo-name">DuukaList<em>+</em></span>
       <span class="logo-tag">Online Marketplace</span>
     </div>
     <div class="hactions">
-      <div class="icon-btn" onclick="navigate('/messages')" title="Messages">💬</div>
+      <div class="icon-btn" onclick="requireAuth(()=>navigate('/messages'))" title="Messages">💬</div>
       <div class="icon-btn" id="notifBtn" title="Notifications">🔔<span class="badge-dot" id="notifDot" style="display:none"></span></div>
       <button class="auth-desktop-btn" id="authDesktopBtn" onclick="openAuth()">
-        <svg width="14" height="14" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
         <span class="signin-text">Sign In</span>
       </button>
-      <div id="userAvatarWrap" style="display:none">
-        <div class="icon-btn" onclick="navigate('/dashboard')" id="userAvatar" style="font-weight:700;font-size:14px;background:linear-gradient(135deg,var(--orange),#ffaa00);color:#fff;width:34px;height:34px;border-radius:50%"></div>
+      <div class="user-avatar-wrap" id="userAvatarWrap" onclick="navigate('/dashboard')">
+        <div class="user-avatar" id="userAvatar">U</div>
       </div>
       <button class="post-header-btn" onclick="requireAuth(()=>navigate('/post'))">+ Post Free</button>
     </div>
   </div>
-  <!-- Row 2: Search (full width always) -->
   <div class="header-row2">
     <div class="header-search">
       <input type="search" id="headerSearch" placeholder="Search listings, gigs, services…" autocomplete="off">
@@ -517,12 +558,9 @@ input,select,textarea{font-family:var(--fb)}
   </div>
 </header>
 
-<!-- APP ROOT -->
-<div id="app"></div>
-
 <!-- BOTTOM NAV -->
 <nav class="bottom-nav">
-  <div class="nav-item" id="nav-home" onclick="navigate('/')"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></div>
+  <div class="nav-item active" id="nav-home" onclick="navigate('/')"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></div>
   <div class="nav-item" id="nav-browse" onclick="navigate('/browse')"><span class="nav-icon">🔍</span><span class="nav-label">Browse</span></div>
   <div class="nav-post-wrap" onclick="requireAuth(()=>navigate('/post'))">
     <div class="nav-post-circle">+</div>
@@ -539,12 +577,11 @@ input,select,textarea{font-family:var(--fb)}
     <div class="auth-logo">DuukaList<em>+</em></div>
     <div class="auth-title">Welcome 👋</div>
     <div class="auth-sub">Sign in to post, message sellers and track orders.</div>
-    <button class="google-btn" onclick="handleGoogleSignIn()">
-      <svg viewBox="0 0 24 24" width="20" height="20"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+    <button class="google-btn" id="mainGoogleBtn" onclick="handleGoogleSignIn()">
+      <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
       Continue with Google
     </button>
-    <!-- Rendered Google button fallback (shown if One Tap is suppressed) -->
-    <div id="googleBtnFallback" style="display:none;margin-bottom:14px;display:flex;justify-content:center"></div>
+    <div id="googleBtnFallback" style="display:none;justify-content:center;margin-bottom:14px"></div>
     <div class="auth-divider">or</div>
     <button class="auth-guest" onclick="closeAuth()">Browse as Guest</button>
     <div class="auth-terms">By signing in you agree to our <a href="https://keromisec9-prog.github.io/Duukalist-termsandconeitions/" target="_blank">Terms</a> and <a href="https://keromisec9-prog.github.io/duukalist-privacy-policy/" target="_blank">Privacy Policy</a></div>
@@ -553,6 +590,9 @@ input,select,textarea{font-family:var(--fb)}
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
+
+<!-- APP -->
+<main id="app"></main>
 
 <script>
 /* ═══════════════════════════════════════
@@ -566,23 +606,22 @@ const GOOGLE_CLIENT_ID = '103731782063-skp1gui990cb64rvtmresjfkmvne4n3a.apps.goo
    AUTH
 ═══════════════════════════════════════ */
 let currentUser = null;
-
 const getToken = () => localStorage.getItem('duuka_token');
 const setToken = t => localStorage.setItem('duuka_token', t);
 const clearToken = () => localStorage.removeItem('duuka_token');
 
 function updateAuthUI(user) {
   currentUser = user;
-  const desktopBtn = document.getElementById('authDesktopBtn');
-  const avatarWrap = document.getElementById('userAvatarWrap');
-  const avatar = document.getElementById('userAvatar');
+  const btn = document.getElementById('authDesktopBtn');
+  const wrap = document.getElementById('userAvatarWrap');
+  const av = document.getElementById('userAvatar');
   if (user) {
-    desktopBtn.style.display = 'none';
-    avatarWrap.style.display = 'block';
-    avatar.textContent = (user.name || user.email || 'U')[0].toUpperCase();
+    btn.style.display = 'none';
+    wrap.style.display = 'block';
+    av.textContent = (user.name || user.email || 'U')[0].toUpperCase();
   } else {
-    desktopBtn.style.display = 'flex';
-    avatarWrap.style.display = 'none';
+    btn.style.display = 'flex';
+    wrap.style.display = 'none';
   }
 }
 
@@ -605,18 +644,16 @@ function closeAuth() {
   document.body.style.overflow = '';
 }
 
+let pendingAuthCallback = null;
 function requireAuth(cb) {
   if (currentUser) cb();
   else { openAuth(); pendingAuthCallback = cb; }
 }
-let pendingAuthCallback = null;
 
 function handleGoogleSignIn() {
-  // Trigger Google One Tap / Sign-In prompt programmatically
   if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-    google.accounts.id.prompt((notification) => {
+    google.accounts.id.prompt(notification => {
       if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-        // One Tap suppressed — fall back to renderButton flow
         renderGoogleBtn();
       }
     });
@@ -625,25 +662,21 @@ function handleGoogleSignIn() {
   }
 }
 
-// Renders a real Google Sign-In button inside the auth sheet as fallback
 function renderGoogleBtn() {
   const container = document.getElementById('googleBtnFallback');
   if (!container || container.children.length > 0) return;
-  container.style.display = 'block';
+  container.style.display = 'flex';
+  document.getElementById('mainGoogleBtn').style.display = 'none';
   if (typeof google !== 'undefined') {
     google.accounts.id.renderButton(container, {
-      type: 'standard',
-      shape: 'pill',
-      theme: 'outline',
-      text: 'continue_with',
-      size: 'large',
+      type: 'standard', shape: 'pill', theme: 'outline',
+      text: 'continue_with', size: 'large',
       width: Math.min(window.innerWidth - 48, 392)
     });
   }
 }
 
 async function handleCredentialResponse(response) {
-  // Called by both One Tap and rendered button
   try {
     const res = await fetch(`${API}/auth/google`, {
       method: 'POST',
@@ -658,13 +691,28 @@ async function handleCredentialResponse(response) {
       closeAuth();
       showToast('Signed in ✓');
       if (pendingAuthCallback) { pendingAuthCallback(); pendingAuthCallback = null; }
-    } else {
-      throw new Error('No token in response');
-    }
+    } else throw new Error('No token in response');
   } catch (err) {
     console.error('Auth error:', err);
-    showToast('Sign-in failed. Check console for details.');
+    showToast('Sign-in failed. Please try again.');
   }
+}
+
+window.onGoogleLibraryLoad = function() {
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleCredentialResponse,
+    auto_select: false,
+    cancel_on_tap_outside: true,
+    context: 'signin'
+  });
+};
+
+function logout() {
+  clearToken();
+  updateAuthUI(null);
+  navigate('/');
+  showToast('Signed out');
 }
 
 /* ═══════════════════════════════════════
@@ -681,17 +729,20 @@ function showToast(msg, dur = 2800) {
    ROUTER
 ═══════════════════════════════════════ */
 const routes = {
-  '/':          renderHome,
-  '/browse':    renderBrowse,
-  '/listing':   renderListing,
-  '/gigs':      renderGigs,
-  '/gig':       renderGigDetail,
-  '/post':      renderPost,
-  '/seller':    renderSeller,
-  '/orders':    renderOrders,
+  '/': renderHome,
+  '/browse': renderBrowse,
+  '/listing': renderListing,
+  '/gigs': renderGigs,
+  '/gig': renderGigDetail,
+  '/resources': renderResources,
+  '/resource': renderResourceDetail,
+  '/needs': renderNeeds,
+  '/post': renderPost,
+  '/seller': renderSeller,
+  '/orders': renderOrders,
   '/dashboard': renderDashboard,
-  '/checkout':  renderCheckout,
-  '/messages':  renderMessages,
+  '/checkout': renderCheckout,
+  '/messages': renderMessages,
 };
 
 function parseRoute() {
@@ -703,13 +754,11 @@ function parseRoute() {
   return { path: '/' + (parts[0] || ''), id: parts[1] || null, params };
 }
 
-function navigate(path) {
-  window.location.hash = path;
-}
+function navigate(path) { window.location.hash = path; }
 
 function setActiveNav(path) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  const map = { '/': 'nav-home', '/browse': 'nav-browse', '/gigs': 'nav-gigs', '/dashboard': 'nav-account', '/orders': 'nav-account' };
+  const map = { '/': 'nav-home', '/browse': 'nav-browse', '/gigs': 'nav-gigs', '/resources': 'nav-browse', '/needs': 'nav-browse', '/dashboard': 'nav-account', '/orders': 'nav-account' };
   const id = map[path];
   if (id) document.getElementById(id)?.classList.add('active');
 }
@@ -729,22 +778,26 @@ function handleRoute() {
 }
 
 /* ═══════════════════════════════════════
-   HELPERS
+   HELPERS & CONSTANTS
 ═══════════════════════════════════════ */
 const CAT_META = {
-  'phones-tablets':    { icon:'📱', bg:'#eff6ff', color:'#3b82f6' },
-  'electronics':       { icon:'💻', bg:'#f0fdf4', color:'#16a34a' },
-  'vehicles':          { icon:'🚗', bg:'#fffbeb', color:'#f59e0b' },
-  'property':          { icon:'🏠', bg:'#ecfdf5', color:'#10b981' },
-  'home-furniture':    { icon:'🛋️', bg:'#f5f3ff', color:'#8b5cf6' },
-  'fashion':           { icon:'👗', bg:'#fdf2f8', color:'#ec4899' },
-  'beauty':            { icon:'💄', bg:'#fdf2f8', color:'#db2777' },
-  'babies-kids':       { icon:'👶', bg:'#fff7ed', color:'#f97316' },
-  'food-agriculture':  { icon:'🌾', bg:'#f7fee7', color:'#65a30d' },
+  'phones-tablets':     { icon:'📱', bg:'#eff6ff', color:'#3b82f6' },
+  'electronics':        { icon:'💻', bg:'#f0fdf4', color:'#16a34a' },
+  'vehicles':           { icon:'🚗', bg:'#fffbeb', color:'#f59e0b' },
+  'property':           { icon:'🏠', bg:'#ecfdf5', color:'#10b981' },
+  'home-furniture':     { icon:'🛋️', bg:'#f5f3ff', color:'#8b5cf6' },
+  'fashion':            { icon:'👗', bg:'#fdf2f8', color:'#ec4899' },
+  'beauty':             { icon:'💄', bg:'#fdf2f8', color:'#db2777' },
+  'babies-kids':        { icon:'👶', bg:'#fff7ed', color:'#f97316' },
+  'food-agriculture':   { icon:'🌾', bg:'#f7fee7', color:'#65a30d' },
   'repair-construction':{ icon:'🔧', bg:'#fff7ed', color:'#ea580c' },
-  'commercial':        { icon:'⚙️', bg:'#f1f5f9', color:'#64748b' },
-  'gigs-services':     { icon:'🎯', bg:'#eef3ff', color:'#1445A8' },
+  'commercial':         { icon:'⚙️', bg:'#f1f5f9', color:'#64748b' },
+  'gigs-services':      { icon:'🎯', bg:'#eef3ff', color:'#1445A8' },
+  'resources':          { icon:'🏗️', bg:'#f5f3ff', color:'#7c3aed' },
 };
+
+const RESOURCE_TYPES = ['Land & Space', 'Tools & Equipment', 'Capital / Investment', 'Transport / Vehicles', 'Raw Materials', 'Workshop / Studio', 'Storage Space', 'Other'];
+const SKILL_CATS = ['Design & Creative', 'Tech & Programming', 'Construction & Trades', 'Mechanics & Auto', 'Tailoring & Fashion', 'Food & Catering', 'Beauty & Wellness', 'Media & Content', 'Business & Finance', 'Teaching & Tutoring', 'Agriculture', 'Other'];
 
 function fmtPrice(p, currency = 'UGX') {
   if (!p && p !== 0) return 'Negotiable';
@@ -763,26 +816,35 @@ function skeletonCards(n = 4) {
     </div>`).join('');
 }
 
+function doSearch() {
+  const q = document.getElementById('headerSearch').value.trim();
+  if (q) navigate(`/browse?q=${encodeURIComponent(q)}`);
+}
+document.getElementById('headerSearch').addEventListener('keydown', e => { if(e.key==='Enter') doSearch(); });
+
 function listingCard(l) {
   const meta = CAT_META[l.category] || { icon:'📦', bg:'#f0f0f0', color:'#888' };
   const isBoosted = l.boost_tier && l.boost_tier !== 'none';
-  const badge = isBoosted
-    ? `<span class="lbadge lbadge-boost">⭐ Featured</span>`
+  const isResource = l.type === 'resource';
+  const badge = isResource
+    ? `<span class="lbadge lbadge-resource">🏗️ Resource</span>`
+    : isBoosted ? `<span class="lbadge lbadge-boost">⭐ Featured</span>`
     : l.condition === 'new' ? `<span class="lbadge lbadge-new">New</span>` : '';
   const imgContent = l.images && l.images[0]
     ? `<img src="${l.images[0]}" alt="${l.title}" loading="lazy">`
     : `<span style="font-size:36px">${meta.icon}</span>`;
   const favKey = `fav_${l.id}`;
   const isFav = localStorage.getItem(favKey);
+  const route = isResource ? `/resource/${l.id}` : `/listing/${l.id}`;
   return `
-    <article class="lcard" onclick="navigate('/listing/${l.id}')">
+    <article class="${isResource?'rcard lcard':'lcard'}" onclick="navigate('${route}')">
       <div class="lcard-img" style="background:${meta.bg}">
         ${imgContent}${badge}
-        <button class="lfav" onclick="toggleFav(event,'${l.id}')" id="fav_${l.id}">${isFav?'❤️':'🤍'}</button>
+        <button class="lfav" onclick="toggleFav(event,'${l.id}')">${isFav?'❤️':'🤍'}</button>
       </div>
       <div class="lcard-body">
         <div class="lcard-title">${l.title||'Listing'}</div>
-        <div class="lcard-price">${fmtPrice(l.price, l.currency||'UGX')}</div>
+        <div class="lcard-price">${isResource && !l.price ? 'Open for partnership' : fmtPrice(l.price, l.currency||'UGX')}</div>
         <div class="lcard-meta">
           <span class="lcard-loc">📍 ${l.location||'Uganda'}</span>
           ${l.condition?`<span class="lcard-cond">${l.condition}</span>`:''}
@@ -793,7 +855,7 @@ function listingCard(l) {
 
 function gigCard(g, i) {
   const colors = [['#eef3ff','#dbeafe'],['#fff5ee','#fed7aa'],['#f0fdf4','#bbf7d0'],['#fdf2f8','#fbcfe8'],['#fffbeb','#fef08a']];
-  const icons = ['🎨','💻','📸','🎬','✍️','🎵','📊','🔧'];
+  const icons = ['🎨','💻','📸','🎬','✍️','🎵','📊','🔧','🏗️','🍕'];
   const [bg1, bg2] = colors[i % colors.length];
   const stars = '★'.repeat(Math.min(5, Math.round(g.rating_avg || g.rating || 4.5)));
   const price = g.packages?.[0]?.price || g.starting_price || 50000;
@@ -846,44 +908,47 @@ function toggleFav(e, id) {
   else { localStorage.setItem(key, '1'); btn.textContent = '❤️'; btn.style.transform = 'scale(1.3)'; setTimeout(()=>{btn.style.transform=''},200); }
 }
 
-function doSearch() {
-  const q = document.getElementById('headerSearch').value.trim();
-  if (q) navigate(`/browse?q=${encodeURIComponent(q)}`);
-}
-document.getElementById('headerSearch').addEventListener('keydown', e => { if(e.key==='Enter') doSearch(); });
-
 /* ═══════════════════════════════════════
    HOME VIEW
 ═══════════════════════════════════════ */
 function renderHome() {
   const app = document.getElementById('app');
   app.innerHTML = `
-    <!-- HERO -->
     <section class="hero">
       <div class="hero-grid"></div>
       <div class="hero-content">
         <div>
           <div class="hero-eyebrow fu"><span class="hero-dot"></span><span>Live marketplace — listings updated daily</span></div>
-          <h1 class="hero-h1 fu2">Buy Smart.<br>Sell <span class="accent">Fast.</span><br>Hire Better.</h1>
-          <p class="hero-sub fu3">One platform for classifieds, gigs and services. Post for free and reach buyers instantly.</p>
+          <h1 class="hero-h1 fu2">Buy. Sell.<br><span class="accent">Hire.</span> Partner.</h1>
+          <p class="hero-sub fu3">A digital platform connecting buyers, sellers and service providers. Post for free.</p>
           <div class="hero-cta fu4">
             <button class="btn btn-orange btn-lg" onclick="navigate('/browse')">🛍️ Start Shopping</button>
-            <button class="btn" style="background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.25);color:#fff;backdrop-filter:blur(6px)" onclick="requireAuth(()=>navigate('/post'))">+ Post a Listing</button>
+            <button class="btn" style="background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.25);color:#fff;backdrop-filter:blur(6px)" onclick="requireAuth(()=>navigate('/post'))">+ Post Free</button>
           </div>
           <div class="hero-stats fu4">
             <div><div class="hstat-num" id="statListings">—</div><div class="hstat-lbl">Listings</div></div>
-            <div><div class="hstat-num">14</div><div class="hstat-lbl">Categories</div></div>
+            <div><div class="hstat-num">14+</div><div class="hstat-lbl">Categories</div></div>
             <div><div class="hstat-num" id="statGigs">—</div><div class="hstat-lbl">Gigs</div></div>
+            <div><div class="hstat-num">6</div><div class="hstat-lbl">Countries</div></div>
           </div>
         </div>
         <div class="hero-search-box">
           <span style="color:var(--muted);font-size:18px">🔍</span>
-          <input type="search" id="heroSearchInput" placeholder="What are you looking for?" style="flex:1;border:none;outline:none;font-size:15px;background:transparent;font-family:var(--fb)">
+          <input type="search" id="heroSearchInput" placeholder="Search listings, gigs, services…" style="flex:1;border:none;outline:none;font-size:15px;background:transparent;font-family:var(--fb)">
           <button class="btn btn-orange btn-sm" onclick="doHeroSearch()">Search</button>
         </div>
       </div>
     </section>
     <div class="hero-wave"></div>
+
+    <!-- MODE TABS -->
+    <div class="mode-tabs">
+      <div class="mode-tab active" onclick="navigate('/')">🏠 All</div>
+      <div class="mode-tab" onclick="navigate('/browse')">🛍️ Products</div>
+      <div class="mode-tab" onclick="navigate('/gigs')">💼 Gigs</div>
+      <div class="mode-tab" onclick="navigate('/resources')">🏗️ Resources</div>
+      <div class="mode-tab" onclick="navigate('/needs')">📢 I Need</div>
+    </div>
 
     <!-- CATEGORIES -->
     <section style="padding:24px 0 4px">
@@ -898,8 +963,8 @@ function renderHome() {
     <div class="flash-banner" onclick="navigate('/browse?sort=newest')">
       <div>
         <div class="flash-lbl">⚡ Today's Deals</div>
-        <div class="flash-title">Latest Listings</div>
-        <div class="flash-sub">Fresh items added daily</div>
+        <div class="flash-title">Fresh Listings</div>
+        <div class="flash-sub">Updated daily across Uganda</div>
       </div>
       <div class="timer">
         <div class="tbox"><span class="tnum" id="timerH">00</span><span class="tlbl">hrs</span></div>
@@ -908,7 +973,7 @@ function renderHome() {
       </div>
     </div>
 
-    <!-- LISTINGS -->
+    <!-- FEATURED LISTINGS -->
     <section style="padding:20px 0">
       <div class="container"><div class="sec-hd">
         <span class="sec-title">Featured <span>Listings</span></span>
@@ -919,9 +984,9 @@ function renderHome() {
 
     <!-- TRUST -->
     <div class="trust-strip">
-      <div class="trust-item"><div class="trust-icon" style="background:#fff5ee">🛡️</div><div class="trust-lbl">Secure Platform</div><div class="trust-desc">Your data stays private</div></div>
-      <div class="trust-item"><div class="trust-icon" style="background:#eef3ff">⚡</div><div class="trust-lbl">Post in Minutes</div><div class="trust-desc">Free, instant live</div></div>
-      <div class="trust-item"><div class="trust-icon" style="background:#e8faf2">💬</div><div class="trust-lbl">Direct Chat</div><div class="trust-desc">Talk to sellers instantly</div></div>
+      <div class="trust-item"><div class="trust-icon" style="background:#fff5ee">🛡️</div><div class="trust-lbl">Secure Payments</div><div class="trust-desc">PesaPal · Bank of Uganda regulated</div></div>
+      <div class="trust-item"><div class="trust-icon" style="background:#eef3ff">⚡</div><div class="trust-lbl">Post in Minutes</div><div class="trust-desc">Free, goes live instantly</div></div>
+      <div class="trust-item"><div class="trust-icon" style="background:#e8faf2">🤝</div><div class="trust-lbl">Find Partners</div><div class="trust-desc">Skills + Resources = Opportunity</div></div>
     </div>
 
     <!-- GIGS -->
@@ -935,22 +1000,59 @@ function renderHome() {
       </div>
     </section>
 
+    <!-- RESOURCES SECTION -->
+    <section style="padding:20px 0">
+      <div class="container"><div class="sec-hd">
+        <span class="sec-title">Available <span>Resources</span></span>
+        <span class="sec-link" onclick="navigate('/resources')">All resources →</span>
+      </div></div>
+      <div style="padding:0 16px;margin-bottom:12px">
+        <div style="background:linear-gradient(135deg,var(--purple-light),#ede9fe);border:1px solid #ddd6fe;border-radius:var(--rm);padding:14px 16px;display:flex;align-items:center;gap:12px">
+          <div style="font-size:28px">🤝</div>
+          <div>
+            <div style="font-weight:700;font-size:14px;color:var(--purple)">Connect Skills + Resources</div>
+            <div style="font-size:12px;color:var(--muted);line-height:1.5">Have skills but no land, tools or capital? Someone here has what you need to start your business.</div>
+          </div>
+        </div>
+      </div>
+      <div class="listings-grid" id="homeResources">${skeletonCards(2)}</div>
+    </section>
+
+    <!-- I NEED BOARD -->
+    <section style="padding:20px 0;background:var(--white);border-top:1px solid var(--border2)">
+      <div class="container"><div class="sec-hd">
+        <span class="sec-title">📢 I <span>Need</span> Board</span>
+        <span class="sec-link" onclick="navigate('/needs')">All requests →</span>
+      </div>
+        <div id="homeNeeds"><div class="spinner"></div></div>
+        <button class="btn btn-outline btn-full" style="margin-top:12px" onclick="requireAuth(()=>navigate('/post?type=need'))">+ Post What You Need</button>
+      </div>
+    </section>
+
+    <!-- PARTNER CTA -->
+    <div class="partner-cta">
+      <div class="scta-eye">Build Together</div>
+      <div class="scta-title">Have skills but<br>no resources?</div>
+      <div class="scta-sub">Find someone with land, tools or capital. Build a business together right here.</div>
+      <button class="btn btn-orange" onclick="navigate('/resources')">Find Resources →</button>
+    </div>
+
     <!-- SELLER CTA -->
     <div class="seller-cta">
       <div class="scta-eye">For Sellers</div>
       <div class="scta-title">Start selling<br>today for free</div>
-      <div class="scta-sub">Reach thousands of buyers. Post your first listing in under 2 minutes.</div>
+      <div class="scta-sub">Reach buyers across Uganda. Post your first listing in 2 minutes.</div>
       <button class="btn btn-orange" onclick="requireAuth(()=>navigate('/post'))">Start Selling →</button>
     </div>
 
     ${renderFooter()}`;
 
-  // Load data
   loadHomeListings();
   loadHomeGigs();
+  loadHomeResources();
+  loadHomeNeeds();
   loadCategories();
   countdownTimer();
-
   document.getElementById('heroSearchInput')?.addEventListener('keydown', e => { if(e.key==='Enter') doHeroSearch(); });
 }
 
@@ -959,11 +1061,10 @@ function doHeroSearch() {
   if (q) navigate(`/browse?q=${encodeURIComponent(q)}`);
 }
 
-async function loadCategories() {
+function loadCategories() {
   const row = document.getElementById('catsRow');
   if (!row) return;
-  const cats = Object.entries(CAT_META);
-  row.innerHTML = cats.map(([slug, m]) => {
+  row.innerHTML = Object.entries(CAT_META).map(([slug, m]) => {
     const label = slug.replace(/-/g,' ').replace(/\b\w/g, c=>c.toUpperCase());
     return `<div class="cat-chip" onclick="navigate('/browse?category=${slug}')">
       <div class="cat-icon" style="background:${m.bg};color:${m.color}">${m.icon}</div>
@@ -981,12 +1082,7 @@ async function loadHomeListings() {
     const d = await res.json();
     const items = d.listings || d.items || (Array.isArray(d) ? d : []);
     if (!items.length) {
-      grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state">
-        <div class="empty-icon">🏪</div>
-        <div class="empty-title">No listings yet</div>
-        <div class="empty-sub">Be the first to post a listing on DuukaList+!</div>
-        <button class="btn btn-orange" onclick="requireAuth(()=>navigate('/post'))">Post First Listing</button>
-      </div></div>`;
+      grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state"><div class="empty-icon">🏪</div><div class="empty-title">No listings yet</div><div class="empty-sub">Be the first to post on DuukaList+!</div><button class="btn btn-orange" onclick="requireAuth(()=>navigate('/post'))">Post First Listing</button></div></div>`;
       return;
     }
     grid.innerHTML = items.map(listingCard).join('');
@@ -994,12 +1090,7 @@ async function loadHomeListings() {
     const el = document.getElementById('statListings');
     if (el) el.textContent = total > 999 ? Math.floor(total/1000)+'k+' : total;
   } catch {
-    grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state">
-      <div class="empty-icon">📭</div>
-      <div class="empty-title">No listings yet</div>
-      <div class="empty-sub">Be the first to post something on DuukaList+</div>
-      <button class="btn btn-orange" onclick="requireAuth(()=>navigate('/post'))">Post a Listing</button>
-    </div></div>`;
+    grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No listings yet</div><div class="empty-sub">Be the first to post something on DuukaList+</div><button class="btn btn-orange" onclick="requireAuth(()=>navigate('/post'))">Post a Listing</button></div></div>`;
   }
 }
 
@@ -1012,15 +1103,59 @@ async function loadHomeGigs() {
     const d = await res.json();
     const items = d.gigs || d.items || (Array.isArray(d) ? d : []);
     if (!items.length) {
-      scroll.innerHTML = `<div style="padding:30px 20px;color:var(--muted);font-size:14px;text-align:center;min-width:200px">No gigs posted yet. <span style="color:var(--orange);cursor:pointer;font-weight:700" onclick="requireAuth(()=>navigate('/post'))">Post a gig →</span></div>`;
+      scroll.innerHTML = `<div style="padding:30px 20px;color:var(--muted);font-size:14px;text-align:center;min-width:220px">No gigs yet. <span style="color:var(--orange);cursor:pointer;font-weight:700" onclick="requireAuth(()=>navigate('/post'))">Offer your skills →</span></div>`;
       return;
     }
     scroll.innerHTML = items.map((g,i) => gigCard(g,i)).join('');
-    const total = d.total || items.length;
     const el = document.getElementById('statGigs');
-    if (el) el.textContent = total > 99 ? Math.floor(total/100)*100+'+' : total;
+    if (el) el.textContent = (d.total || items.length);
   } catch {
     scroll.innerHTML = `<div style="padding:30px 20px;color:var(--muted);font-size:14px;text-align:center;min-width:220px">No gigs yet. <span style="color:var(--orange);cursor:pointer;font-weight:700" onclick="requireAuth(()=>navigate('/post'))">Offer your services →</span></div>`;
+  }
+}
+
+async function loadHomeResources() {
+  const grid = document.getElementById('homeResources');
+  if (!grid) return;
+  try {
+    const res = await fetch(`${API}/listings?type=resource&limit=4`);
+    if (!res.ok) throw new Error();
+    const d = await res.json();
+    const items = d.listings || d.items || (Array.isArray(d) ? d : []);
+    if (!items.length) {
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--muted);font-size:13px">No resources listed yet. <span style="color:var(--purple);cursor:pointer;font-weight:700" onclick="requireAuth(()=>navigate('/post?type=resource'))">List yours →</span></div>`;
+      return;
+    }
+    grid.innerHTML = items.map(listingCard).join('');
+  } catch {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--muted);font-size:13px">No resources yet. <span style="color:var(--purple);cursor:pointer;font-weight:700" onclick="requireAuth(()=>navigate('/post?type=resource'))">List a resource →</span></div>`;
+  }
+}
+
+async function loadHomeNeeds() {
+  const el = document.getElementById('homeNeeds');
+  if (!el) return;
+  try {
+    const res = await fetch(`${API}/listings?type=need&limit=3`);
+    if (!res.ok) throw new Error();
+    const d = await res.json();
+    const items = d.listings || d.items || (Array.isArray(d) ? d : []);
+    if (!items.length) {
+      el.innerHTML = `<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px">No requests yet. Be the first to post what you need.</div>`;
+      return;
+    }
+    el.innerHTML = items.map(n => `
+      <div class="need-card" onclick="navigate('/listing/${n.id}')">
+        <div class="need-title">${n.title}</div>
+        <div class="need-meta">
+          <span>📍 ${n.location||'Uganda'}</span>
+          <span>• ${n.category||'General'}</span>
+          ${n.price ? `<span class="need-budget">Budget: ${fmtPrice(n.price,'UGX')}</span>` : ''}
+        </div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5">${(n.description||'').slice(0,100)}${(n.description||'').length>100?'…':''}</div>
+      </div>`).join('');
+  } catch {
+    el.innerHTML = `<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px">No requests yet.</div>`;
   }
 }
 
@@ -1055,7 +1190,6 @@ function renderBrowse(_, params = {}) {
       <div class="listings-grid" id="browseGrid">${skeletonCards(6)}</div>
     </div>`;
 
-  // Build filter chips
   const filters = document.getElementById('browseFilters');
   const chips = [['','All'], ...Object.entries(CAT_META).map(([s,m])=>[s, m.icon+' '+s.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase())])];
   filters.innerHTML = chips.map(([s,l]) => `<div class="filter-chip${cat===s?' active':''}" onclick="navigate('/browse?category=${s}&sort=${sort}')">${l}</div>`).join('');
@@ -1065,7 +1199,6 @@ function renderBrowse(_, params = {}) {
     browseTimer = setTimeout(doBrowseSearch, 400);
   });
   document.getElementById('browseQ').addEventListener('keydown', e => { if(e.key==='Enter') doBrowseSearch(); });
-
   fetchBrowseListings(q, cat, sort);
 }
 
@@ -1074,7 +1207,6 @@ function doBrowseSearch() {
   const sort = document.getElementById('sortSelect')?.value || 'newest';
   navigate(`/browse?q=${encodeURIComponent(q)}&sort=${sort}`);
 }
-
 function changeBrowseSort(sort) {
   const q = document.getElementById('browseQ')?.value.trim() || '';
   navigate(`/browse?q=${encodeURIComponent(q)}&sort=${sort}`);
@@ -1095,28 +1227,18 @@ async function fetchBrowseListings(q, category, sort) {
     const total = d.total || items.length;
     if (countEl) countEl.textContent = `${total} listing${total !== 1 ? 's' : ''}`;
     if (!items.length) {
-      grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state">
-        <div class="empty-icon">🔍</div>
-        <div class="empty-title">No listings found</div>
-        <div class="empty-sub">${q ? `No results for "${q}"` : 'No listings in this category yet.'}<br>Be the first to post!</div>
-        <button class="btn btn-orange" onclick="requireAuth(()=>navigate('/post'))">Post a Listing</button>
-      </div></div>`;
+      grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">Nothing found</div><div class="empty-sub">${q ? `No results for "${q}"` : 'No listings in this category yet.'}</div><button class="btn btn-orange" onclick="requireAuth(()=>navigate('/post'))">Post a Listing</button></div></div>`;
       return;
     }
     grid.innerHTML = items.map(listingCard).join('');
   } catch {
     if (countEl) countEl.textContent = '0 listings';
-    grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state">
-      <div class="empty-icon">📭</div>
-      <div class="empty-title">Nothing here yet</div>
-      <div class="empty-sub">Be the first to post a listing!</div>
-      <button class="btn btn-orange" onclick="requireAuth(()=>navigate('/post'))">Post a Listing</button>
-    </div></div>`;
+    grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">Nothing here yet</div><button class="btn btn-orange" onclick="requireAuth(()=>navigate('/post'))">Post a Listing</button></div></div>`;
   }
 }
 
 /* ═══════════════════════════════════════
-   LISTING DETAIL VIEW
+   LISTING DETAIL
 ═══════════════════════════════════════ */
 async function renderListing(id) {
   const app = document.getElementById('app');
@@ -1124,21 +1246,19 @@ async function renderListing(id) {
   try {
     const res = await fetch(`${API}/listings/${id}`);
     if (!res.ok) throw new Error();
-    const l = await res.json();
-    const listing = l.listing || l;
+    const l = (await res.json()).listing || (await res.json());
+    const listing = l;
     const meta = CAT_META[listing.category] || { icon:'📦', bg:'#f0f0f0' };
     const images = listing.images || [];
     const imgSlides = images.length
-      ? images.map((src,i) => `<div class="detail-img"><img src="${src}" alt="${listing.title}" loading="lazy"></div>`).join('')
+      ? images.map(src => `<div class="detail-img"><img src="${src}" alt="${listing.title}" loading="lazy"></div>`).join('')
       : `<div class="detail-img" style="background:${meta.bg}"><span style="font-size:60px">${meta.icon}</span></div>`;
     const dots = images.length > 1
       ? `<div class="detail-dots">${images.map((_,i)=>`<div class="detail-dot${i===0?' active':''}" id="dot_${i}"></div>`).join('')}</div>` : '';
-
     app.innerHTML = `
       <div onclick="history.back()" class="detail-back">← Back</div>
       <div class="detail-imgs">
-        <div class="detail-imgs-scroll" id="imgScroll">${imgSlides}</div>
-        ${dots}
+        <div class="detail-imgs-scroll" id="imgScroll">${imgSlides}</div>${dots}
       </div>
       <div class="detail-body">
         <div class="detail-badges">
@@ -1158,22 +1278,17 @@ async function renderListing(id) {
         ${listing.seller_id ? `
         <div class="detail-seller-card" onclick="navigate('/seller/${listing.seller_id}')">
           <div class="seller-av-lg">${(listing.seller_name||'S')[0].toUpperCase()}</div>
-          <div class="seller-info">
-            <h4>${listing.seller_name||'Seller'}</h4>
-            <p>View profile & other listings →</p>
-          </div>
+          <div class="seller-info"><h4>${listing.seller_name||'Seller'}</h4><p>View profile & other listings →</p></div>
         </div>` : ''}
         <div class="detail-ctas">
           ${listing.whatsapp_number
             ? `<button class="wa-btn" onclick="window.open('https://wa.me/${listing.whatsapp_number.replace(/[^0-9]/g,'')}?text=Hi, I saw your listing on DuukaList+: ${encodeURIComponent(listing.title)}','_blank')">💬 WhatsApp</button>`
-            : `<button class="btn btn-outline btn-full" onclick="showToast('Contact seller through messages')">💬 Message</button>`}
+            : `<button class="btn btn-outline btn-full" onclick="showToast('Use WhatsApp or Message to contact seller')">💬 Message</button>`}
           ${listing.status !== 'sold'
             ? `<button class="buy-btn" onclick="requireAuth(()=>navigate('/checkout/${listing.id}'))">Buy Now</button>`
             : `<button class="buy-btn" style="background:var(--muted);cursor:not-allowed;box-shadow:none" disabled>Sold Out</button>`}
         </div>
       </div>`;
-
-    // Image scroll dots
     if (images.length > 1) {
       const scroll = document.getElementById('imgScroll');
       scroll?.addEventListener('scroll', () => {
@@ -1182,12 +1297,143 @@ async function renderListing(id) {
       });
     }
   } catch {
-    app.innerHTML = `<div class="empty-state">
-      <div class="empty-icon">❌</div>
-      <div class="empty-title">Listing not found</div>
-      <div class="empty-sub">This listing may have been removed or expired.</div>
-      <button class="btn btn-orange" onclick="navigate('/browse')">Browse Listings</button>
+    app.innerHTML = `<div class="empty-state"><div class="empty-icon">❌</div><div class="empty-title">Listing not found</div><div class="empty-sub">This listing may have been removed.</div><button class="btn btn-orange" onclick="navigate('/browse')">Browse Listings</button></div>`;
+  }
+}
+
+/* ═══════════════════════════════════════
+   RESOURCES VIEW
+═══════════════════════════════════════ */
+async function renderResources(_, params = {}) {
+  const app = document.getElementById('app');
+  const type = params.type || '';
+  app.innerHTML = `
+    <div class="page-hero">
+      <h1>Resources</h1>
+      <p>Find land, tools, capital & equipment for partnership</p>
+    </div>
+    <div style="background:var(--white);border-bottom:1px solid var(--border);padding:10px 16px;overflow-x:auto;white-space:nowrap;scrollbar-width:none">
+      ${['', ...RESOURCE_TYPES].map((t,i) => `<span class="filter-chip${type===(i===0?'':t)?' active':''}" onclick="navigate('/resources?type=${encodeURIComponent(t)}')" style="display:inline-block;margin-right:6px">${i===0?'All':t}</span>`).join('')}
+    </div>
+    <div style="padding:16px">
+      <div style="background:var(--purple-light);border:1px solid #ddd6fe;border-radius:var(--rm);padding:14px 16px;margin-bottom:16px">
+        <div style="font-weight:700;font-size:14px;color:var(--purple);margin-bottom:4px">🤝 How partnerships work</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.6">A resource owner lists what they have and what kind of partner they seek. Skilled people apply. You agree on revenue sharing or rental terms privately.</div>
+      </div>
+      <div class="listings-grid" id="resourcesGrid">${skeletonCards(4)}</div>
+      <div style="margin-top:20px;text-align:center">
+        <button class="btn btn-ghost" onclick="requireAuth(()=>navigate('/post?type=resource'))">🏗️ List Your Resource</button>
+      </div>
     </div>`;
+
+  try {
+    const p = new URLSearchParams({ limit: 20, type: 'resource' });
+    if (type) p.set('resource_type', type);
+    const res = await fetch(`${API}/listings?${p}`);
+    if (!res.ok) throw new Error();
+    const d = await res.json();
+    const items = d.listings || d.items || (Array.isArray(d) ? d : []);
+    const grid = document.getElementById('resourcesGrid');
+    if (!items.length) {
+      grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state"><div class="empty-icon">🏗️</div><div class="empty-title">No resources yet</div><div class="empty-sub">Be the first to list land, tools or capital for partnership</div><button class="btn btn-orange" onclick="requireAuth(()=>navigate('/post?type=resource'))">List a Resource</button></div></div>`;
+    } else {
+      grid.innerHTML = items.map(listingCard).join('');
+    }
+  } catch {
+    const grid = document.getElementById('resourcesGrid');
+    if (grid) grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state"><div class="empty-icon">🏗️</div><div class="empty-title">No resources yet</div><button class="btn btn-orange" onclick="requireAuth(()=>navigate('/post?type=resource'))">List a Resource</button></div></div>`;
+  }
+}
+
+async function renderResourceDetail(id) {
+  const app = document.getElementById('app');
+  app.innerHTML = `<div style="padding:20px"><div class="spinner"></div></div>`;
+  try {
+    const res = await fetch(`${API}/listings/${id}`);
+    if (!res.ok) throw new Error();
+    const d = await res.json();
+    const r = d.listing || d;
+    app.innerHTML = `
+      <div onclick="history.back()" class="detail-back">← Back</div>
+      <div class="detail-body">
+        <div style="background:var(--purple-light);border-radius:var(--rm);padding:40px;text-align:center;margin-bottom:16px;font-size:48px">🏗️</div>
+        <div class="detail-badges">
+          <span class="lbadge lbadge-resource">🏗️ Resource</span>
+          ${r.resource_type ? `<span class="lbadge" style="background:var(--purple-light);color:var(--purple)">${r.resource_type}</span>` : ''}
+        </div>
+        <div class="detail-title">${r.title}</div>
+        <div class="detail-price" style="color:var(--purple)">${r.price ? fmtPrice(r.price,'UGX') : 'Open for partnership'}</div>
+        <div class="detail-meta-grid">
+          <div class="dmeta-item"><div class="dmeta-lbl">Resource Type</div><div class="dmeta-val">${r.resource_type||'—'}</div></div>
+          <div class="dmeta-item"><div class="dmeta-lbl">Partnership</div><div class="dmeta-val">${r.partnership_type||'Negotiable'}</div></div>
+          <div class="dmeta-item"><div class="dmeta-lbl">Location</div><div class="dmeta-val">📍 ${r.location||'Uganda'}</div></div>
+          <div class="dmeta-item"><div class="dmeta-lbl">Seeking</div><div class="dmeta-val">${r.seeking_skill||'Any skilled partner'}</div></div>
+        </div>
+        ${r.description ? `<div class="detail-desc">${r.description}</div>` : ''}
+        ${r.seller_id ? `
+        <div class="detail-seller-card" onclick="navigate('/seller/${r.seller_id}')">
+          <div class="seller-av-lg">${(r.seller_name||'S')[0].toUpperCase()}</div>
+          <div class="seller-info"><h4>${r.seller_name||'Resource Owner'}</h4><p>View profile →</p></div>
+        </div>` : ''}
+        <div class="detail-ctas">
+          ${r.whatsapp_number
+            ? `<button class="wa-btn" onclick="window.open('https://wa.me/${r.whatsapp_number.replace(/[^0-9]/g,'')}?text=Hi, I saw your listing on DuukaList+: ${encodeURIComponent(r.title)}','_blank')">💬 WhatsApp</button>`
+            : `<button class="btn btn-outline btn-full">💬 Message</button>`}
+          <button class="buy-btn" style="background:var(--purple);box-shadow:0 8px 32px rgba(124,58,237,.28)" onclick="requireAuth(()=>showToast('Partnership request sent!'))">🤝 Apply to Partner</button>
+        </div>
+      </div>`;
+  } catch {
+    app.innerHTML = `<div class="empty-state"><div class="empty-icon">❌</div><div class="empty-title">Resource not found</div><button class="btn btn-orange" onclick="navigate('/resources')">Browse Resources</button></div>`;
+  }
+}
+
+/* ═══════════════════════════════════════
+   I NEED BOARD
+═══════════════════════════════════════ */
+async function renderNeeds(_, params = {}) {
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="page-hero" style="background:linear-gradient(130deg,var(--teal),#0e7490)">
+      <h1>📢 I Need Board</h1>
+      <p>Tell sellers what you're looking for — they'll find you</p>
+    </div>
+    <div style="padding:16px">
+      <div style="background:var(--teal-light);border:1px solid #a5f3fc;border-radius:var(--rm);padding:14px 16px;margin-bottom:16px">
+        <div style="font-weight:700;font-size:14px;color:var(--teal);margin-bottom:4px">How it works</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.6">Post what you need — a product, a skill, a partner, land, tools. Sellers and skilled people respond directly to you. No middleman.</div>
+      </div>
+      <button class="btn btn-full" style="background:var(--teal);color:#fff;margin-bottom:20px;box-shadow:0 8px 24px rgba(8,145,178,.25)" onclick="requireAuth(()=>navigate('/post?type=need'))">+ Post What You Need</button>
+      <div id="needsGrid"><div class="spinner"></div></div>
+    </div>`;
+
+  try {
+    const res = await fetch(`${API}/listings?type=need&limit=20`);
+    if (!res.ok) throw new Error();
+    const d = await res.json();
+    const items = d.listings || d.items || (Array.isArray(d) ? d : []);
+    const grid = document.getElementById('needsGrid');
+    if (!items.length) {
+      grid.innerHTML = `<div class="empty-state"><div class="empty-icon">📢</div><div class="empty-title">No requests yet</div><div class="empty-sub">Be the first to post what you need. Sellers will respond to you.</div></div>`;
+    } else {
+      grid.innerHTML = items.map(n => `
+        <div class="need-card" onclick="navigate('/listing/${n.id}')">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+            <div class="need-title">${n.title}</div>
+            ${n.price ? `<span class="need-budget">${fmtPrice(n.price,'UGX')}</span>` : ''}
+          </div>
+          <div class="need-meta">
+            <span>📍 ${n.location||'Uganda'}</span>
+            <span>• ${n.category||'General'}</span>
+            <span>• ${n.created_at ? new Date(n.created_at).toLocaleDateString() : 'Recent'}</span>
+          </div>
+          <div style="font-size:13px;color:var(--ink2);line-height:1.6">${(n.description||'').slice(0,150)}${(n.description||'').length>150?'…':''}</div>
+          <div style="margin-top:10px;display:flex;gap:8px">
+            ${n.whatsapp_number ? `<button class="wa-btn" style="padding:8px 14px;font-size:12px" onclick="event.stopPropagation();window.open('https://wa.me/${n.whatsapp_number.replace(/[^0-9]/g,'')}?text=I can help with: ${encodeURIComponent(n.title)}','_blank')">💬 Respond</button>` : ''}
+          </div>
+        </div>`).join('');
+    }
+  } catch {
+    document.getElementById('needsGrid').innerHTML = `<div class="empty-state"><div class="empty-icon">📢</div><div class="empty-title">No requests yet</div></div>`;
   }
 }
 
@@ -1203,46 +1449,39 @@ async function renderGigs(_, params = {}) {
       <p>Hire skilled professionals for any project</p>
     </div>
     <div style="background:var(--white);border-bottom:1px solid var(--border);padding:10px 16px;overflow-x:auto;white-space:nowrap;scrollbar-width:none">
-      ${['','design','tech','writing','marketing','video','music'].map(c => {
-        const labels = {''  :'All','design':'Design','tech':'Tech & Dev','writing':'Writing','marketing':'Marketing','video':'Video','music':'Music & Audio'};
+      ${['','design','tech','writing','marketing','video','music','construction','mechanics','food','beauty'].map((c,i) => {
+        const labels = {'':'All','design':'🎨 Design','tech':'💻 Tech','writing':'✍️ Writing','marketing':'📊 Marketing','video':'🎬 Video','music':'🎵 Music','construction':'🏗️ Construction','mechanics':'🔧 Mechanics','food':'🍕 Food','beauty':'💄 Beauty'};
         return `<span class="filter-chip${cat===c?' active':''}" onclick="navigate('/gigs?category=${c}')" style="display:inline-block;margin-right:6px">${labels[c]||c}</span>`;
       }).join('')}
     </div>
     <div style="padding:16px">
       <div class="listings-grid" id="gigsGrid">${skeletonCards(4)}</div>
+      <div style="margin-top:20px;text-align:center">
+        <button class="btn btn-ghost" onclick="requireAuth(()=>navigate('/post?type=gig'))">💼 Offer Your Skills</button>
+      </div>
     </div>`;
 
   try {
-    const params2 = new URLSearchParams({ limit: 20 });
-    if (cat) params2.set('category', cat);
-    const res = await fetch(`${API}/gigs?${params2}`);
+    const p = new URLSearchParams({ limit: 20 });
+    if (cat) p.set('category', cat);
+    const res = await fetch(`${API}/gigs?${p}`);
     if (!res.ok) throw new Error();
     const d = await res.json();
     const items = d.gigs || d.items || (Array.isArray(d) ? d : []);
     const grid = document.getElementById('gigsGrid');
     if (!items.length) {
-      grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state">
-        <div class="empty-icon">🎯</div>
-        <div class="empty-title">No gigs yet</div>
-        <div class="empty-sub">Be the first to offer your services on DuukaList+</div>
-        <button class="btn btn-orange" onclick="requireAuth(()=>navigate('/post'))">Post a Gig</button>
-      </div></div>`;
+      grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state"><div class="empty-icon">🎯</div><div class="empty-title">No gigs yet</div><div class="empty-sub">Be the first to offer your skills on DuukaList+</div><button class="btn btn-orange" onclick="requireAuth(()=>navigate('/post'))">Post a Gig</button></div></div>`;
     } else {
       grid.innerHTML = items.map((g,i) => gigCard(g,i)).join('');
     }
   } catch {
     const grid = document.getElementById('gigsGrid');
-    if (grid) grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state">
-      <div class="empty-icon">🎯</div>
-      <div class="empty-title">No gigs yet</div>
-      <div class="empty-sub">Be the first to offer a service!</div>
-      <button class="btn btn-orange" onclick="requireAuth(()=>navigate('/post'))">Post a Gig</button>
-    </div></div>`;
+    if (grid) grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state"><div class="empty-icon">🎯</div><div class="empty-title">No gigs yet</div><button class="btn btn-orange" onclick="requireAuth(()=>navigate('/post'))">Post a Gig</button></div></div>`;
   }
 }
 
 /* ═══════════════════════════════════════
-   GIG DETAIL VIEW
+   GIG DETAIL
 ═══════════════════════════════════════ */
 let selectedPackage = 0;
 async function renderGigDetail(id) {
@@ -1255,11 +1494,10 @@ async function renderGigDetail(id) {
     const g = d.gig || d;
     const packages = g.packages || [];
     const stars = '★'.repeat(Math.min(5, Math.round(g.rating_avg||4.5)));
-
     app.innerHTML = `
       <div onclick="history.back()" class="detail-back">← Back</div>
       <div style="padding:16px">
-        <div class="gcard-img" style="background:linear-gradient(135deg,#eef3ff,#dbeafe);height:180px;border-radius:var(--rm);font-size:56px;display:flex;align-items:center;justify-content:center;margin-bottom:16px">🎨</div>
+        <div style="background:linear-gradient(135deg,#eef3ff,#dbeafe);height:180px;border-radius:var(--rm);font-size:56px;display:flex;align-items:center;justify-content:center;margin-bottom:16px">🎨</div>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
           <div class="gavatar" style="width:40px;height:40px;font-size:16px">${(g.seller_name||'S')[0].toUpperCase()}</div>
           <div>
@@ -1269,7 +1507,6 @@ async function renderGigDetail(id) {
         </div>
         <h1 style="font-family:var(--fd);font-weight:700;font-size:22px;color:var(--ink);letter-spacing:-.5px;margin-bottom:12px;line-height:1.2">${g.title||'Service'}</h1>
         <p style="font-size:14px;color:var(--ink2);line-height:1.7;margin-bottom:20px">${g.description||''}</p>
-
         ${packages.length ? `
         <h3 style="font-weight:800;font-size:15px;color:var(--blue);margin-bottom:12px">Choose a Package</h3>
         <div class="gig-packages">
@@ -1277,18 +1514,13 @@ async function renderGigDetail(id) {
             <div class="pkg-card${i===0?' selected':''}" id="pkg_${i}" onclick="selectPkg(${i})">
               <div class="pkg-tier">${p.tier||'Package '+(i+1)}</div>
               <div class="pkg-price">${fmtPrice(p.price,'UGX')}</div>
-              <div class="pkg-dur">⏱ ${p.duration_days||7} day${p.duration_days!==1?'s':''} delivery</div>
+              <div class="pkg-dur">⏱ ${p.duration_days||7} day delivery</div>
               <ul class="pkg-features">${(p.features||[]).map(f=>`<li>${f}</li>`).join('')}</ul>
             </div>`).join('')}
         </div>` : ''}
-
         ${g.faqs?.length ? `
         <h3 style="font-weight:800;font-size:15px;color:var(--blue);margin-bottom:12px">FAQs</h3>
-        ${g.faqs.map(f => `
-          <div style="border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:8px">
-            <div style="font-weight:700;font-size:13px;color:var(--ink);margin-bottom:6px">Q: ${f.question}</div>
-            <div style="font-size:13px;color:var(--muted);line-height:1.6">A: ${f.answer}</div>
-          </div>`).join('')}` : ''}
+        ${g.faqs.map(f => `<div style="border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:8px"><div style="font-weight:700;font-size:13px;color:var(--ink);margin-bottom:6px">Q: ${f.question}</div><div style="font-size:13px;color:var(--muted);line-height:1.6">A: ${f.answer}</div></div>`).join('')}` : ''}
       </div>
       <div style="position:sticky;bottom:var(--bnav);background:var(--white);padding:12px 16px;border-top:1px solid var(--border)">
         <button class="btn btn-orange btn-full btn-lg" onclick="orderGig('${id}')">Order Now →</button>
@@ -1305,238 +1537,438 @@ async function renderGigDetail(id) {
 }
 
 /* ═══════════════════════════════════════
-   POST LISTING VIEW
+   POST LISTING
 ═══════════════════════════════════════ */
-function renderPost() {
+let postType = 'product';
+let postPhotos = [];
+
+function renderPost(_, params = {}) {
   if (!currentUser) { openAuth(); return; }
+  const defaultType = params.type || 'product';
+  postType = defaultType;
+  postPhotos = [];
   const app = document.getElementById('app');
   app.innerHTML = `
-    <div class="page-hero"><h1>Post a Listing</h1><p>Reach thousands of buyers — free</p></div>
+    <div class="page-hero"><h1>Post a Listing</h1><p>Reach thousands of people — free</p></div>
     <div class="post-form">
+
       <div class="form-section">
-        <div class="form-section-title">📋 Listing Type</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px">
-          <div class="boost-opt selected" id="typeProduct" onclick="selectType('product')">
-            <div class="boost-opt-name">🛍️ Product</div>
-            <div class="boost-opt-desc">Sell a physical item</div>
+        <div class="form-section-title">📋 What are you posting?</div>
+        <div class="type-grid">
+          <div class="type-opt${postType==='product'?' selected':''}" id="typeProduct" onclick="setPostType('product')">
+            <div class="type-opt-icon">🛍️</div>
+            <div class="type-opt-name">Product</div>
+            <div class="type-opt-desc">Sell a physical item</div>
           </div>
-          <div class="boost-opt" id="typeGig" onclick="selectType('gig')">
-            <div class="boost-opt-name">🎯 Gig / Service</div>
-            <div class="boost-opt-desc">Offer your skills</div>
+          <div class="type-opt${postType==='gig'?' selected':''}" id="typeGig" onclick="setPostType('gig')">
+            <div class="type-opt-icon">💼</div>
+            <div class="type-opt-name">Gig / Service</div>
+            <div class="type-opt-desc">Offer your skills</div>
+          </div>
+          <div class="type-opt${postType==='resource'?' selected-purple':''}" id="typeResource" onclick="setPostType('resource')">
+            <div class="type-opt-icon">🏗️</div>
+            <div class="type-opt-name">Resource</div>
+            <div class="type-opt-desc">Land, tools, capital</div>
+          </div>
+          <div class="type-opt${postType==='need'?' selected-teal':''}" id="typeNeed" onclick="setPostType('need')">
+            <div class="type-opt-icon">📢</div>
+            <div class="type-opt-name">I Need</div>
+            <div class="type-opt-desc">Post what you need</div>
           </div>
         </div>
       </div>
 
       <div class="form-section">
         <div class="form-section-title">📝 Details</div>
-        <div class="field"><label>Title <span>*</span></label><input type="text" id="fTitle" placeholder="e.g. iPhone 14 Pro Max 256GB"></div>
+        <div class="field"><label>Title <span>*</span></label><input type="text" id="fTitle" placeholder="e.g. Samsung Galaxy S24, Plumbing Services…"></div>
         <div class="field"><label>Category <span>*</span></label>
           <select id="fCat">
             <option value="">Select category…</option>
-            ${Object.keys(CAT_META).map(s => `<option value="${s}">${s.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}</option>`).join('')}
+            ${Object.keys(CAT_META).filter(s=>s!=='resources').map(s => `<option value="${s}">${s.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}</option>`).join('')}
           </select>
         </div>
-        <div class="field"><label>Description <span>*</span></label><textarea id="fDesc" placeholder="Describe your item or service in detail…"></textarea></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div class="field"><label>Price (UGX) <span>*</span></label><input type="number" id="fPrice" placeholder="0"></div>
+        <div class="field"><label>Description <span>*</span></label><textarea id="fDesc" placeholder="Describe your listing in detail…"></textarea></div>
+
+        <!-- Product/Need specific -->
+        <div id="priceFields" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="field"><label>Price (UGX) <span>*</span></label><input type="number" id="fPrice" placeholder="0 = Negotiable"></div>
           <div class="field" id="condField"><label>Condition</label>
             <select id="fCond"><option value="">Select…</option><option value="new">New</option><option value="used">Used</option><option value="refurbished">Refurbished</option></select>
           </div>
         </div>
-        <div class="field"><label>Location <span>*</span></label><input type="text" id="fLoc" placeholder="e.g. Kampala, Ntinda"></div>
-        <div class="field" id="waField"><label>WhatsApp Number (optional)</label><input type="tel" id="fWa" placeholder="e.g. 256700000000"></div>
+
+        <!-- Resource specific -->
+        <div id="resourceFields" style="display:none">
+          <div class="field"><label>Resource Type <span>*</span></label>
+            <select id="fResourceType">
+              <option value="">Select type…</option>
+              ${RESOURCE_TYPES.map(t=>`<option value="${t}">${t}</option>`).join('')}
+            </select>
+          </div>
+          <div class="field"><label>Seeking (skill or partner type)</label>
+            <select id="fSeekingSkill">
+              <option value="">Any skilled partner</option>
+              ${SKILL_CATS.map(s=>`<option value="${s}">${s}</option>`).join('')}
+            </select>
+          </div>
+          <div class="field"><label>Partnership Type</label>
+            <select id="fPartnershipType">
+              <option value="Revenue sharing">Revenue sharing</option>
+              <option value="Rental">Rental</option>
+              <option value="Joint venture">Joint venture</option>
+              <option value="Loan/Investment">Loan / Investment</option>
+              <option value="Negotiable">Negotiable</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Gig specific -->
+        <div id="gigFields" style="display:none">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="field"><label>Starting Price (UGX) <span>*</span></label><input type="number" id="fGigPrice" placeholder="50000"></div>
+            <div class="field"><label>Delivery Days</label><input type="number" id="fGigDays" placeholder="7" value="7"></div>
+          </div>
+        </div>
       </div>
 
       <div class="form-section">
-        <div class="form-section-title">📸 Photos</div>
-        <div class="photo-upload" onclick="document.getElementById('photoInput').click()">
-          <input type="file" id="photoInput" multiple accept="image/*" onchange="previewPhotos(this)">
+        <div class="form-section-title">📍 Location</div>
+        <div class="field"><label>District / Area <span>*</span></label>
+          <select id="fLocation">
+            <option value="">Select location…</option>
+            ${['Kampala','Wakiso','Mukono','Entebbe','Jinja','Mbale','Mbarara','Gulu','Lira','Arua','Fort Portal','Masaka','Soroti','Kabale','Kasese','Hoima','Tororo','Iganga','Busia','Moroto'].map(d=>`<option value="${d}">${d}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field"><label>Specific Area (optional)</label><input type="text" id="fArea" placeholder="e.g. Ntinda, Nakasero, Bugolobi…"></div>
+        <div class="field"><label>WhatsApp Number</label>
+          <div class="phone-input-row">
+            <div class="phone-country">🇺🇬 +256</div>
+            <input type="tel" id="fPhone" placeholder="07XX XXX XXX" pattern="[0-9]{9,10}">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-title">📸 Photos (optional)</div>
+        <label class="photo-upload" onclick="document.getElementById('fPhotos').click()">
+          <input type="file" id="fPhotos" accept="image/*" multiple style="display:none" onchange="handlePhotos(this)">
           <div class="photo-upload-icon">📷</div>
           <p>Tap to add photos</p>
-          <small>Up to 8 photos • JPG, PNG</small>
-        </div>
+          <small>Up to 5 photos · JPG or PNG</small>
+        </label>
         <div class="photo-previews" id="photoPreviews"></div>
       </div>
 
-      <div class="form-section">
-        <div class="form-section-title">⭐ Boost Your Listing <span style="font-size:11px;color:var(--muted);font-weight:400">(optional)</span></div>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Boosted listings appear at the top of search results.</p>
+      <div class="form-section" id="boostSection">
+        <div class="form-section-title">⭐ Boost Listing (optional)</div>
         <div class="boost-options">
-          <div class="boost-opt selected" id="boost_none" onclick="selectBoost('none')">
-            <div class="boost-opt-name">No Boost</div>
-            <div class="boost-opt-price">Free</div>
-            <div class="boost-opt-desc">Standard placement</div>
+          <div class="boost-opt selected" id="boostNone" onclick="selectBoost('none')">
+            <div class="boost-opt-name">Free</div>
+            <div class="boost-opt-price">UGX 0</div>
+            <div class="boost-opt-desc">Standard listing</div>
           </div>
-          <div class="boost-opt" id="boost_standard" onclick="selectBoost('standard')">
-            <div class="boost-opt-name">Standard</div>
+          <div class="boost-opt" id="boostStandard" onclick="selectBoost('standard')">
+            <div class="boost-opt-name">⬆️ Standard</div>
             <div class="boost-opt-price">UGX 5,000</div>
             <div class="boost-opt-desc">7 days boost</div>
           </div>
-          <div class="boost-opt" id="boost_top" onclick="selectBoost('top')">
-            <div class="boost-opt-name">TOP Badge</div>
+          <div class="boost-opt" id="boostTop" onclick="selectBoost('top')">
+            <div class="boost-opt-name">🔝 TOP</div>
             <div class="boost-opt-price">UGX 15,000</div>
-            <div class="boost-opt-desc">30 days · Top of category</div>
+            <div class="boost-opt-desc">30 days · TOP badge</div>
           </div>
-          <div class="boost-opt" id="boost_diamond" onclick="selectBoost('diamond')">
+          <div class="boost-opt" id="boostDiamond" onclick="selectBoost('diamond')">
             <div class="boost-opt-name">💎 Diamond</div>
-            <div class="boost-opt-price">UGX 40,000</div>
+            <div class="boost-opt-price">UGX 50,000</div>
             <div class="boost-opt-desc">30 days · Homepage slot</div>
           </div>
         </div>
       </div>
 
-      <button class="btn btn-orange btn-full btn-lg" onclick="submitListing()" id="submitBtn" style="margin-bottom:24px">Publish Listing →</button>
+      <div style="padding-bottom:24px">
+        <button class="btn btn-orange btn-full btn-lg" id="submitBtn" onclick="submitListing()">🚀 Post Listing</button>
+        <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--muted)">By posting you agree to our <a href="#" style="color:var(--orange)">Seller Policy</a></div>
+      </div>
     </div>`;
 
-  let selectedType = 'product', selectedBoostTier = 'none';
-  const photosData = [];
+  setPostType(postType);
+}
 
-  window.selectType = (t) => {
-    selectedType = t;
-    ['product','gig'].forEach(x => document.getElementById('type'+x.charAt(0).toUpperCase()+x.slice(1))?.classList.toggle('selected', x===t));
-    document.getElementById('condField').style.display = t === 'gig' ? 'none' : 'block';
-    document.getElementById('waField').style.display = t === 'gig' ? 'none' : 'block';
+let selectedBoost = 'none';
+window.setPostType = (type) => {
+  postType = type;
+  ['product','gig','resource','need'].forEach(t => {
+    const el = document.getElementById('type'+t.charAt(0).toUpperCase()+t.slice(1));
+    if (el) {
+      el.classList.remove('selected','selected-purple','selected-teal');
+      if (t === type) {
+        if (t === 'resource') el.classList.add('selected-purple');
+        else if (t === 'need') el.classList.add('selected-teal');
+        else el.classList.add('selected');
+      }
+    }
+  });
+  const priceFields = document.getElementById('priceFields');
+  const resourceFields = document.getElementById('resourceFields');
+  const gigFields = document.getElementById('gigFields');
+  const boostSection = document.getElementById('boostSection');
+  if (priceFields) priceFields.style.display = (type==='resource'||type==='gig') ? 'none' : 'grid';
+  if (resourceFields) resourceFields.style.display = type==='resource' ? 'block' : 'none';
+  if (gigFields) gigFields.style.display = type==='gig' ? 'block' : 'none';
+  if (boostSection) boostSection.style.display = type==='need' ? 'none' : 'block';
+};
+
+window.selectBoost = (tier) => {
+  selectedBoost = tier;
+  ['none','standard','top','diamond'].forEach(t => {
+    document.getElementById('boost'+t.charAt(0).toUpperCase()+t.slice(1))?.classList.toggle('selected', t===tier);
+  });
+};
+
+window.handlePhotos = (input) => {
+  const previews = document.getElementById('photoPreviews');
+  const files = Array.from(input.files).slice(0, 5);
+  postPhotos = files;
+  previews.innerHTML = files.map((f, i) => {
+    const url = URL.createObjectURL(f);
+    return `<div class="photo-preview"><img src="${url}" alt="photo ${i+1}"><div class="photo-remove" onclick="removePhoto(${i})">✕</div></div>`;
+  }).join('');
+};
+
+window.removePhoto = (i) => {
+  postPhotos.splice(i, 1);
+  const previews = document.getElementById('photoPreviews');
+  Array.from(previews.children)[i]?.remove();
+};
+
+async function submitListing() {
+  const title = document.getElementById('fTitle')?.value.trim();
+  const category = document.getElementById('fCat')?.value;
+  const description = document.getElementById('fDesc')?.value.trim();
+  const location = document.getElementById('fLocation')?.value;
+  if (!title || !category || !description || !location) {
+    showToast('Please fill in all required fields');
+    return;
+  }
+
+  const btn = document.getElementById('submitBtn');
+  btn.textContent = 'Posting…';
+  btn.disabled = true;
+
+  const phone = document.getElementById('fPhone')?.value.trim();
+  const area = document.getElementById('fArea')?.value.trim();
+  const fullLocation = area ? `${area}, ${location}` : location;
+
+  let payload = {
+    type: postType,
+    title,
+    category,
+    description,
+    location: fullLocation,
+    whatsapp_number: phone ? '256' + phone.replace(/^0/, '') : null,
+    boost_tier: selectedBoost,
   };
-  window.selectBoost = (tier) => {
-    selectedBoostTier = tier;
-    ['none','standard','top','diamond'].forEach(t => document.getElementById('boost_'+t)?.classList.toggle('selected', t===tier));
-  };
-  window.previewPhotos = (input) => {
-    const prev = document.getElementById('photoPreviews');
-    [...input.files].forEach(f => {
-      const r = new FileReader();
-      r.onload = e => {
-        photosData.push(e.target.result);
-        prev.innerHTML += `<div class="photo-preview"><img src="${e.target.result}"><span class="photo-remove" onclick="this.parentNode.remove()">✕</span></div>`;
-      };
-      r.readAsDataURL(f);
+
+  if (postType === 'product' || postType === 'need') {
+    const price = document.getElementById('fPrice')?.value;
+    const cond = document.getElementById('fCond')?.value;
+    payload.price = price ? parseInt(price) : null;
+    payload.condition = cond || null;
+    payload.currency = 'UGX';
+  }
+
+  if (postType === 'resource') {
+    payload.resource_type = document.getElementById('fResourceType')?.value;
+    payload.seeking_skill = document.getElementById('fSeekingSkill')?.value;
+    payload.partnership_type = document.getElementById('fPartnershipType')?.value;
+  }
+
+  if (postType === 'gig') {
+    const price = document.getElementById('fGigPrice')?.value;
+    const days = document.getElementById('fGigDays')?.value;
+    payload.packages = [{ tier: 'Basic', price: parseInt(price)||50000, duration_days: parseInt(days)||7, features: [] }];
+    payload.starting_price = parseInt(price)||50000;
+    payload.currency = 'UGX';
+  }
+
+  try {
+    const endpoint = postType === 'gig' ? `${API}/gigs` : `${API}/listings`;
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify(payload)
     });
-  };
-  window.submitListing = async () => {
-    const title = document.getElementById('fTitle').value.trim();
-    const category = document.getElementById('fCat').value;
-    const description = document.getElementById('fDesc').value.trim();
-    const price = document.getElementById('fPrice').value;
-    const location = document.getElementById('fLoc').value.trim();
-    if (!title || !category || !description || !price || !location) { showToast('Please fill all required fields'); return; }
-    const btn = document.getElementById('submitBtn');
-    btn.textContent = 'Publishing…'; btn.disabled = true;
-    try {
-      const body = { title, category_id: category, category_slug: category, description, price: Number(price), location, type: selectedType, condition: document.getElementById('fCond')?.value, whatsapp_number: document.getElementById('fWa')?.value, boost_tier: selectedBoostTier };
-      const res = await fetch(`${API}/listings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-        body: JSON.stringify(body)
-      });
-      if (!res.ok) throw new Error();
-      const d = await res.json();
-      showToast('Listing published! 🎉');
-      if (selectedBoostTier !== 'none' && d.listing?.id) navigate(`/checkout/${d.listing.id}?type=boost&tier=${selectedBoostTier}`);
-      else setTimeout(() => navigate('/dashboard'), 1200);
-    } catch { showToast('Failed to publish. Try again.'); btn.textContent = 'Publish Listing →'; btn.disabled = false; }
-  };
+    if (!res.ok) throw new Error(`Failed: ${res.status}`);
+    const d = await res.json();
+    showToast('Posted successfully! 🎉');
+    const id = d.id || d.listing?.id || d.gig?.id;
+    if (id) {
+      setTimeout(() => navigate(postType === 'gig' ? `/gig/${id}` : `/listing/${id}`), 800);
+    } else {
+      setTimeout(() => navigate(postType === 'gig' ? '/gigs' : '/browse'), 800);
+    }
+  } catch (err) {
+    showToast('Could not post. Please try again.');
+    btn.textContent = '🚀 Post Listing';
+    btn.disabled = false;
+  }
 }
 
 /* ═══════════════════════════════════════
-   CHECKOUT VIEW
+   CHECKOUT / PESAPAL PAYMENT
 ═══════════════════════════════════════ */
+let selectedPayMethod = 'mtn';
+
 async function renderCheckout(id, params = {}) {
   if (!currentUser) { openAuth(); return; }
   const type = params.type || 'product';
   const app = document.getElementById('app');
-  app.innerHTML = `<div style="padding:20px"><div class="spinner"></div></div>`;
 
-  let title = 'Order', amount = 0;
+  // Fetch item info
+  let item = { title: 'Order', price: 0, currency: 'UGX' };
   try {
-    if (type === 'boost') {
-      const tierPrices = { standard: 5000, top: 15000, vip: 25000, diamond: 40000 };
-      amount = tierPrices[params.tier] || 5000;
-      title = `Boost — ${params.tier || 'standard'} tier`;
-    } else if (type === 'gig') {
-      const res = await fetch(`${API}/gigs/${id}`);
-      const d = await res.json();
-      const g = d.gig || d;
-      const pkg = g.packages?.[Number(params.pkg||0)];
-      title = g.title + (pkg ? ` — ${pkg.tier}` : '');
-      amount = pkg?.price || g.starting_price || 50000;
-    } else {
-      const res = await fetch(`${API}/listings/${id}`);
-      const d = await res.json();
-      const l = d.listing || d;
-      title = l.title; amount = l.price;
+    if (id && id !== 'sub') {
+      const ep = type === 'gig' ? `${API}/gigs/${id}` : `${API}/listings/${id}`;
+      const res = await fetch(ep);
+      if (res.ok) {
+        const d = await res.json();
+        const raw = d.listing || d.gig || d;
+        item.title = raw.title || 'Order';
+        item.price = type === 'gig'
+          ? (raw.packages?.[parseInt(params.pkg)||0]?.price || raw.starting_price || 0)
+          : (raw.price || 0);
+        item.currency = raw.currency || 'UGX';
+      }
+    } else if (id === 'sub') {
+      item = { title: 'Pro Subscription', price: 20000, currency: 'UGX' };
     }
   } catch {}
 
-  const commission = Math.round(amount * 0.03);
-  const total = amount + commission;
+  const commission = Math.round(item.price * 0.03);
+  const total = item.price + commission;
+
   app.innerHTML = `
     <div onclick="history.back()" class="detail-back">← Back</div>
+    <div class="page-hero" style="padding:28px 20px"><h1>Checkout</h1><p>Secure payment via PesaPal</p></div>
     <div class="checkout-body">
-      <h2 style="font-family:var(--fd);font-weight:700;font-size:22px;color:var(--ink);margin-bottom:18px;letter-spacing:-.5px">Complete Order</h2>
+
       <div class="checkout-summary">
-        <div class="checkout-row"><span>Item</span><span style="font-weight:600;max-width:55%;text-align:right;font-size:13px">${title}</span></div>
-        <div class="checkout-row"><span>Subtotal</span><span>${fmtPrice(amount,'UGX')}</span></div>
-        <div class="checkout-row"><span style="color:var(--muted)">Platform fee (3%)</span><span style="color:var(--muted)">${fmtPrice(commission,'UGX')}</span></div>
-        <div class="checkout-row total"><span>Total</span><span>${fmtPrice(total,'UGX')}</span></div>
+        <div style="font-weight:700;font-size:15px;color:var(--blue);margin-bottom:12px">Order Summary</div>
+        <div class="checkout-row"><span>${item.title}</span><span>${fmtPrice(item.price, item.currency)}</span></div>
+        <div class="checkout-row"><span style="color:var(--muted)">Platform fee (3%)</span><span style="color:var(--muted)">${fmtPrice(commission, item.currency)}</span></div>
+        <div class="checkout-row total"><span>Total</span><span>${fmtPrice(total, item.currency)}</span></div>
       </div>
 
-      <h3 style="font-weight:700;font-size:15px;color:var(--ink2);margin-bottom:8px">Payment Method</h3>
-      <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Choose how you want to pay — card, MTN MoMo, or Airtel Money all supported.</p>
-      <div class="payment-methods">
-        <div class="pmethod selected" id="pm_pesapal">
-          <span class="pmethod-icon">💳</span>
-          <div class="pmethod-info"><strong>All Payment Methods</strong><span>Card · MTN MoMo · Airtel Money</span></div>
-          <div class="pmethod-radio" style="background:var(--orange);border-color:var(--orange)"></div>
+      <div style="font-weight:700;font-size:15px;color:var(--ink);margin-bottom:14px">Select Payment Method</div>
+
+      <div class="pesapal-methods">
+        <div class="pmethod${selectedPayMethod==='mtn'?' selected':''}" onclick="selectPayMethod('mtn')">
+          <span style="font-size:28px">📱</span>
+          <div class="pmethod-info">
+            <strong>MTN Mobile Money</strong>
+            <span>Enter your MTN number to confirm</span>
+          </div>
+          <div class="pmethod-radio"></div>
+        </div>
+        <div class="pmethod${selectedPayMethod==='airtel'?' selected':''}" onclick="selectPayMethod('airtel')">
+          <span style="font-size:28px">📱</span>
+          <div class="pmethod-info">
+            <strong>Airtel Money</strong>
+            <span>Enter your Airtel number to confirm</span>
+          </div>
+          <div class="pmethod-radio"></div>
+        </div>
+        <div class="pmethod${selectedPayMethod==='card'?' selected':''}" onclick="selectPayMethod('card')">
+          <span style="font-size:28px">💳</span>
+          <div class="pmethod-info">
+            <strong>Visa / Mastercard</strong>
+            <span>Redirect to PesaPal secure page</span>
+          </div>
+          <div class="pmethod-radio"></div>
         </div>
       </div>
 
-      <div class="green-box" style="background:#e8faf2;border:1px solid #b7f5d8;border-left:3px solid #0dab5b;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:12px;color:#065f46">
-        ✅ You will be redirected to a secure payment page where you can choose Card, MTN Mobile Money, or Airtel Money.
+      <div id="phoneSection">
+        <div style="font-weight:700;font-size:13px;color:var(--ink2);margin-bottom:8px">Your Mobile Money Number</div>
+        <div class="phone-input-row" style="border:1.5px solid var(--border);border-radius:var(--rm)">
+          <div class="phone-country">🇺🇬 +256</div>
+          <input type="tel" id="payPhone" placeholder="07XX XXX XXX" style="flex:1;border:none;padding:11px 14px;font-size:14px;color:var(--ink);background:transparent;outline:none;font-family:var(--fb)">
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">You will receive a prompt on your phone to confirm the payment.</div>
       </div>
 
-      <button class="btn btn-orange btn-full btn-lg" onclick="processPayment('${id}',${total},'${type}')" id="payBtn">Pay ${fmtPrice(total,'UGX')} →</button>
-      <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px">Payments processed by a licensed third-party provider. DuukaList+ does not store card details.</p>
+      <div class="security-note" style="margin-top:16px">
+        🔒 Secured by <strong>PesaPal</strong> — Regulated by the Bank of Uganda
+      </div>
+
+      <button class="btn btn-orange btn-full btn-lg" style="margin-bottom:12px" onclick="processPayment('${id}', '${type}', ${total}, '${item.currency}')">
+        Pay ${fmtPrice(total, item.currency)} →
+      </button>
+
+      <div style="text-align:center;font-size:11px;color:var(--muted)">
+        Payment processed by PesaPal. DuukaList+ does not store card details.
+      </div>
     </div>`;
 
-  window.processPayment = async (listingId, totalAmt, orderType) => {
-    const btn = document.getElementById('payBtn');
-    btn.textContent = 'Processing…'; btn.disabled = true;
-    try {
-      // All payments go through PesaPal (handles cards + MTN + Airtel)
-      const orderId = 'DL-' + Date.now() + '-' + Math.random().toString(36).slice(2,7).toUpperCase();
-      const res = await fetch(`${PAY_API}/payments/initiate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-        body: JSON.stringify({
-          order_id: orderId,
-          amount: totalAmt,
-          currency: 'UGX',
-          description: orderType === 'boost' ? 'Listing Boost' : 'DuukaList+ Order',
-          buyer_name: currentUser?.name || 'Customer',
-          buyer_email: currentUser?.email || '',
-          payment_type: orderType,
-          meta: { listing_id: listingId }
-        })
-      });
-      const d = await res.json();
-      if (d.redirect_url) {
-        window.location.href = d.redirect_url;
-      } else {
-        throw new Error(d.error || 'No redirect URL');
-      }
-    } catch (e) {
-      console.error('Payment error:', e);
-      showToast('Payment failed. Try again.');
-      btn.textContent = `Pay ${fmtPrice(totalAmt,'UGX')} →`;
-      btn.disabled = false;
-    }
+  window.selectPayMethod = (method) => {
+    selectedPayMethod = method;
+    document.querySelectorAll('.pmethod').forEach(el => el.classList.remove('selected'));
+    event.currentTarget.classList.add('selected');
+    document.getElementById('phoneSection').style.display = method === 'card' ? 'none' : 'block';
   };
+}
+
+async function processPayment(itemId, type, amount, currency) {
+  const phone = document.getElementById('payPhone')?.value?.trim();
+  if (selectedPayMethod !== 'card' && !phone) {
+    showToast('Please enter your mobile money number');
+    return;
+  }
+
+  const btn = event.currentTarget;
+  btn.textContent = 'Processing…';
+  btn.disabled = true;
+
+  try {
+    const payload = {
+      item_id: itemId,
+      item_type: type,
+      amount,
+      currency,
+      payment_method: selectedPayMethod,
+      phone: phone ? '256' + phone.replace(/^0/, '') : null,
+    };
+
+    const res = await fetch(`${PAY_API}/payments/pesapal/init`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) throw new Error(`Payment init failed: ${res.status}`);
+    const d = await res.json();
+
+    if (d.redirect_url) {
+      // Card payment — redirect to PesaPal hosted page
+      window.location.href = d.redirect_url;
+    } else if (d.order_id || d.tracking_id) {
+      // Mobile money — prompt sent
+      showToast('📱 Check your phone to confirm payment!', 4000);
+      setTimeout(() => navigate('/orders'), 3000);
+    } else {
+      throw new Error('No payment URL returned');
+    }
+  } catch (err) {
+    showToast('Payment failed. Please try again.');
+    btn.textContent = `Pay ${fmtPrice(amount, currency)} →`;
+    btn.disabled = false;
+  }
 }
 
 /* ═══════════════════════════════════════
    ORDERS VIEW
 ═══════════════════════════════════════ */
-async function renderOrders() {
+function renderOrders() {
   if (!currentUser) { openAuth(); return; }
   const app = document.getElementById('app');
   app.innerHTML = `
@@ -1598,7 +2030,7 @@ async function renderOrders() {
 }
 
 /* ═══════════════════════════════════════
-   DASHBOARD VIEW
+   DASHBOARD
 ═══════════════════════════════════════ */
 async function renderDashboard() {
   if (!currentUser) { openAuth(); return; }
@@ -1609,10 +2041,10 @@ async function renderDashboard() {
       <div class="dash-user">
         <div class="dash-avatar">${initial}</div>
         <div class="dash-user-info">
-          <h2>${currentUser.name||'Seller'}</h2>
+          <h2>${currentUser.name||'User'}</h2>
           <p>${currentUser.email||''} · ${currentUser.seller_level||'New Seller'}</p>
         </div>
-        <button class="btn btn-sm" style="background:rgba(255,255,255,.1);color:#fff;margin-left:auto" onclick="logout()">Sign Out</button>
+        <button class="btn btn-sm" style="background:rgba(255,255,255,.1);color:#fff;margin-left:auto;flex-shrink:0" onclick="logout()">Sign Out</button>
       </div>
       <div class="dash-stats">
         <div class="dstat"><div class="dstat-num" id="dListings">—</div><div class="dstat-lbl">Listings</div></div>
@@ -1622,10 +2054,11 @@ async function renderDashboard() {
     </div>
     <div class="dash-body">
       <div class="dash-section">
-        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
-          <button class="btn btn-orange btn-sm" onclick="requireAuth(()=>navigate('/post'))">+ New Listing</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+          <button class="btn btn-orange btn-sm" onclick="requireAuth(()=>navigate('/post'))">+ Post Listing</button>
           <button class="btn btn-outline btn-sm" onclick="navigate('/orders')">My Orders</button>
           <button class="btn btn-outline btn-sm" onclick="navigate('/gigs')">Browse Gigs</button>
+          <button class="btn btn-outline btn-sm" onclick="navigate('/resources')">Resources</button>
         </div>
       </div>
       <div class="dash-section">
@@ -1636,10 +2069,15 @@ async function renderDashboard() {
         <div class="dash-section-title">💳 Subscription</div>
         <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--rm);padding:16px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-            <div><div style="font-weight:700;font-size:15px;color:var(--ink)">${currentUser.subscription_tier||'Free'} Plan</div><div style="font-size:12px;color:var(--muted)">5 active listings</div></div>
+            <div>
+              <div style="font-weight:700;font-size:15px;color:var(--ink)">${currentUser.subscription_tier||'Free'} Plan</div>
+              <div style="font-size:12px;color:var(--muted)">${currentUser.subscription_tier==='pro'?'Unlimited listings':'Up to 5 active listings'}</div>
+            </div>
             <span class="status-pill status-active">${currentUser.subscription_tier||'FREE'}</span>
           </div>
-          <button class="btn btn-orange btn-sm btn-full" onclick="navigate('/checkout/sub?type=subscription')">Upgrade to Pro — UGX 20,000/mo</button>
+          ${!currentUser.subscription_tier || currentUser.subscription_tier==='free'
+            ? `<button class="btn btn-orange btn-sm btn-full" onclick="navigate('/checkout/sub?type=subscription')">Upgrade to Pro — UGX 20,000/mo</button>`
+            : `<div style="font-size:12px;color:var(--green);font-weight:600">✓ Active subscription</div>`}
         </div>
       </div>
     </div>`;
@@ -1656,9 +2094,7 @@ async function renderDashboard() {
       listingsEl.innerHTML = items.map(l => {
         const meta = CAT_META[l.category] || { icon:'📦', bg:'#f0f0f0' };
         return `<div class="dash-listing-row" onclick="navigate('/listing/${l.id}')">
-          <div class="dash-listing-img" style="background:${meta.bg}">
-            ${l.images?.[0] ? `<img src="${l.images[0]}" alt="${l.title}">` : meta.icon}
-          </div>
+          <div class="dash-listing-img" style="background:${meta.bg}">${l.images?.[0] ? `<img src="${l.images[0]}" alt="${l.title}">` : meta.icon}</div>
           <div class="dash-listing-info">
             <h4>${l.title}</h4>
             <p>${fmtPrice(l.price,'UGX')} · 📍 ${l.location||'Uganda'}</p>
@@ -1673,15 +2109,8 @@ async function renderDashboard() {
   } catch { document.getElementById('dashListings').innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">Could not load listings.</div>`; }
 }
 
-function logout() {
-  clearToken();
-  updateAuthUI(null);
-  navigate('/');
-  showToast('Signed out');
-}
-
 /* ═══════════════════════════════════════
-   SELLER PROFILE VIEW
+   SELLER PROFILE
 ═══════════════════════════════════════ */
 async function renderSeller(id) {
   const app = document.getElementById('app');
@@ -1690,11 +2119,9 @@ async function renderSeller(id) {
     const res = await fetch(`${API}/listings?seller_id=${id}&limit=20`);
     const d = await res.json();
     const listings = d.listings || d.items || [];
-    // Try to get seller info from first listing
     const seller = listings[0] || {};
     const name = seller.seller_name || 'Seller';
     const initial = name[0].toUpperCase();
-
     app.innerHTML = `
       <div onclick="history.back()" class="detail-back">← Back</div>
       <div class="seller-hero">
@@ -1721,12 +2148,11 @@ async function renderSeller(id) {
 }
 
 /* ═══════════════════════════════════════
-   MESSAGES VIEW
+   MESSAGES
 ═══════════════════════════════════════ */
 function renderMessages() {
   if (!currentUser) { openAuth(); return; }
-  const app = document.getElementById('app');
-  app.innerHTML = `
+  document.getElementById('app').innerHTML = `
     <div class="page-hero"><h1>Messages</h1><p>Your conversations with buyers and sellers</p></div>
     <div style="padding:16px">
       <div class="empty-state">
@@ -1739,7 +2165,7 @@ function renderMessages() {
 }
 
 /* ═══════════════════════════════════════
-   FOOTER HTML
+   FOOTER
 ═══════════════════════════════════════ */
 function renderFooter() {
   return `<footer class="site-footer">
@@ -1751,36 +2177,38 @@ function renderFooter() {
         <a onclick="navigate('/')">Home</a>
         <a onclick="navigate('/browse')">Browse Listings</a>
         <a onclick="navigate('/gigs')">Browse Gigs</a>
+        <a onclick="navigate('/resources')">Resources</a>
+        <a onclick="navigate('/needs')">I Need Board</a>
+      </div>
+      <div class="fcol">
+        <h4>Sell & Partner</h4>
         <a onclick="requireAuth(()=>navigate('/post'))">Post a Listing</a>
+        <a onclick="requireAuth(()=>navigate('/post?type=gig'))">Post a Gig</a>
+        <a onclick="requireAuth(()=>navigate('/post?type=resource'))">List a Resource</a>
+        <a onclick="requireAuth(()=>navigate('/dashboard'))">Dashboard</a>
+        <a onclick="requireAuth(()=>navigate('/orders'))">My Orders</a>
       </div>
       <div class="fcol">
         <h4>Account</h4>
-        <a onclick="requireAuth(()=>navigate('/dashboard'))">Dashboard</a>
-        <a onclick="requireAuth(()=>navigate('/orders'))">My Orders</a>
         <a onclick="openAuth()">Sign In</a>
+        <a onclick="requireAuth(()=>navigate('/dashboard'))">My Account</a>
         <a href="https://keromisec9-prog.github.io/duukalist-contactpage/" target="_blank">Contact Us</a>
       </div>
       <div class="fcol">
         <h4>Legal</h4>
         <a href="https://keromisec9-prog.github.io/duukalist-privacy-policy/" target="_blank">Privacy Policy</a>
         <a href="https://keromisec9-prog.github.io/Duukalist-termsandconeitions/" target="_blank">Terms of Service</a>
-        <a href="https://keromisec9-prog.github.io/duukarefundpolicy/" target="_blank">Refund Policy</a>
         <a href="https://keromisec9-prog.github.io/DuukaList-SellerPolicy/" target="_blank">Seller Policy</a>
-        <a href="https://keromisec9-prog.github.io/DuukaList-additional-legal-policies/" target="_blank">More Policies</a>
-      </div>
-      <div class="fcol">
-        <h4>Company</h4>
-        <a href="https://keromisec9-prog.github.io/DuukaList-buyer-protection-disclaimer-/" target="_blank">Buyer Protection</a>
-        <a href="https://keromisec9-prog.github.io/DuukaList-additional-legal-policies/" target="_blank">DMCA / IP</a>
-        <a href="https://keromisec9-prog.github.io/duukalist-contactpage/" target="_blank">Help & Support</a>
+        <a href="https://keromisec9-prog.github.io/duukarefundpolicy/" target="_blank">Refund Policy</a>
       </div>
     </div>
     <div class="footer-bottom">
       <div>© 2025 DuukaList+. All rights reserved. Platform only — not a party to any transaction.</div>
       <div class="footer-badges">
-        <span class="fbadge">Platform Only</span>
-        <span class="fbadge">No Financial Storage</span>
+        <span class="fbadge">PesaPal Payments</span>
+        <span class="fbadge">Bank of Uganda Regulated</span>
         <span class="fbadge">Free to Post</span>
+        <span class="fbadge">Pan-African</span>
       </div>
     </div>
   </footer>`;
@@ -1789,7 +2217,6 @@ function renderFooter() {
 /* ═══════════════════════════════════════
    INIT
 ═══════════════════════════════════════ */
-// Called by Google when gsi/client script is fully loaded
 window.onGoogleLibraryLoad = function() {
   google.accounts.id.initialize({
     client_id: GOOGLE_CLIENT_ID,
@@ -1798,14 +2225,17 @@ window.onGoogleLibraryLoad = function() {
     cancel_on_tap_outside: true,
     context: 'signin'
   });
-  if (!getToken()) {
-    setTimeout(() => google.accounts.id.prompt(), 1200);
-  }
 };
 
 document.addEventListener('DOMContentLoaded', () => {
   checkAuth();
   handleRoute();
+  // Google One Tap — show after short delay so page renders first
+  setTimeout(() => {
+    if (!getToken() && typeof google !== 'undefined' && google.accounts?.id) {
+      google.accounts.id.prompt();
+    }
+  }, 1500);
 });
 </script>
 </body>
