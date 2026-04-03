@@ -621,7 +621,7 @@ input,select,textarea{font-family:var(--fb)}
         <div class="spinner"></div>
         <p>Preparing payment…</p>
       </div>
-      <iframe class="pay-iframe" id="payIframe" src="" allow="payment" onload="onIframeLoad()"></iframe>
+      <iframe class="pay-iframe" id="payIframe" src="" allow="payment"></iframe>
     </div>
   </div>
 </div>
@@ -1980,13 +1980,19 @@ async function processPayment(itemId, type, amount, currency) {
       body: JSON.stringify(payload)
     });
 
-    const d = await res.json();
-    if (!res.ok || !d.redirect_url) throw new Error(d.error || `HTTP ${res.status}`);
+    let d;
+    try { d = await res.json(); } catch(e) { throw new Error('Server returned invalid response'); }
 
-    // Open PesaPal in in-app bottom sheet WebView
-    openPaySheet(d.redirect_url, description, amount, currency);
+    if (!res.ok) throw new Error(d?.error || d?.message || `Server error (${res.status})`);
 
+    const payUrl = d.redirect_url || d.payment_url || d.url || d.paymentUrl;
+    if (!payUrl) throw new Error('No payment URL returned from server');
+
+    // Reset button before opening sheet
     if (btn) { btn.textContent = `Pay ${fmtPrice(amount, currency)} →`; btn.disabled = false; }
+
+    // Open PesaPal in in-app bottom sheet — falls back gracefully if X-Frame-Options blocks it
+    openPaySheet(payUrl, description, amount, currency);
 
   } catch (err) {
     showToast('Payment failed: ' + err.message, 4000);
@@ -1994,43 +2000,103 @@ async function processPayment(itemId, type, amount, currency) {
   }
 }
 
+// Store current pay URL for fallback
+let _currentPayUrl = '';
+
 function openPaySheet(url, title, amount, currency) {
-  const overlay  = document.getElementById('payOverlay');
-  const iframe   = document.getElementById('payIframe');
-  const loading  = document.getElementById('payLoading');
+  const overlay    = document.getElementById('payOverlay');
+  const iframe     = document.getElementById('payIframe');
+  const loading    = document.getElementById('payLoading');
   const sheetTitle = document.getElementById('paySheetTitle');
 
+  _currentPayUrl = url;
+
   // Set title
-  const amtStr = fmtPrice(amount, currency);
-  sheetTitle.textContent = `${(title||'Payment').toUpperCase()} — ${amtStr}`;
+  sheetTitle.textContent = `${(title||'Payment').toUpperCase()} — ${fmtPrice(amount, currency)}`;
 
-  // Reset iframe
+  // Reset state
   loading.style.display = 'flex';
+  loading.innerHTML = `<div class="spinner"></div><p>Opening secure payment…</p>`;
   iframe.classList.remove('loaded');
-  iframe.src = url;
+  iframe.src = '';
 
-  // Open sheet
+  // Open sheet first so user sees it immediately
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
-}
 
-function closePaySheet() {
-  const overlay = document.getElementById('payOverlay');
-  const iframe  = document.getElementById('payIframe');
-  overlay.classList.remove('open');
-  document.body.style.overflow = '';
-  // Clear iframe src to stop any pending requests
-  setTimeout(() => { iframe.src = ''; }, 300);
-  // Navigate to orders so user can check payment status
-  showToast('Check My Orders for payment status', 3000);
+  // Small delay so sheet animation plays before iframe load starts
+  setTimeout(() => {
+    // Attach load listener via JS (fixes the onIframeLoad timing bug)
+    iframe.onload = onIframeLoad;
+
+    // Catch X-Frame-Options / CSP block — fires as error on some browsers
+    iframe.onerror = () => iframeBlocked(url);
+
+    iframe.src = url;
+
+    // Safety timeout: if iframe hasn't shown content after 8s,
+    // assume PesaPal blocked it and show the fallback button
+    window._iframeTimeout = setTimeout(() => {
+      const isLoaded = iframe.classList.contains('loaded');
+      if (!isLoaded) iframeBlocked(url);
+    }, 8000);
+  }, 320);
 }
 
 function onIframeLoad() {
   const loading = document.getElementById('payLoading');
   const iframe  = document.getElementById('payIframe');
-  // Hide spinner, show iframe content
+  clearTimeout(window._iframeTimeout);
+
+  // Try to detect if PesaPal blocked the iframe by checking
+  // if the iframe contentDocument is accessible (same-origin) or null (blocked)
+  try {
+    // If cross-origin and loaded fine, contentDocument access throws — that's OK, it means it loaded
+    const doc = iframe.contentDocument;
+    // If doc is accessible and empty/about:blank, it was blocked silently
+    if (doc && (doc.URL === 'about:blank' || doc.body?.innerHTML?.trim() === '')) {
+      iframeBlocked(_currentPayUrl);
+      return;
+    }
+  } catch(e) {
+    // Cross-origin exception = iframe loaded successfully with PesaPal content ✓
+  }
+
   loading.style.display = 'none';
   iframe.classList.add('loaded');
+}
+
+function iframeBlocked(url) {
+  // PesaPal sent X-Frame-Options: deny/sameorigin — show a clean fallback
+  const loading = document.getElementById('payLoading');
+  clearTimeout(window._iframeTimeout);
+  loading.innerHTML = `
+    <div style="text-align:center;padding:24px 20px">
+      <div style="font-size:48px;margin-bottom:16px">🔒</div>
+      <div style="font-family:var(--fd);font-weight:700;font-size:20px;color:#fff;margin-bottom:8px">Secure Payment Ready</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:24px;line-height:1.6">PesaPal requires opening in your browser for security. Tap below — you'll be returned to Duuka after payment.</div>
+      <button onclick="window.open('${url}','_blank');closePaySheet();" style="background:var(--orange);color:#fff;font-weight:700;font-size:16px;padding:14px 32px;border-radius:100px;border:none;cursor:pointer;font-family:var(--fb);box-shadow:0 8px 32px rgba(255,106,0,.35);width:100%;max-width:280px">
+        Open Secure Payment →
+      </button>
+      <div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:14px">Secured by PesaPal · Bank of Uganda regulated</div>
+    </div>`;
+  loading.style.display = 'flex';
+}
+
+function closePaySheet() {
+  const overlay = document.getElementById('payOverlay');
+  const iframe  = document.getElementById('payIframe');
+  clearTimeout(window._iframeTimeout);
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+  // Clear iframe after animation
+  setTimeout(() => {
+    iframe.src = '';
+    iframe.onload = null;
+    iframe.onerror = null;
+    iframe.classList.remove('loaded');
+  }, 350);
+  showToast('Check My Orders for payment status', 3000);
 }
 
 /* ═══════════════════════════════════════
