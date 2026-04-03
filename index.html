@@ -781,19 +781,19 @@ function handleRoute() {
    HELPERS & CONSTANTS
 ═══════════════════════════════════════ */
 const CAT_META = {
-  'phones-tablets':     { icon:'📱', bg:'#eff6ff', color:'#3b82f6' },
-  'electronics':        { icon:'💻', bg:'#f0fdf4', color:'#16a34a' },
-  'vehicles':           { icon:'🚗', bg:'#fffbeb', color:'#f59e0b' },
-  'property':           { icon:'🏠', bg:'#ecfdf5', color:'#10b981' },
-  'home-furniture':     { icon:'🛋️', bg:'#f5f3ff', color:'#8b5cf6' },
-  'fashion':            { icon:'👗', bg:'#fdf2f8', color:'#ec4899' },
-  'beauty':             { icon:'💄', bg:'#fdf2f8', color:'#db2777' },
-  'babies-kids':        { icon:'👶', bg:'#fff7ed', color:'#f97316' },
-  'food-agriculture':   { icon:'🌾', bg:'#f7fee7', color:'#65a30d' },
-  'repair-construction':{ icon:'🔧', bg:'#fff7ed', color:'#ea580c' },
-  'commercial':         { icon:'⚙️', bg:'#f1f5f9', color:'#64748b' },
-  'gigs-services':      { icon:'🎯', bg:'#eef3ff', color:'#1445A8' },
-  'resources':          { icon:'🏗️', bg:'#f5f3ff', color:'#7c3aed' },
+  'phones-tablets':     { id:1,  icon:'📱', bg:'#eff6ff', color:'#3b82f6' },
+  'electronics':        { id:2,  icon:'💻', bg:'#f0fdf4', color:'#16a34a' },
+  'vehicles':           { id:3,  icon:'🚗', bg:'#fffbeb', color:'#f59e0b' },
+  'property':           { id:4,  icon:'🏠', bg:'#ecfdf5', color:'#10b981' },
+  'home-furniture':     { id:5,  icon:'🛋️', bg:'#f5f3ff', color:'#8b5cf6' },
+  'fashion':            { id:6,  icon:'👗', bg:'#fdf2f8', color:'#ec4899' },
+  'beauty':             { id:7,  icon:'💄', bg:'#fdf2f8', color:'#db2777' },
+  'babies-kids':        { id:8,  icon:'👶', bg:'#fff7ed', color:'#f97316' },
+  'food-agriculture':   { id:9,  icon:'🌾', bg:'#f7fee7', color:'#65a30d' },
+  'repair-construction':{ id:10, icon:'🔧', bg:'#fff7ed', color:'#ea580c' },
+  'commercial':         { id:11, icon:'⚙️', bg:'#f1f5f9', color:'#64748b' },
+  'gigs-services':      { id:12, icon:'🎯', bg:'#eef3ff', color:'#1445A8' },
+  'resources':          { id:13, icon:'🏗️', bg:'#f5f3ff', color:'#7c3aed' },
 };
 
 const RESOURCE_TYPES = ['Land & Space', 'Tools & Equipment', 'Capital / Investment', 'Transport / Vehicles', 'Raw Materials', 'Workshop / Studio', 'Storage Space', 'Other'];
@@ -1649,13 +1649,13 @@ function renderPost(_, params = {}) {
       </div>
 
       <div class="form-section">
-        <div class="form-section-title">📸 Photos (optional)</div>
-        <label class="photo-upload" onclick="document.getElementById('fPhotos').click()">
-          <input type="file" id="fPhotos" accept="image/*" multiple style="display:none" onchange="handlePhotos(this)">
+        <div class="form-section-title">📸 Photos</div>
+        <input type="file" id="fPhotos" accept="image/*" multiple style="display:none" onchange="handlePhotos(this)">
+        <div class="photo-upload" onclick="document.getElementById('fPhotos').click()">
           <div class="photo-upload-icon">📷</div>
           <p>Tap to add photos</p>
           <small>Up to 5 photos · JPG or PNG</small>
-        </label>
+        </div>
         <div class="photo-previews" id="photoPreviews"></div>
       </div>
 
@@ -1687,7 +1687,7 @@ function renderPost(_, params = {}) {
 
       <div style="padding-bottom:24px">
         <button class="btn btn-orange btn-full btn-lg" id="submitBtn" onclick="submitListing()">🚀 Post Listing</button>
-        <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--muted)">By posting you agree to our <a href="#" style="color:var(--orange)">Seller Policy</a></div>
+        <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--muted)">By posting you agree to our <a href="https://keromisec9-prog.github.io/DuukaList-SellerPolicy/" target="_blank" style="color:var(--orange)">Seller Policy</a></div>
       </div>
     </div>`;
 
@@ -1764,8 +1764,13 @@ async function submitListing() {
   const category = document.getElementById('fCat')?.value;
   const description = document.getElementById('fDesc')?.value.trim();
   const location = document.getElementById('fLocation')?.value;
+  const photos = postPhotos.filter(Boolean);
   if (!title || !category || !description || !location) {
     showToast('Please fill in all required fields');
+    return;
+  }
+  if (!photos.length) {
+    showToast('Please add at least one photo');
     return;
   }
 
@@ -1781,7 +1786,7 @@ async function submitListing() {
     type: postType,
     title,
     category,
-    category_id: category,
+    category_id: CAT_META[category]?.id || 1,
     category_slug: category,
     description,
     location: fullLocation,
