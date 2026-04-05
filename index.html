@@ -1725,31 +1725,22 @@ window.selectBoost = (tier) => {
   });
 };
 
+// Store original File objects for direct upload to B2
+let postPhotoFiles = [];
+
 window.handlePhotos = (input) => {
   const previews = document.getElementById('photoPreviews');
   const files = Array.from(input.files).slice(0, 5);
   postPhotos = [];
+  postPhotoFiles = [];
   previews.innerHTML = '';
   files.forEach((f, i) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      // Compress image before storing
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX = 800;
-        let w = img.width, h = img.height;
-        if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
-        if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
-        canvas.width = w; canvas.height = h;
-        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        const compressed = canvas.toDataURL('image/jpeg', 0.7);
-        postPhotos[i] = compressed;
-        previews.innerHTML += `<div class="photo-preview"><img src="${compressed}" alt="photo ${i+1}"><div class="photo-remove" onclick="removePhoto(${i})">✕</div></div>`;
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(f);
+    // Store original file for upload
+    postPhotoFiles[i] = f;
+    // Show preview using object URL (no quality loss for preview)
+    const previewUrl = URL.createObjectURL(f);
+    postPhotos[i] = previewUrl;
+    previews.innerHTML += `<div class="photo-preview"><img src="${previewUrl}" alt="photo ${i+1}"><div class="photo-remove" onclick="removePhoto(${i})">✕</div></div>`;
   });
 };
 
@@ -1775,8 +1766,34 @@ async function submitListing() {
   }
 
   const btn = document.getElementById('submitBtn');
-  btn.textContent = 'Posting…';
+  btn.textContent = 'Uploading photos…';
   btn.disabled = true;
+
+  // ── Upload photos to B2 via Worker ──────────────────────────
+  let imageUrls = [];
+  try {
+    const formData = new FormData();
+    const filesToUpload = postPhotoFiles.filter(Boolean);
+    for (let i = 0; i < filesToUpload.length; i++) {
+      formData.append('file', filesToUpload[i], filesToUpload[i].name || `photo_${i}.jpg`);
+    }
+    const uploadRes = await fetch(`${API}/upload`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${getToken()}` },
+      body: formData,
+    });
+    if (!uploadRes.ok) throw new Error(`Upload failed: ${uploadRes.status}`);
+    const uploadData = await uploadRes.json();
+    imageUrls = uploadData.urls || [];
+    if (!imageUrls.length) throw new Error('No image URLs returned');
+  } catch (uploadErr) {
+    showToast('Photo upload failed: ' + uploadErr.message);
+    btn.textContent = '🚀 Post Listing';
+    btn.disabled = false;
+    return;
+  }
+
+  btn.textContent = 'Posting…';
 
   const phone = document.getElementById('fPhone')?.value.trim();
   const area = document.getElementById('fArea')?.value.trim();
@@ -1792,7 +1809,7 @@ async function submitListing() {
     location: fullLocation,
     whatsapp_number: phone ? '256' + phone.replace(/^0/, '') : null,
     boost_tier: selectedBoost,
-    images: postPhotos.filter(Boolean),
+    images: imageUrls,
   };
 
   if (postType === 'product' || postType === 'need') {
