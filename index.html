@@ -1851,7 +1851,7 @@ async function submitListing() {
       setTimeout(() => navigate(postType === 'gig' ? '/gigs' : '/browse'), 800);
     }
   } catch (err) {
-    showToast('Could not post. Please try again.');
+    showToast('Error: ' + err.message, 5000);
     btn.textContent = '🚀 Post Listing';
     btn.disabled = false;
   }
