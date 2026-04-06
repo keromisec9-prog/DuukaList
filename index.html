@@ -588,6 +588,31 @@ input,select,textarea{font-family:var(--fb)}
   </div>
 </div>
 
+<!-- BOOST SHEET -->
+<div id="boostOverlay" style="position:fixed;inset:0;background:rgba(11,46,110,.7);backdrop-filter:blur(6px);z-index:1100;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s">
+  <div id="boostSheet" style="background:var(--white);border-radius:var(--rxl) var(--rxl) 0 0;padding:8px 24px 40px;width:100%;max-width:440px;transform:translateY(100%);transition:transform .3s cubic-bezier(.34,1.56,.64,1)">
+    <div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 20px"></div>
+    <div style="font-family:var(--fd);font-weight:900;font-size:20px;color:var(--ink);margin-bottom:4px">⭐ Boost Listing</div>
+    <div id="boostListingTitle" style="font-size:13px;color:var(--muted);margin-bottom:20px"></div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
+      <div style="border:2px solid var(--border);border-radius:var(--rm);padding:14px 16px;cursor:pointer;transition:all .15s" class="bopt" data-tier="standard" data-price="5000" onclick="selectBoostTier(this)">
+        <div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:700;font-size:14px">⬆️ Standard</div><div style="font-size:12px;color:var(--muted)">7 days · More visibility</div></div><div style="font-family:var(--fd);font-weight:700;font-size:15px;color:var(--orange)">UGX 5,000</div></div>
+      </div>
+      <div style="border:2px solid var(--border);border-radius:var(--rm);padding:14px 16px;cursor:pointer;transition:all .15s" class="bopt" data-tier="top" data-price="15000" onclick="selectBoostTier(this)">
+        <div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:700;font-size:14px">🔝 TOP Badge</div><div style="font-size:12px;color:var(--muted)">30 days · TOP badge + priority search</div></div><div style="font-family:var(--fd);font-weight:700;font-size:15px;color:var(--orange)">UGX 15,000</div></div>
+      </div>
+      <div style="border:2px solid var(--border);border-radius:var(--rm);padding:14px 16px;cursor:pointer;transition:all .15s" class="bopt" data-tier="vip" data-price="30000" onclick="selectBoostTier(this)">
+        <div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:700;font-size:14px">👑 VIP TOP</div><div style="font-size:12px;color:var(--muted)">30 days · VIP badge + category top</div></div><div style="font-family:var(--fd);font-weight:700;font-size:15px;color:var(--orange)">UGX 30,000</div></div>
+      </div>
+      <div style="border:2px solid var(--border);border-radius:var(--rm);padding:14px 16px;cursor:pointer;transition:all .15s" class="bopt" data-tier="diamond" data-price="50000" onclick="selectBoostTier(this)">
+        <div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:700;font-size:14px">💎 Diamond</div><div style="font-size:12px;color:var(--muted)">30 days · Homepage slot + Diamond badge</div></div><div style="font-family:var(--fd);font-weight:700;font-size:15px;color:var(--orange)">UGX 50,000</div></div>
+      </div>
+    </div>
+    <button id="boostPayBtn" class="btn btn-orange btn-full btn-lg" disabled style="opacity:.5;margin-bottom:10px" onclick="payForBoost()">Select a tier to continue</button>
+    <button class="btn btn-outline btn-full" onclick="closeBoostSheet()">Cancel</button>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -743,6 +768,87 @@ async function deleteListing(id, title) {
   } catch(e) {
     showToast('Could not delete listing');
   }
+}
+
+// ── Boost Sheet ──────────────────────────────────────────────
+let _boostId = null, _boostTierSel = null, _boostPriceSel = 0;
+
+function openBoostSheet(id, title) {
+  _boostId = id; _boostTierSel = null; _boostPriceSel = 0;
+  document.getElementById('boostListingTitle').textContent = title;
+  document.querySelectorAll('.bopt').forEach(el => el.style.borderColor = 'var(--border)');
+  const btn = document.getElementById('boostPayBtn');
+  btn.textContent = 'Select a tier to continue';
+  btn.disabled = true; btn.style.opacity = '.5';
+  const ov = document.getElementById('boostOverlay');
+  const sh = document.getElementById('boostSheet');
+  ov.style.opacity = '1'; ov.style.pointerEvents = 'all';
+  sh.style.transform = 'translateY(0)';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeBoostSheet() {
+  const ov = document.getElementById('boostOverlay');
+  const sh = document.getElementById('boostSheet');
+  ov.style.opacity = '0'; ov.style.pointerEvents = 'none';
+  sh.style.transform = 'translateY(100%)';
+  document.body.style.overflow = '';
+}
+
+function selectBoostTier(el) {
+  document.querySelectorAll('.bopt').forEach(b => b.style.cssText = b.style.cssText.replace(/border-color:[^;]+/,'border-color:var(--border)'));
+  el.style.borderColor = 'var(--orange)';
+  el.style.background = 'var(--orange-light)';
+  document.querySelectorAll('.bopt').forEach(b => { if(b !== el) b.style.background = ''; });
+  _boostTierSel = el.dataset.tier;
+  _boostPriceSel = parseInt(el.dataset.price);
+  const btn = document.getElementById('boostPayBtn');
+  btn.textContent = 'Pay ' + fmtPrice(_boostPriceSel, 'UGX') + ' →';
+  btn.disabled = false; btn.style.opacity = '1';
+}
+
+async function payForBoost() {
+  if (!_boostId || !_boostTierSel) return;
+  closeBoostSheet();
+  showToast('Preparing payment…');
+  try {
+    const orderId = 'boost_' + _boostId + '_' + Date.now();
+    const res = await fetch(PAY_API + '/payments/initiate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+      body: JSON.stringify({
+        order_id: orderId,
+        amount: _boostPriceSel,
+        currency: 'UGX',
+        description: 'Boost listing (' + _boostTierSel + ')',
+        buyer_name: currentUser.name || 'Seller',
+        buyer_email: currentUser.email,
+        buyer_phone: currentUser.phone || '',
+      }),
+    });
+    const d = await res.json();
+    if (!d.redirect_url) throw new Error(d.error || 'No payment URL');
+    localStorage.setItem('pending_boost', JSON.stringify({
+      listing_id: _boostId, tier: _boostTierSel,
+      order_id: orderId, tracking_id: d.order_tracking_id,
+    }));
+    window.location.href = d.redirect_url;
+  } catch(e) { showToast('Payment error: ' + e.message, 4000); }
+}
+
+async function checkPendingBoost() {
+  const raw = localStorage.getItem('pending_boost');
+  if (!raw || !currentUser) return;
+  const boost = JSON.parse(raw);
+  localStorage.removeItem('pending_boost');
+  try {
+    const res = await fetch(API + '/listings/' + boost.listing_id + '/boost', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+      body: JSON.stringify({ tier: boost.tier, payment_ref: boost.tracking_id }),
+    });
+    if (res.ok) showToast('Listing boosted! ⭐', 4000);
+  } catch {}
 }
 
 function logout() {
@@ -2181,6 +2287,7 @@ async function renderDashboard() {
               <button onclick="editListing('${l.id}')" style="font-size:11px;font-weight:700;padding:5px 10px;border-radius:100px;border:1.5px solid var(--border);background:var(--white);color:var(--ink2);cursor:pointer;font-family:var(--fb)">✏️ Edit</button>
               <button onclick="toggleListingStatus('${l.id}','${l.status}')" style="font-size:11px;font-weight:700;padding:5px 10px;border-radius:100px;border:1.5px solid ${l.status==='active'?'var(--border)':'var(--green)'};background:var(--white);color:${l.status==='active'?'var(--muted)':'var(--green)'};cursor:pointer;font-family:var(--fb)">${l.status==='active'?'⏸ Deactivate':'▶ Activate'}</button>
               <button onclick="deleteListing('${l.id}','${l.title}')" style="font-size:11px;font-weight:700;padding:5px 10px;border-radius:100px;border:1.5px solid rgba(229,62,62,.3);background:var(--white);color:var(--red);cursor:pointer;font-family:var(--fb)">🗑 Delete</button>
+              <button onclick="openBoostSheet('${l.id}','${l.title}')" style="font-size:11px;font-weight:700;padding:5px 10px;border-radius:100px;border:1.5px solid rgba(255,106,0,.4);background:var(--orange-light);color:var(--orange);cursor:pointer;font-family:var(--fb)">⭐ Boost</button>
             </div>
           </div>
         </div>`;
@@ -2381,7 +2488,7 @@ window.onGoogleLibraryLoad = function() {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-  checkAuth();
+  checkAuth().then(() => checkPendingBoost());
   handleRoute();
   // Google One Tap — show after short delay so page renders first
   setTimeout(() => {
