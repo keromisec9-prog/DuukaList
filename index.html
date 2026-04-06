@@ -473,11 +473,6 @@ input,select,textarea{font-family:var(--fb)}
 .auth-terms{font-size:11px;color:var(--muted2);text-align:center;margin-top:14px;line-height:1.6}
 .auth-terms a{color:var(--orange);font-weight:600}
 
-/* ═══════════════════════ BOOST SHEET ═══════════════════════ */
-.boost-tier-opt{border:2px solid var(--border);border-radius:var(--rm);padding:14px 16px;cursor:pointer;transition:all .15s}
-.boost-tier-opt:hover{border-color:var(--orange);background:var(--orange-light)}
-.boost-tier-opt.selected{border-color:var(--orange);background:var(--orange-light)}
-
 /* ═══════════════════════ TOAST ═══════════════════════ */
 .toast{position:fixed;bottom:calc(var(--bnav) + 12px);left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 20px;border-radius:100px;font-size:13px;font-weight:600;white-space:nowrap;z-index:2000;opacity:0;transition:all .25s;pointer-events:none}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -596,43 +591,6 @@ input,select,textarea{font-family:var(--fb)}
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
-<!-- BOOST SHEET -->
-<div id="boostOverlay" style="position:fixed;inset:0;background:rgba(11,46,110,.7);backdrop-filter:blur(6px);z-index:1100;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s">
-  <div id="boostSheet" style="background:var(--white);border-radius:var(--rxl) var(--rxl) 0 0;padding:8px 24px 40px;width:100%;max-width:440px;transform:translateY(100%);transition:transform .3s cubic-bezier(.34,1.56,.64,1)">
-    <div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 20px"></div>
-    <div style="font-family:var(--fd);font-weight:900;font-size:20px;color:var(--ink);margin-bottom:4px">⭐ Boost Listing</div>
-    <div id="boostListingTitle" style="font-size:13px;color:var(--muted);margin-bottom:20px"></div>
-    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px" id="boostTierList">
-      <div class="boost-tier-opt" onclick="selectBoostTier('standard')" data-tier="standard" data-price="5000">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div><div style="font-weight:700;font-size:15px;color:var(--ink)">⬆️ Standard</div><div style="font-size:12px;color:var(--muted)">7 days · More visibility</div></div>
-          <div style="font-family:var(--fd);font-weight:700;font-size:16px;color:var(--orange)">UGX 5,000</div>
-        </div>
-      </div>
-      <div class="boost-tier-opt" onclick="selectBoostTier('top')" data-tier="top" data-price="15000">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div><div style="font-weight:700;font-size:15px;color:var(--ink)">🔝 TOP Badge</div><div style="font-size:12px;color:var(--muted)">30 days · TOP badge + priority search</div></div>
-          <div style="font-family:var(--fd);font-weight:700;font-size:16px;color:var(--orange)">UGX 15,000</div>
-        </div>
-      </div>
-      <div class="boost-tier-opt" onclick="selectBoostTier('vip')" data-tier="vip" data-price="30000">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div><div style="font-weight:700;font-size:15px;color:var(--ink)">👑 VIP TOP</div><div style="font-size:12px;color:var(--muted)">30 days · VIP badge + category top</div></div>
-          <div style="font-family:var(--fd);font-weight:700;font-size:16px;color:var(--orange)">UGX 30,000</div>
-        </div>
-      </div>
-      <div class="boost-tier-opt" onclick="selectBoostTier('diamond')" data-tier="diamond" data-price="50000">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div><div style="font-weight:700;font-size:15px;color:var(--ink)">💎 Diamond</div><div style="font-size:12px;color:var(--muted)">30 days · Homepage slot + Diamond badge</div></div>
-          <div style="font-family:var(--fd);font-weight:700;font-size:16px;color:var(--orange)">UGX 50,000</div>
-        </div>
-      </div>
-    </div>
-    <button id="boostPayBtn" class="btn btn-orange btn-full btn-lg" disabled style="opacity:.5" onclick="payForBoost()">Select a tier to continue</button>
-    <button class="btn btn-outline btn-full" style="margin-top:10px" onclick="closeBoostSheet()">Cancel</button>
-  </div>
-</div>
-
 <!-- APP -->
 <main id="app"></main>
 
@@ -750,300 +708,40 @@ window.onGoogleLibraryLoad = function() {
   });
 };
 
-// ── Boost Sheet ─────────────────────────────────────────────
-let _boostListingId = null;
-let _boostTier = null;
-let _boostPrice = 0;
-
-function openBoostSheet(id, title) {
-  _boostListingId = id;
-  _boostTier = null;
-  _boostPrice = 0;
-  document.getElementById('boostListingTitle').textContent = title;
-  document.querySelectorAll('.boost-tier-opt').forEach(el => el.classList.remove('selected'));
-  const btn = document.getElementById('boostPayBtn');
-  btn.textContent = 'Select a tier to continue';
-  btn.disabled = true;
-  btn.style.opacity = '.5';
-  const overlay = document.getElementById('boostOverlay');
-  const sheet = document.getElementById('boostSheet');
-  overlay.style.opacity = '1';
-  overlay.style.pointerEvents = 'all';
-  sheet.style.transform = 'translateY(0)';
-  document.body.style.overflow = 'hidden';
-}
-
-function closeBoostSheet() {
-  const overlay = document.getElementById('boostOverlay');
-  const sheet = document.getElementById('boostSheet');
-  overlay.style.opacity = '0';
-  overlay.style.pointerEvents = 'none';
-  sheet.style.transform = 'translateY(100%)';
-  document.body.style.overflow = '';
-}
-
-function selectBoostTier(tier) {
-  _boostTier = tier;
-  document.querySelectorAll('.boost-tier-opt').forEach(el => {
-    el.classList.toggle('selected', el.dataset.tier === tier);
-    if (el.dataset.tier === tier) _boostPrice = parseInt(el.dataset.price);
-  });
-  const btn = document.getElementById('boostPayBtn');
-  btn.textContent = `Pay ${fmtPrice(_boostPrice, 'UGX')} →`;
-  btn.disabled = false;
-  btn.style.opacity = '1';
-}
-
-async function payForBoost() {
-  if (!_boostListingId || !_boostTier) return;
-  closeBoostSheet();
-
-  // Initiate PesaPal payment for boost
-  const btn = document.getElementById('boostPayBtn');
-  showToast('Preparing payment…');
-
-  try {
-    const orderId = 'boost_' + _boostListingId + '_' + Date.now();
-    const res = await fetch(`${PAY_API}/payments/initiate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-      body: JSON.stringify({
-        order_id: orderId,
-        amount: _boostPrice,
-        currency: 'UGX',
-        description: `Boost listing (${_boostTier})`,
-        buyer_name: currentUser.name || 'Seller',
-        buyer_email: currentUser.email,
-        buyer_phone: currentUser.phone || '',
-        meta: { listing_id: _boostListingId, boost_tier: _boostTier }
-      }),
-    });
-    const d = await res.json();
-    if (!d.redirect_url) throw new Error(d.error || 'No payment URL');
-
-    // Store pending boost info — apply after payment returns
-    localStorage.setItem('pending_boost', JSON.stringify({
-      listing_id: _boostListingId,
-      tier: _boostTier,
-      order_id: orderId,
-      tracking_id: d.order_tracking_id,
-    }));
-
-    // Redirect to PesaPal
-    window.location.href = d.redirect_url;
-
-  } catch(e) {
-    showToast('Payment error: ' + e.message, 4000);
-  }
-}
-
-// Apply boost after returning from PesaPal (called on page load)
-async function checkPendingBoost() {
-  const raw = localStorage.getItem('pending_boost');
-  if (!raw || !currentUser) return;
-  const boost = JSON.parse(raw);
-  localStorage.removeItem('pending_boost');
-
-  try {
-    const res = await fetch(`${API}/listings/${boost.listing_id}/boost`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-      body: JSON.stringify({ tier: boost.tier, payment_ref: boost.tracking_id }),
-    });
-    if (res.ok) showToast('Listing boosted! ⭐', 4000);
-  } catch(e) {}
-}
-
 // ── Listing Management ──────────────────────────────────────
-function editListing(id) { navigate('/edit/' + id); }
+function editListing(id) {
+  navigate('/edit/' + id);
+}
 
 async function toggleListingStatus(id, currentStatus) {
   const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+  const label = newStatus === 'active' ? 'activated' : 'deactivated';
   try {
     const res = await fetch(`${API}/listings/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({ status: newStatus }),
     });
-    if (!res.ok) throw new Error();
-    showToast(`Listing ${newStatus === 'active' ? 'activated' : 'deactivated'} ✓`);
+    if (!res.ok) throw new Error('Failed');
+    showToast(`Listing ${label} ✓`);
     renderDashboard();
-  } catch { showToast('Could not update listing'); }
+  } catch(e) {
+    showToast('Could not update listing status');
+  }
 }
 
-async function confirmDeleteListing(id, title) {
+async function deleteListing(id, title) {
   if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
   try {
     const res = await fetch(`${API}/listings/${id}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${getToken()}` },
     });
-    if (!res.ok) throw new Error();
+    if (!res.ok) throw new Error('Failed');
     showToast('Listing deleted ✓');
     renderDashboard();
-  } catch { showToast('Could not delete listing'); }
-}
-
-// ── Boost Sheet ──────────────────────────────────────────────
-let _boostListingId = null;
-let _boostTier = null;
-let _boostPrice = 0;
-
-function openBoostSheet(id, title) {
-  _boostListingId = id;
-  _boostTier = null;
-  _boostPrice = 0;
-  document.getElementById('boostListingTitle').textContent = title;
-  document.querySelectorAll('.boost-tier-opt').forEach(el => el.classList.remove('selected'));
-  const btn = document.getElementById('boostPayBtn');
-  btn.textContent = 'Select a tier to continue';
-  btn.disabled = true;
-  btn.style.opacity = '.5';
-  const overlay = document.getElementById('boostOverlay');
-  const sheet = document.getElementById('boostSheet');
-  overlay.style.opacity = '1';
-  overlay.style.pointerEvents = 'all';
-  sheet.style.transform = 'translateY(0)';
-  document.body.style.overflow = 'hidden';
-}
-
-function closeBoostSheet() {
-  const overlay = document.getElementById('boostOverlay');
-  const sheet = document.getElementById('boostSheet');
-  overlay.style.opacity = '0';
-  overlay.style.pointerEvents = 'none';
-  sheet.style.transform = 'translateY(100%)';
-  document.body.style.overflow = '';
-}
-
-function selectBoostTier(tier) {
-  _boostTier = tier;
-  document.querySelectorAll('.boost-tier-opt').forEach(el => {
-    el.classList.toggle('selected', el.dataset.tier === tier);
-    if (el.dataset.tier === tier) _boostPrice = parseInt(el.dataset.price);
-  });
-  const btn = document.getElementById('boostPayBtn');
-  btn.textContent = `Pay ${fmtPrice(_boostPrice, 'UGX')} →`;
-  btn.disabled = false;
-  btn.style.opacity = '1';
-}
-
-async function payForBoost() {
-  if (!_boostListingId || !_boostTier) return;
-  closeBoostSheet();
-  showToast('Preparing payment…');
-  try {
-    const orderId = 'boost_' + _boostListingId + '_' + Date.now();
-    const res = await fetch(`${PAY_API}/payments/initiate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-      body: JSON.stringify({
-        order_id: orderId,
-        amount: _boostPrice,
-        currency: 'UGX',
-        description: `Boost listing (${_boostTier})`,
-        buyer_name: currentUser.name || 'Seller',
-        buyer_email: currentUser.email,
-        buyer_phone: currentUser.phone || '',
-      }),
-    });
-    const d = await res.json();
-    if (!d.redirect_url) throw new Error(d.error || 'No payment URL');
-    localStorage.setItem('pending_boost', JSON.stringify({
-      listing_id: _boostListingId, tier: _boostTier,
-      order_id: orderId, tracking_id: d.order_tracking_id,
-    }));
-    window.location.href = d.redirect_url;
   } catch(e) {
-    showToast('Payment error: ' + e.message, 4000);
-  }
-}
-
-async function checkPendingBoost() {
-  const raw = localStorage.getItem('pending_boost');
-  if (!raw || !currentUser) return;
-  const boost = JSON.parse(raw);
-  localStorage.removeItem('pending_boost');
-  try {
-    const res = await fetch(`${API}/listings/${boost.listing_id}/boost`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-      body: JSON.stringify({ tier: boost.tier, payment_ref: boost.tracking_id }),
-    });
-    if (res.ok) showToast('Listing boosted! ⭐', 4000);
-  } catch {}
-}
-
-// ── Edit Listing Page ────────────────────────────────────────
-async function renderEditListing(id) {
-  if (!currentUser) { openAuth(); return; }
-  if (!id) { navigate('/dashboard'); return; }
-  const app = document.getElementById('app');
-  app.innerHTML = `<div style="padding:20px"><div class="spinner"></div></div>`;
-  try {
-    const res = await fetch(`${API}/listings/${id}`);
-    if (!res.ok) throw new Error();
-    const d = await res.json();
-    const l = d.listing || d;
-    app.innerHTML = `
-      <div onclick="history.back()" class="detail-back">← Back</div>
-      <div class="page-hero"><h1>Edit Listing</h1><p>Update your listing details</p></div>
-      <div class="post-form">
-        <div class="form-section">
-          <div class="form-section-title">📝 Details</div>
-          <div class="field"><label>Title <span>*</span></label><input type="text" id="eFTitle" value="${l.title||''}"></div>
-          <div class="field"><label>Description</label><textarea id="eFDesc">${l.description||''}</textarea></div>
-          <div class="field"><label>Price (UGX)</label><input type="number" id="eFPrice" value="${l.price||''}"></div>
-          <div class="field"><label>Location</label>
-            <select id="eFLocation">
-              ${['Kampala','Wakiso','Mukono','Entebbe','Jinja','Mbale','Mbarara','Gulu','Lira','Arua','Fort Portal','Masaka'].map(d=>`<option value="${d}" ${l.location?.includes(d)?'selected':''}>${d}</option>`).join('')}
-            </select>
-          </div>
-          <div class="field"><label>Status</label>
-            <select id="eFStatus">
-              <option value="active" ${l.status==='active'?'selected':''}>Active</option>
-              <option value="inactive" ${l.status==='inactive'?'selected':''}>Inactive</option>
-              <option value="sold" ${l.status==='sold'?'selected':''}>Sold</option>
-            </select>
-          </div>
-          <div class="field"><label>WhatsApp Number</label>
-            <div class="phone-input-row">
-              <div class="phone-country">🇺🇬 +256</div>
-              <input type="tel" id="eFPhone" value="${l.whatsapp_number?.replace(/^256/,'')||''}" placeholder="07XX XXX XXX">
-            </div>
-          </div>
-        </div>
-        <button class="btn btn-orange btn-full btn-lg" id="eSubmitBtn" onclick="saveEditListing('${id}')">💾 Save Changes</button>
-        <button class="btn btn-outline btn-full" style="margin-top:10px" onclick="history.back()">Cancel</button>
-      </div>`;
-  } catch {
-    app.innerHTML = `<div class="empty-state"><div class="empty-icon">❌</div><div class="empty-title">Listing not found</div><button class="btn btn-orange" onclick="navigate('/dashboard')">Dashboard</button></div>`;
-  }
-}
-
-async function saveEditListing(id) {
-  const btn = document.getElementById('eSubmitBtn');
-  btn.textContent = 'Saving…'; btn.disabled = true;
-  const phone = document.getElementById('eFPhone')?.value.trim();
-  try {
-    const res = await fetch(`${API}/listings/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-      body: JSON.stringify({
-        title: document.getElementById('eFTitle')?.value.trim(),
-        description: document.getElementById('eFDesc')?.value.trim(),
-        price: parseFloat(document.getElementById('eFPrice')?.value) || null,
-        location: document.getElementById('eFLocation')?.value,
-        status: document.getElementById('eFStatus')?.value,
-        whatsapp_number: phone ? '256' + phone.replace(/^0/,'') : null,
-      }),
-    });
-    if (!res.ok) throw new Error('Failed: ' + res.status);
-    showToast('Listing updated ✓');
-    setTimeout(() => navigate('/listing/' + id), 800);
-  } catch(e) {
-    showToast('Error: ' + e.message);
-    btn.textContent = '💾 Save Changes'; btn.disabled = false;
+    showToast('Could not delete listing');
   }
 }
 
@@ -2479,11 +2177,10 @@ async function renderDashboard() {
               <span class="status-pill ${l.status==='active'?'status-active':l.status==='sold'?'status-sold':'status-expired'}">${l.status||'active'}</span>
               ${l.boost_tier && l.boost_tier!=='none'?`<span class="boost-badge">⭐ Boosted</span>`:''}
             </div>
-            <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap" onclick="event.stopPropagation()">
+            <div style="display:flex;gap:6px;margin-top:8px" onclick="event.stopPropagation()">
               <button onclick="editListing('${l.id}')" style="font-size:11px;font-weight:700;padding:5px 10px;border-radius:100px;border:1.5px solid var(--border);background:var(--white);color:var(--ink2);cursor:pointer;font-family:var(--fb)">✏️ Edit</button>
               <button onclick="toggleListingStatus('${l.id}','${l.status}')" style="font-size:11px;font-weight:700;padding:5px 10px;border-radius:100px;border:1.5px solid ${l.status==='active'?'var(--border)':'var(--green)'};background:var(--white);color:${l.status==='active'?'var(--muted)':'var(--green)'};cursor:pointer;font-family:var(--fb)">${l.status==='active'?'⏸ Deactivate':'▶ Activate'}</button>
-              <button onclick="openBoostSheet('${l.id}','${l.title}')" style="font-size:11px;font-weight:700;padding:5px 10px;border-radius:100px;border:1.5px solid rgba(255,106,0,.4);background:var(--orange-light);color:var(--orange);cursor:pointer;font-family:var(--fb)">⭐ Boost</button>
-              <button onclick="confirmDeleteListing('${l.id}','${l.title}')" style="font-size:11px;font-weight:700;padding:5px 10px;border-radius:100px;border:1.5px solid rgba(229,62,62,.3);background:var(--white);color:var(--red);cursor:pointer;font-family:var(--fb)">🗑 Delete</button>
+              <button onclick="deleteListing('${l.id}','${l.title}')" style="font-size:11px;font-weight:700;padding:5px 10px;border-radius:100px;border:1.5px solid rgba(229,62,62,.3);background:var(--white);color:var(--red);cursor:pointer;font-family:var(--fb)">🗑 Delete</button>
             </div>
           </div>
         </div>`;
@@ -2550,6 +2247,79 @@ function renderMessages() {
 /* ═══════════════════════════════════════
    FOOTER
 ═══════════════════════════════════════ */
+async function renderEditListing(id) {
+  if (!currentUser) { openAuth(); return; }
+  if (!id) { navigate('/dashboard'); return; }
+  const app = document.getElementById('app');
+  app.innerHTML = `<div style="padding:20px"><div class="spinner"></div></div>`;
+  try {
+    const res = await fetch(`${API}/listings/${id}`);
+    if (!res.ok) throw new Error('Not found');
+    const d = await res.json();
+    const l = d.listing || d;
+
+    app.innerHTML = `
+      <div onclick="history.back()" class="detail-back">← Back</div>
+      <div class="page-hero"><h1>Edit Listing</h1><p>Update your listing details</p></div>
+      <div class="post-form">
+        <div class="form-section">
+          <div class="form-section-title">📝 Details</div>
+          <div class="field"><label>Title <span>*</span></label><input type="text" id="eFTitle" value="${l.title||''}"></div>
+          <div class="field"><label>Description</label><textarea id="eFDesc">${l.description||''}</textarea></div>
+          <div class="field"><label>Price (UGX)</label><input type="number" id="eFPrice" value="${l.price||''}"></div>
+          <div class="field"><label>Location</label>
+            <select id="eFLocation">
+              ${['Kampala','Wakiso','Mukono','Entebbe','Jinja','Mbale','Mbarara','Gulu','Lira','Arua','Fort Portal','Masaka'].map(d=>`<option value="${d}" ${l.location?.includes(d)?'selected':''}>${d}</option>`).join('')}
+            </select>
+          </div>
+          <div class="field"><label>Status</label>
+            <select id="eFStatus">
+              <option value="active" ${l.status==='active'?'selected':''}>Active</option>
+              <option value="inactive" ${l.status==='inactive'?'selected':''}>Inactive (hidden)</option>
+              <option value="sold" ${l.status==='sold'?'selected':''}>Sold</option>
+            </select>
+          </div>
+          <div class="field"><label>WhatsApp Number</label>
+            <div class="phone-input-row">
+              <div class="phone-country">🇺🇬 +256</div>
+              <input type="tel" id="eFPhone" value="${l.whatsapp_number?.replace(/^256/,'')||''}" placeholder="07XX XXX XXX">
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-orange btn-full btn-lg" id="eSubmitBtn" onclick="saveEditListing('${id}')">💾 Save Changes</button>
+        <button class="btn btn-outline btn-full" style="margin-top:10px" onclick="history.back()">Cancel</button>
+      </div>`;
+  } catch(e) {
+    app.innerHTML = `<div class="empty-state"><div class="empty-icon">❌</div><div class="empty-title">Listing not found</div><button class="btn btn-orange" onclick="navigate('/dashboard')">Back to Dashboard</button></div>`;
+  }
+}
+
+async function saveEditListing(id) {
+  const btn = document.getElementById('eSubmitBtn');
+  btn.textContent = 'Saving…'; btn.disabled = true;
+  const phone = document.getElementById('eFPhone')?.value.trim();
+  try {
+    const res = await fetch(`${API}/listings/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify({
+        title: document.getElementById('eFTitle')?.value.trim(),
+        description: document.getElementById('eFDesc')?.value.trim(),
+        price: parseFloat(document.getElementById('eFPrice')?.value) || null,
+        location: document.getElementById('eFLocation')?.value,
+        status: document.getElementById('eFStatus')?.value,
+        whatsapp_number: phone ? '256' + phone.replace(/^0/,'') : null,
+      }),
+    });
+    if (!res.ok) throw new Error('Failed: ' + res.status);
+    showToast('Listing updated ✓');
+    setTimeout(() => navigate('/listing/' + id), 800);
+  } catch(e) {
+    showToast('Error: ' + e.message);
+    btn.textContent = '💾 Save Changes'; btn.disabled = false;
+  }
+}
+
 function renderFooter() {
   return `<footer class="site-footer">
     <div class="footer-logo">DuukaList<em>+</em></div>
@@ -2611,7 +2381,7 @@ window.onGoogleLibraryLoad = function() {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-  checkAuth().then(() => checkPendingBoost());
+  checkAuth();
   handleRoute();
   // Google One Tap — show after short delay so page renders first
   setTimeout(() => {
