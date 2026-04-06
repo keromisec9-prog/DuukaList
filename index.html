@@ -708,6 +708,43 @@ window.onGoogleLibraryLoad = function() {
   });
 };
 
+// ── Listing Management ──────────────────────────────────────
+function editListing(id) {
+  navigate('/edit/' + id);
+}
+
+async function toggleListingStatus(id, currentStatus) {
+  const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+  const label = newStatus === 'active' ? 'activated' : 'deactivated';
+  try {
+    const res = await fetch(`${API}/listings/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify({ status: newStatus }),
+    });
+    if (!res.ok) throw new Error('Failed');
+    showToast(`Listing ${label} ✓`);
+    renderDashboard();
+  } catch(e) {
+    showToast('Could not update listing status');
+  }
+}
+
+async function deleteListing(id, title) {
+  if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
+  try {
+    const res = await fetch(`${API}/listings/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${getToken()}` },
+    });
+    if (!res.ok) throw new Error('Failed');
+    showToast('Listing deleted ✓');
+    renderDashboard();
+  } catch(e) {
+    showToast('Could not delete listing');
+  }
+}
+
 function logout() {
   clearToken();
   updateAuthUI(null);
@@ -743,6 +780,7 @@ const routes = {
   '/dashboard': renderDashboard,
   '/checkout': renderCheckout,
   '/messages': renderMessages,
+  '/edit': renderEditListing,
 };
 
 function parseRoute() {
@@ -1851,7 +1889,7 @@ async function submitListing() {
       setTimeout(() => navigate(postType === 'gig' ? '/gigs' : '/browse'), 800);
     }
   } catch (err) {
-    showToast('Error: ' + err.message, 5000);
+    showToast('Could not post. Please try again.');
     btn.textContent = '🚀 Post Listing';
     btn.disabled = false;
   }
@@ -2132,13 +2170,18 @@ async function renderDashboard() {
         const meta = CAT_META[l.category] || { icon:'📦', bg:'#f0f0f0' };
         return `<div class="dash-listing-row" onclick="navigate('/listing/${l.id}')">
           <div class="dash-listing-img" style="background:${meta.bg}">${l.images?.[0] ? `<img src="${l.images[0]}" alt="${l.title}">` : meta.icon}</div>
-          <div class="dash-listing-info">
+          <div class="dash-listing-info" style="min-width:0">
             <h4>${l.title}</h4>
             <p>${fmtPrice(l.price,'UGX')} · 📍 ${l.location||'Uganda'}</p>
-          </div>
-          <div class="dash-listing-actions">
-            <span class="status-pill ${l.status==='active'?'status-active':l.status==='sold'?'status-sold':'status-expired'}">${l.status||'active'}</span>
-            ${l.boost_tier && l.boost_tier!=='none'?`<span class="boost-badge">⭐</span>`:''}
+            <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+              <span class="status-pill ${l.status==='active'?'status-active':l.status==='sold'?'status-sold':'status-expired'}">${l.status||'active'}</span>
+              ${l.boost_tier && l.boost_tier!=='none'?`<span class="boost-badge">⭐ Boosted</span>`:''}
+            </div>
+            <div style="display:flex;gap:6px;margin-top:8px" onclick="event.stopPropagation()">
+              <button onclick="editListing('${l.id}')" style="font-size:11px;font-weight:700;padding:5px 10px;border-radius:100px;border:1.5px solid var(--border);background:var(--white);color:var(--ink2);cursor:pointer;font-family:var(--fb)">✏️ Edit</button>
+              <button onclick="toggleListingStatus('${l.id}','${l.status}')" style="font-size:11px;font-weight:700;padding:5px 10px;border-radius:100px;border:1.5px solid ${l.status==='active'?'var(--border)':'var(--green)'};background:var(--white);color:${l.status==='active'?'var(--muted)':'var(--green)'};cursor:pointer;font-family:var(--fb)">${l.status==='active'?'⏸ Deactivate':'▶ Activate'}</button>
+              <button onclick="deleteListing('${l.id}','${l.title}')" style="font-size:11px;font-weight:700;padding:5px 10px;border-radius:100px;border:1.5px solid rgba(229,62,62,.3);background:var(--white);color:var(--red);cursor:pointer;font-family:var(--fb)">🗑 Delete</button>
+            </div>
           </div>
         </div>`;
       }).join('');
@@ -2204,6 +2247,79 @@ function renderMessages() {
 /* ═══════════════════════════════════════
    FOOTER
 ═══════════════════════════════════════ */
+async function renderEditListing(id) {
+  if (!currentUser) { openAuth(); return; }
+  if (!id) { navigate('/dashboard'); return; }
+  const app = document.getElementById('app');
+  app.innerHTML = `<div style="padding:20px"><div class="spinner"></div></div>`;
+  try {
+    const res = await fetch(`${API}/listings/${id}`);
+    if (!res.ok) throw new Error('Not found');
+    const d = await res.json();
+    const l = d.listing || d;
+
+    app.innerHTML = `
+      <div onclick="history.back()" class="detail-back">← Back</div>
+      <div class="page-hero"><h1>Edit Listing</h1><p>Update your listing details</p></div>
+      <div class="post-form">
+        <div class="form-section">
+          <div class="form-section-title">📝 Details</div>
+          <div class="field"><label>Title <span>*</span></label><input type="text" id="eFTitle" value="${l.title||''}"></div>
+          <div class="field"><label>Description</label><textarea id="eFDesc">${l.description||''}</textarea></div>
+          <div class="field"><label>Price (UGX)</label><input type="number" id="eFPrice" value="${l.price||''}"></div>
+          <div class="field"><label>Location</label>
+            <select id="eFLocation">
+              ${['Kampala','Wakiso','Mukono','Entebbe','Jinja','Mbale','Mbarara','Gulu','Lira','Arua','Fort Portal','Masaka'].map(d=>`<option value="${d}" ${l.location?.includes(d)?'selected':''}>${d}</option>`).join('')}
+            </select>
+          </div>
+          <div class="field"><label>Status</label>
+            <select id="eFStatus">
+              <option value="active" ${l.status==='active'?'selected':''}>Active</option>
+              <option value="inactive" ${l.status==='inactive'?'selected':''}>Inactive (hidden)</option>
+              <option value="sold" ${l.status==='sold'?'selected':''}>Sold</option>
+            </select>
+          </div>
+          <div class="field"><label>WhatsApp Number</label>
+            <div class="phone-input-row">
+              <div class="phone-country">🇺🇬 +256</div>
+              <input type="tel" id="eFPhone" value="${l.whatsapp_number?.replace(/^256/,'')||''}" placeholder="07XX XXX XXX">
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-orange btn-full btn-lg" id="eSubmitBtn" onclick="saveEditListing('${id}')">💾 Save Changes</button>
+        <button class="btn btn-outline btn-full" style="margin-top:10px" onclick="history.back()">Cancel</button>
+      </div>`;
+  } catch(e) {
+    app.innerHTML = `<div class="empty-state"><div class="empty-icon">❌</div><div class="empty-title">Listing not found</div><button class="btn btn-orange" onclick="navigate('/dashboard')">Back to Dashboard</button></div>`;
+  }
+}
+
+async function saveEditListing(id) {
+  const btn = document.getElementById('eSubmitBtn');
+  btn.textContent = 'Saving…'; btn.disabled = true;
+  const phone = document.getElementById('eFPhone')?.value.trim();
+  try {
+    const res = await fetch(`${API}/listings/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify({
+        title: document.getElementById('eFTitle')?.value.trim(),
+        description: document.getElementById('eFDesc')?.value.trim(),
+        price: parseFloat(document.getElementById('eFPrice')?.value) || null,
+        location: document.getElementById('eFLocation')?.value,
+        status: document.getElementById('eFStatus')?.value,
+        whatsapp_number: phone ? '256' + phone.replace(/^0/,'') : null,
+      }),
+    });
+    if (!res.ok) throw new Error('Failed: ' + res.status);
+    showToast('Listing updated ✓');
+    setTimeout(() => navigate('/listing/' + id), 800);
+  } catch(e) {
+    showToast('Error: ' + e.message);
+    btn.textContent = '💾 Save Changes'; btn.disabled = false;
+  }
+}
+
 function renderFooter() {
   return `<footer class="site-footer">
     <div class="footer-logo">DuukaList<em>+</em></div>
