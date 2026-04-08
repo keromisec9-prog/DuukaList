@@ -475,6 +475,20 @@ input,select,textarea{font-family:var(--fb)}
 .prog-line{flex:1;height:2px;background:var(--border);margin-top:-11px}
 .prog-line.done{background:var(--green)}
 
+/* ═══════════════════════ STOREFRONT ═══════════════════════ */
+.store-banner{height:120px;display:flex;align-items:flex-end;padding:0 16px 16px;position:relative;overflow:hidden}
+.store-banner::before{content:'';position:absolute;inset:0;background:inherit;filter:brightness(.7)}
+.store-av{width:72px;height:72px;border-radius:var(--rm);background:linear-gradient(135deg,var(--orange),#ffaa00);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#fff;border:3px solid #fff;box-shadow:var(--shm);position:relative;z-index:1;flex-shrink:0}
+.store-identity{margin-left:12px;position:relative;z-index:1}
+.store-name{font-family:var(--fd);font-weight:900;font-size:20px;color:#fff;line-height:1.1;text-shadow:0 1px 4px rgba(0,0,0,.4)}
+.store-handle{font-size:12px;color:rgba(255,255,255,.75);font-weight:500}
+.store-info-row{display:flex;flex-wrap:wrap;gap:8px;padding:14px 16px;background:var(--white);border-bottom:1px solid var(--border)}
+.store-info-chip{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);font-weight:500}
+.store-desc{padding:14px 16px;font-size:14px;color:var(--ink2);line-height:1.6;background:var(--white);border-bottom:1px solid var(--border)}
+.store-actions{display:flex;gap:8px;padding:12px 16px;background:var(--white);border-bottom:1px solid var(--border)}
+/* Delivery badge on listing card */
+.delivery-badge{background:#e8faf2;color:var(--green);font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px;border:1px solid #bbf7d0}
+
 /* ═══════════════════════ SELLER PROFILE ═══════════════════════ */
 .seller-hero{background:linear-gradient(130deg,var(--blue),#1445A8);padding:28px 16px;text-align:center;color:#fff}
 .seller-hero-av{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--orange),#ffaa00);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#fff;margin:0 auto 12px;border:3px solid rgba(255,255,255,.3)}
@@ -1027,6 +1041,7 @@ const routes = {
   '/checkout': renderCheckout,
   '/messages': renderMessages,
   '/edit': renderEditListing,
+  '/setup-store': renderSetupStore,
 };
 
 function parseRoute() {
@@ -1132,6 +1147,7 @@ function listingCard(l) {
         <div class="lcard-meta">
           <span class="lcard-loc">📍 ${l.location||'Uganda'}</span>
           ${l.condition?`<span class="lcard-cond">${l.condition}</span>`:''}
+          ${l.delivery_available?`<span class="delivery-badge">🚚 Delivery</span>`:''}
         </div>
       </div>
     </article>`;
@@ -1557,6 +1573,8 @@ async function renderListing(id) {
           <div class="dmeta-item"><div class="dmeta-lbl">Condition</div><div class="dmeta-val">${listing.condition||'—'}</div></div>
           <div class="dmeta-item"><div class="dmeta-lbl">Location</div><div class="dmeta-val">📍 ${listing.location||'Uganda'}</div></div>
           <div class="dmeta-item"><div class="dmeta-lbl">Posted</div><div class="dmeta-val">${listing.created_at ? new Date(listing.created_at).toLocaleDateString() : '—'}</div></div>
+          ${listing.delivery_available ? `<div class="dmeta-item"><div class="dmeta-lbl">Delivery</div><div class="dmeta-val" style="color:var(--green)">✓ Available${listing.delivery_fee ? ' · UGX ' + Number(listing.delivery_fee).toLocaleString() : ' (Free)'}</div></div>` : ''}
+          ${listing.pickup_location ? `<div class="dmeta-item"><div class="dmeta-lbl">Pickup</div><div class="dmeta-val">📍 ${listing.pickup_location}</div></div>` : ''}
         </div>
         ${listing.description ? `<div class="detail-desc">${listing.description}</div>` : ''}
         ${listing.seller_id ? `
@@ -1957,6 +1975,22 @@ function renderPost(_, params = {}) {
         </div>
       </div>
 
+      <div class="form-section" id="deliverySection">
+          <div class="form-section-title">🚚 Delivery (optional)</div>
+          <div class="field">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:700;font-size:13px;color:var(--ink2)">
+              <input type="checkbox" id="fDelivery" style="width:18px;height:18px;accent-color:var(--orange)" onchange="toggleDeliveryFields(this)">
+              <span>Delivery available for this item</span>
+            </label>
+          </div>
+          <div id="deliveryFields" style="display:none">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div class="field"><label>Delivery Fee (UGX)</label><input type="number" id="fDeliveryFee" placeholder="0 = Free delivery"></div>
+              <div class="field"><label>Pickup Location</label><input type="text" id="fPickup" placeholder="e.g. Ntinda, Kampala"></div>
+            </div>
+          </div>
+      </div>
+
       <div class="form-section">
         <div class="form-section-title">📸 Photos</div>
         <input type="file" id="fPhotos" accept="image/*" multiple style="display:none" onchange="handlePhotos(this)">
@@ -2004,6 +2038,11 @@ function renderPost(_, params = {}) {
 }
 
 let selectedBoost = 'none';
+window.toggleDeliveryFields = (cb) => {
+  const fields = document.getElementById('deliveryFields');
+  if (fields) fields.style.display = cb.checked ? 'block' : 'none';
+};
+
 window.setPostType = (type) => {
   postType = type;
   ['product','gig','resource','need'].forEach(t => {
@@ -2118,6 +2157,9 @@ async function submitListing() {
     location: fullLocation,
     whatsapp_number: phone ? '256' + phone.replace(/^0/, '') : null,
     boost_tier: selectedBoost,
+    delivery_available: document.getElementById('fDelivery')?.checked || false,
+    delivery_fee: document.getElementById('fDeliveryFee')?.value ? parseInt(document.getElementById('fDeliveryFee').value) : null,
+    pickup_location: document.getElementById('fPickup')?.value.trim() || null,
     images: imageUrls,
   };
 
@@ -2402,6 +2444,8 @@ async function renderDashboard() {
       <div class="dash-section">
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
           <button class="btn btn-orange btn-sm" onclick="requireAuth(()=>navigate('/post'))">+ Post Listing</button>
+          <button class="btn btn-outline btn-sm" onclick="navigate('/seller/' + currentUser.id)">🏪 My Store</button>
+          <button class="btn btn-outline btn-sm" onclick="navigate('/setup-store')">⚙️ Edit Store</button>
           <button class="btn btn-outline btn-sm" onclick="navigate('/orders')">My Orders</button>
           <button class="btn btn-outline btn-sm" onclick="navigate('/gigs')">Browse Gigs</button>
           <button class="btn btn-outline btn-sm" onclick="navigate('/resources')">Resources</button>
@@ -2473,34 +2517,62 @@ async function renderSeller(id) {
   const app = document.getElementById('app');
   app.innerHTML = `<div style="padding:20px"><div class="spinner"></div></div>`;
   try {
-    const res = await fetch(`${API}/listings?seller_id=${id}&limit=20`);
+    const res = await fetch(`${API}/storefront/${id}`);
+    if (!res.ok) throw new Error();
     const d = await res.json();
-    const listings = d.listings || d.items || [];
-    const seller = listings[0] || {};
-    const name = seller.seller_name || 'Seller';
-    const initial = name[0].toUpperCase();
+    const seller = d.seller || {};
+    const listings = d.listings || [];
+    const storeName = seller.store_name || seller.name || 'Seller';
+    const initial = storeName[0].toUpperCase();
+    const bannerColor = seller.store_banner_color || 'linear-gradient(135deg,var(--blue),#1445A8)';
+    const joinYear = seller.joined_at ? new Date(seller.joined_at).getFullYear() : 2025;
+
     app.innerHTML = `
       <div onclick="history.back()" class="detail-back">← Back</div>
-      <div class="seller-hero">
-        <div class="seller-hero-av">${initial}</div>
-        <h1>${name}</h1>
-        <p>Member since ${seller.created_at ? new Date(seller.created_at).getFullYear() : '2025'}</p>
-        <div class="seller-badges"><span class="seller-badge">✓ Active Seller</span></div>
+
+      <!-- Store Banner -->
+      <div class="store-banner" style="background:${bannerColor}">
+        <div class="store-av">${initial}</div>
+        <div class="store-identity">
+          <div class="store-name">${storeName}</div>
+          <div class="store-handle">${seller.store_name ? seller.name + ' · ' : ''}Member since ${joinYear}</div>
+        </div>
       </div>
+
+      <!-- Store Info Row -->
+      <div class="store-info-row">
+        <div class="store-info-chip">📦 <strong>${listings.length}</strong> listings</div>
+        ${seller.store_location ? `<div class="store-info-chip">📍 ${seller.store_location}</div>` : ''}
+        ${seller.seller_level ? `<div class="store-info-chip">⭐ ${seller.seller_level}</div>` : ''}
+      </div>
+
+      <!-- Store Description -->
+      ${seller.store_description ? `<div class="store-desc">${seller.store_description}</div>` : ''}
+
+      <!-- Contact Actions -->
+      ${seller.store_whatsapp ? `
+      <div class="store-actions">
+        <button class="wa-btn" style="flex:1" onclick="window.open('https://wa.me/${(seller.store_whatsapp||'').replace(/[^0-9]/g,'')}?text=Hi, I found your store on DuukaList+','_blank')">💬 WhatsApp</button>
+        <button class="call-btn" style="flex:1" onclick="window.open('tel:+${(seller.store_whatsapp||'').replace(/[^0-9]/g,'')}')">📞 Call</button>
+      </div>` : ''}
+
+      <!-- Stats Row -->
       <div class="seller-stats-row">
         <div class="sstat"><div class="sstat-num">${listings.length}</div><div class="sstat-lbl">Listings</div></div>
         <div class="sstat"><div class="sstat-num">—</div><div class="sstat-lbl">Orders</div></div>
         <div class="sstat"><div class="sstat-num">—</div><div class="sstat-lbl">Rating</div></div>
         <div class="sstat"><div class="sstat-num">—</div><div class="sstat-lbl">Reviews</div></div>
       </div>
+
+      <!-- Listings Grid -->
       <div style="padding:16px">
-        <div class="sec-hd" style="margin-bottom:14px"><span class="sec-title">Listings</span></div>
+        <div class="sec-hd" style="margin-bottom:14px"><span class="sec-title">All <span>Listings</span></span></div>
         ${listings.length
           ? `<div class="listings-grid">${listings.map(listingCard).join('')}</div>`
-          : `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No listings</div></div>`}
+          : `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No listings yet</div></div>`}
       </div>`;
   } catch {
-    app.innerHTML = `<div class="empty-state"><div class="empty-icon">❌</div><div class="empty-title">Seller not found</div><button class="btn btn-orange" onclick="navigate('/browse')">Browse Listings</button></div>`;
+    app.innerHTML = `<div class="empty-state"><div class="empty-icon">❌</div><div class="empty-title">Store not found</div><button class="btn btn-orange" onclick="navigate('/browse')">Browse Listings</button></div>`;
   }
 }
 
@@ -2594,6 +2666,95 @@ async function saveEditListing(id) {
   } catch(e) {
     showToast('Error: ' + e.message);
     btn.textContent = '💾 Save Changes'; btn.disabled = false;
+  }
+}
+
+async function renderSetupStore() {
+  if (!currentUser) { openAuth(); return; }
+  const app = document.getElementById('app');
+  // Load current profile
+  let profile = {};
+  try {
+    const res = await fetch(`${API}/me`, { headers: { Authorization: `Bearer ${getToken()}` } });
+    const d = await res.json();
+    profile = d.user || {};
+  } catch {}
+
+  const COLORS = [
+    'linear-gradient(135deg,#0B2E6E,#1445A8)',
+    'linear-gradient(135deg,#FF6A00,#dd5500)',
+    'linear-gradient(135deg,#7c3aed,#5b21b6)',
+    'linear-gradient(135deg,#0891b2,#0e7490)',
+    'linear-gradient(135deg,#0dab5b,#059669)',
+    'linear-gradient(135deg,#1a1a2e,#16213e)',
+  ];
+
+  app.innerHTML = `
+    <div onclick="history.back()" class="detail-back">← Back</div>
+    <div class="page-hero"><h1>🏪 My Store</h1><p>Set up your storefront</p></div>
+    <div class="post-form">
+      <div class="form-section">
+        <div class="form-section-title">🏪 Store Identity</div>
+        <div class="field"><label>Store Name <span>*</span></label><input type="text" id="ssName" value="${profile.store_name||''}" placeholder="e.g. Kelly's Electronics, Kampala Deals…"></div>
+        <div class="field"><label>Store Description</label><textarea id="ssDesc" placeholder="Tell customers what you sell, your location, working hours…" style="min-height:80px">${profile.store_description||''}</textarea></div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">📞 Contact</div>
+        <div class="field"><label>WhatsApp / Phone</label>
+          <div class="phone-input-row">
+            <div class="phone-country">🇺🇬 +256</div>
+            <input type="tel" id="ssPhone" value="${(profile.store_whatsapp||profile.phone||'').replace(/^256/,'')}" placeholder="07XX XXX XXX">
+          </div>
+        </div>
+        <div class="field"><label>Store Location</label><input type="text" id="ssLocation" value="${profile.store_location||''}" placeholder="e.g. Ntinda, Kampala"></div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">🎨 Banner Color</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          ${COLORS.map((c,i) => `
+            <div onclick="selectBannerColor(this,'${c}')" data-color="${c}"
+              style="width:52px;height:52px;border-radius:var(--rm);background:${c};cursor:pointer;border:3px solid ${profile.store_banner_color===c?'var(--orange)':'transparent'};transition:all .15s">
+            </div>`).join('')}
+        </div>
+      </div>
+      <button class="btn btn-orange btn-full btn-lg" id="ssSaveBtn" onclick="saveStore()" style="margin-bottom:12px">💾 Save Store</button>
+      <button class="btn btn-outline btn-full" onclick="navigate('/seller/' + currentUser.id)">👁 Preview My Store</button>
+    </div>`;
+
+  window._selectedBannerColor = profile.store_banner_color || null;
+}
+
+window.selectBannerColor = (el, color) => {
+  window._selectedBannerColor = color;
+  document.querySelectorAll('[data-color]').forEach(e => e.style.borderColor = 'transparent');
+  el.style.borderColor = 'var(--orange)';
+};
+
+async function saveStore() {
+  const btn = document.getElementById('ssSaveBtn');
+  btn.textContent = 'Saving…'; btn.disabled = true;
+  const phone = document.getElementById('ssPhone')?.value.trim();
+  try {
+    const res = await fetch(`${API}/me`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify({
+        store_name: document.getElementById('ssName')?.value.trim(),
+        store_description: document.getElementById('ssDesc')?.value.trim(),
+        store_whatsapp: phone ? '256' + phone.replace(/^0/,'') : null,
+        store_location: document.getElementById('ssLocation')?.value.trim(),
+        store_banner_color: window._selectedBannerColor,
+      }),
+    });
+    if (!res.ok) throw new Error('Failed: ' + res.status);
+    const d = await res.json();
+    // Update currentUser
+    if (d.user) Object.assign(currentUser, d.user);
+    showToast('Store saved! ✓');
+    setTimeout(() => navigate('/seller/' + currentUser.id), 800);
+  } catch(e) {
+    showToast('Error: ' + e.message);
+    btn.textContent = '💾 Save Store'; btn.disabled = false;
   }
 }
 
