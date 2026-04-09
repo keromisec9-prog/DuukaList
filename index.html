@@ -2232,6 +2232,13 @@ window.removePhoto = (i) => {
   Array.from(previews.children)[i]?.remove();
 };
 
+// ── SHA1 helper for direct B2 uploads ───────────────────────
+async function computeFileSHA1(file) {
+  const buffer = await file.arrayBuffer();
+  const hashBuffer = await crypto.subtle.digest('SHA-1', buffer);
+  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
 async function submitListing() {
   const title = document.getElementById('fTitle')?.value.trim();
   const category = document.getElementById('fCat')?.value;
@@ -2251,25 +2258,45 @@ async function submitListing() {
   btn.textContent = 'Uploading photos…';
   btn.disabled = true;
 
-  // ── Upload photos to B2 via Worker ──────────────────────────
+  // ── Upload photos directly to B2 (presigned URL) ────────────
   let imageUrls = [];
   try {
-    const formData = new FormData();
     const filesToUpload = postPhotoFiles.filter(Boolean);
     for (let i = 0; i < filesToUpload.length; i++) {
-      formData.append('file', filesToUpload[i], filesToUpload[i].name || `photo_${i}.jpg`);
+      const file = filesToUpload[i];
+      btn.textContent = `Uploading photo ${i+1}/${filesToUpload.length}…`;
+
+      // Step 1: Get presigned upload URL from Worker
+      const urlRes = await fetch(
+        `${API}/upload-url?fileName=${encodeURIComponent(file.name||'photo.jpg')}&fileType=${encodeURIComponent(file.type||'image/jpeg')}&folder=listings`,
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+      );
+      if (!urlRes.ok) throw new Error(`Could not get upload URL (${urlRes.status})`);
+      const urlData = await urlRes.json();
+      if (!urlData.uploadUrl) throw new Error(urlData.error || 'No upload URL returned');
+
+      // Step 2: Upload directly to B2 — Worker never touches the bytes
+      const sha1 = await computeFileSHA1(file);
+      const b2Res = await fetch(urlData.uploadUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': urlData.authorizationToken,
+          'X-Bz-File-Name': encodeURIComponent(urlData.fileName),
+          'Content-Type': file.type || 'image/jpeg',
+          'Content-Length': String(file.size),
+          'X-Bz-Content-Sha1': sha1,
+        },
+        body: file,
+      });
+      if (!b2Res.ok) {
+        const e = await b2Res.json().catch(() => ({}));
+        throw new Error(e.message || `B2 upload failed (${b2Res.status})`);
+      }
+      imageUrls.push(urlData.downloadUrl);
     }
-    const uploadRes = await fetch(`${API}/upload`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${getToken()}` },
-      body: formData,
-    });
-    if (!uploadRes.ok) throw new Error(`Upload failed: ${uploadRes.status}`);
-    const uploadData = await uploadRes.json();
-    imageUrls = uploadData.urls || [];
-    if (!imageUrls.length) throw new Error('No image URLs returned');
+    if (!imageUrls.length) throw new Error('No photos were uploaded');
   } catch (uploadErr) {
-    showToast('Photo upload failed: ' + uploadErr.message);
+    showToast('Photo upload failed: ' + uploadErr.message, 4000);
     btn.textContent = '🚀 Post Listing';
     btn.disabled = false;
     return;
@@ -3421,21 +3448,53 @@ async function submitSpotVideo() {
     if (listingId) formData.append('listing_id', listingId);
     formData.append('category', category);
 
-    const res = await fetch(`${API}/spotduuka/upload`, {
+    // Step 1: Get presigned URL for video
+    const urlRes = await fetch(
+      `${API}/upload-url?fileName=${encodeURIComponent(_spotUploadFile.name||'video.mp4')}&fileType=${encodeURIComponent(_spotUploadFile.type||'video/mp4')}&folder=spotduuka`,
+      { headers: { Authorization: 'Bearer ' + getToken() } }
+    );
+    if (!urlRes.ok) throw new Error('Could not get upload URL');
+    const urlData = await urlRes.json();
+    if (!urlData.uploadUrl) throw new Error(urlData.error || 'No upload URL');
+
+    btn.textContent = 'Uploading video…';
+
+    // Step 2: Upload directly to B2
+    const sha1 = await computeFileSHA1(_spotUploadFile);
+    const b2Res = await fetch(urlData.uploadUrl, {
       method: 'POST',
-      headers: { Authorization: 'Bearer ' + getToken() },
-      body: formData,
+      headers: {
+        'Authorization': urlData.authorizationToken,
+        'X-Bz-File-Name': encodeURIComponent(urlData.fileName),
+        'Content-Type': _spotUploadFile.type || 'video/mp4',
+        'Content-Length': String(_spotUploadFile.size),
+        'X-Bz-Content-Sha1': sha1,
+      },
+      body: _spotUploadFile,
     });
-
-    if (!res.ok) {
-      const e = await res.json();
-      throw new Error(e.error || 'Upload failed');
+    if (!b2Res.ok) {
+      const e = await b2Res.json().catch(() => ({}));
+      throw new Error(e.message || 'B2 upload failed');
     }
+    const videoUrl = urlData.downloadUrl;
 
-    const d = await res.json();
+    // Step 3: Register video metadata with Worker
+    btn.textContent = 'Saving…';
+    const metaRes = await fetch(`${API}/spotduuka/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+      body: JSON.stringify({
+        video_url: videoUrl,
+        title,
+        description: desc,
+        listing_id: listingId || null,
+        category,
+      }),
+    });
+    if (!metaRes.ok) throw new Error('Could not save video info');
+    const d = await metaRes.json();
     showToast('Video posted to SpotDuuka! 🎬', 3000);
     closeSpotUpload();
-    // Reload feed
     setTimeout(() => renderSpotDuuka(), 500);
   } catch(e) {
     showToast('Error: ' + e.message, 4000);
