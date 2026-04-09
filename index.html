@@ -455,6 +455,44 @@ input,select,textarea{font-family:var(--fb)}
 .status-expired{background:#fef2f2;color:var(--red)}
 .boost-badge{background:rgba(255,106,0,.1);color:var(--orange);font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px}
 
+/* ═══════════════════════ SPOTDUUKA ═══════════════════════ */
+.spot-container{position:fixed;inset:0;top:var(--nav);bottom:var(--bnav);background:#000;z-index:50;overflow:hidden}
+.spot-feed{width:100%;height:100%;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none}
+.spot-feed::-webkit-scrollbar{display:none}
+.spot-slide{width:100%;height:100%;scroll-snap-align:start;position:relative;overflow:hidden;flex-shrink:0;display:block}
+.spot-video{width:100%;height:100%;object-fit:cover;display:block;cursor:pointer}
+/* Gradient overlay at bottom */
+.spot-overlay{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.75));padding:16px 16px 24px;color:#fff;pointer-events:none}
+.spot-overlay-top{position:absolute;top:0;left:0;right:0;background:linear-gradient(rgba(0,0,0,.4),transparent);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;pointer-events:none}
+.spot-seller{display:flex;align-items:center;gap:8px;margin-bottom:8px;pointer-events:all;cursor:pointer}
+.spot-seller-av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--orange),#ffaa00);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;border:2px solid rgba(255,255,255,.6);flex-shrink:0}
+.spot-seller-name{font-weight:700;font-size:13px;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.spot-title{font-weight:700;font-size:15px;margin-bottom:4px;text-shadow:0 1px 3px rgba(0,0,0,.5);line-height:1.3}
+.spot-desc{font-size:12px;color:rgba(255,255,255,.8);margin-bottom:10px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.spot-listing-btn{display:inline-flex;align-items:center;gap:6px;background:var(--orange);color:#fff;font-weight:700;font-size:12px;padding:6px 14px;border-radius:100px;border:none;cursor:pointer;font-family:var(--fb);pointer-events:all;box-shadow:0 4px 12px rgba(255,106,0,.4)}
+/* Right side actions */
+.spot-actions{position:absolute;right:12px;bottom:100px;display:flex;flex-direction:column;gap:18px;align-items:center}
+.spot-action-btn{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;pointer-events:all}
+.spot-action-icon{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.15);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;font-size:20px;border:1px solid rgba(255,255,255,.2);transition:all .15s}
+.spot-action-btn:active .spot-action-icon{transform:scale(.9);background:rgba(255,255,255,.3)}
+.spot-action-label{font-size:11px;color:rgba(255,255,255,.85);font-weight:600;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.spot-action-btn.liked .spot-action-icon{background:rgba(255,106,0,.4);border-color:var(--orange)}
+.spot-action-btn.saved .spot-action-icon{background:rgba(255,106,0,.4);border-color:var(--orange)}
+/* Play/pause indicator */
+.spot-pause-indicator{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:60px;height:60px;background:rgba(0,0,0,.5);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;opacity:0;transition:opacity .2s;pointer-events:none}
+.spot-pause-indicator.show{opacity:1}
+/* Upload modal */
+.spot-upload-sheet{background:var(--white);border-radius:var(--rxl) var(--rxl) 0 0;padding:8px 24px 40px;width:100%;max-width:440px;transform:translateY(100%);transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+/* SpotDuuka header overlay */
+.spot-header{position:absolute;top:0;left:0;right:0;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;z-index:10;pointer-events:all}
+.spot-logo{font-family:var(--fd);font-weight:900;font-size:18px;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.5)}
+.spot-logo span{color:var(--orange)}
+.spot-upload-trigger{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:100px;padding:6px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;backdrop-filter:blur(6px);font-family:var(--fb)}
+/* Empty feed */
+.spot-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(255,255,255,.7);text-align:center;padding:40px}
+/* Video loading skeleton */
+.spot-skeleton{position:absolute;inset:0;background:linear-gradient(180deg,#111 0%,#1a1a1a 100%);display:flex;align-items:center;justify-content:center}
+
 /* ═══════════════════════ MESSAGING ═══════════════════════ */
 .thread-item{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border2);cursor:pointer;transition:background .15s;background:var(--white)}
 .thread-item:hover{background:var(--bg)}
@@ -642,7 +680,7 @@ input,select,textarea{font-family:var(--fb)}
 <!-- BOTTOM NAV -->
 <nav class="bottom-nav">
   <div class="nav-item active" id="nav-home" onclick="navigate('/')"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></div>
-  <div class="nav-item" id="nav-browse" onclick="navigate('/browse')"><span class="nav-icon">🔍</span><span class="nav-label">Browse</span></div>
+  <div class="nav-item" id="nav-spot" onclick="navigate('/spot')"><span class="nav-icon">🎬</span><span class="nav-label">SpotDuuka</span></div>
   <div class="nav-post-wrap" onclick="requireAuth(()=>navigate('/post'))">
     <div class="nav-post-circle">+</div>
     <span class="nav-post-lbl">Post</span>
@@ -677,6 +715,46 @@ input,select,textarea{font-family:var(--fb)}
   </div>
   <div class="pv-scroll" id="pvScroll"></div>
   <div class="pv-thumbs" id="pvThumbs"></div>
+</div>
+
+<!-- SPOTDUUKA UPLOAD SHEET -->
+<div id="spotUploadOverlay" style="position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);z-index:1200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s">
+  <div id="spotUploadSheet" class="spot-upload-sheet" onclick="event.stopPropagation()">
+    <div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 20px"></div>
+    <div style="font-family:var(--fd);font-weight:900;font-size:20px;color:var(--ink);margin-bottom:4px">🎬 Post to SpotDuuka</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:20px">Short videos that sell</div>
+
+    <!-- Video picker -->
+    <div id="suPickBtn" style="display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px dashed var(--border);border-radius:var(--rm);padding:32px 20px;margin-bottom:16px;cursor:pointer;transition:all .15s" onclick="document.getElementById('suVideoInput').click()" onmouseenter="this.style.borderColor='var(--orange)'" onmouseleave="this.style.borderColor='var(--border)'">
+      <div style="font-size:40px;margin-bottom:10px">📹</div>
+      <div style="font-weight:700;font-size:15px;color:var(--ink)">Tap to select video</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">MP4 · MOV · Max 100MB</div>
+    </div>
+    <input type="file" id="suVideoInput" accept="video/*" style="display:none" onchange="onSpotVideoSelected(this)">
+    <video id="suVideoPreview" style="display:none;width:100%;border-radius:var(--rm);max-height:200px;object-fit:cover;margin-bottom:16px" controls playsinline muted></video>
+
+    <div class="field"><label>Title <span style="color:var(--orange)">*</span></label><input type="text" id="suTitle" placeholder="What are you showing?" maxlength="100"></div>
+    <div class="field"><label>Description</label><textarea id="suDesc" placeholder="Tell people more…" style="min-height:60px" maxlength="500"></textarea></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="field"><label>Category</label>
+        <select id="suCategory">
+          <option value="general">General</option>
+          <option value="vehicles">🚗 Vehicles</option>
+          <option value="property">🏠 Property</option>
+          <option value="fashion">👗 Fashion</option>
+          <option value="electronics">💻 Electronics</option>
+          <option value="food">🍕 Food</option>
+          <option value="beauty">💄 Beauty</option>
+          <option value="construction">🔧 Construction</option>
+          <option value="services">🎯 Services</option>
+          <option value="agriculture">🌾 Agriculture</option>
+        </select>
+      </div>
+      <div class="field"><label>Listing ID (optional)</label><input type="text" id="suListingId" placeholder="Link to a listing"></div>
+    </div>
+    <button id="suSubmitBtn" class="btn btn-orange btn-full btn-lg" style="margin-bottom:10px" onclick="submitSpotVideo()">🚀 Post to SpotDuuka</button>
+    <button class="btn btn-outline btn-full" onclick="closeSpotUpload()">Cancel</button>
+  </div>
 </div>
 
 <!-- BOOST SHEET -->
@@ -1095,6 +1173,7 @@ const routes = {
   '/dashboard': renderDashboard,
   '/checkout': renderCheckout,
   '/messages': renderMessages,
+  '/spot': renderSpotDuuka,
   '/edit': renderEditListing,
   '/setup-store': renderSetupStore,
 };
@@ -1112,7 +1191,7 @@ function navigate(path) { window.location.hash = path; }
 
 function setActiveNav(path) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  const map = { '/': 'nav-home', '/browse': 'nav-browse', '/gigs': 'nav-gigs', '/resources': 'nav-browse', '/needs': 'nav-browse', '/dashboard': 'nav-account', '/orders': 'nav-account' };
+  const map = { '/': 'nav-home', '/spot': 'nav-spot', '/gigs': 'nav-gigs', '/resources': 'nav-spot', '/needs': 'nav-spot', '/dashboard': 'nav-account', '/orders': 'nav-account' };
   const id = map[path];
   if (id) document.getElementById(id)?.classList.add('active');
 }
@@ -3002,6 +3081,366 @@ async function saveStore() {
   } catch(e) {
     showToast('Error: ' + e.message);
     btn.textContent = '💾 Save Store'; btn.disabled = false;
+  }
+}
+
+
+// ═══════════════════════════════════════
+// SPOTDUUKA — Vertical Video Feed
+// ═══════════════════════════════════════
+
+let _spotVideos = [];
+let _spotCursor = 0;
+let _spotCurrentIdx = 0;
+let _spotLiked = {};
+let _spotSaved = {};
+let _spotWatchStart = {};
+
+async function renderSpotDuuka() {
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="spot-container" id="spotContainer">
+      <div class="spot-header">
+        <div class="spot-logo">Spot<span>Duuka</span> 🎬</div>
+        <button class="spot-upload-trigger" onclick="openSpotUpload()">+ Post Video</button>
+      </div>
+      <div class="spot-feed" id="spotFeed">
+        <div class="spot-skeleton"><div class="spinner" style="border-color:rgba(255,255,255,.2);border-top-color:var(--orange)"></div></div>
+      </div>
+    </div>`;
+
+  // Load liked/saved from localStorage
+  _spotLiked = JSON.parse(localStorage.getItem('spot_liked') || '{}');
+  _spotSaved = JSON.parse(localStorage.getItem('spot_saved') || '{}');
+  _spotVideos = [];
+  _spotCursor = 0;
+  _spotCurrentIdx = 0;
+
+  await loadMoreSpotVideos();
+}
+
+async function loadMoreSpotVideos() {
+  try {
+    const headers = getToken() ? { Authorization: 'Bearer ' + getToken() } : {};
+    const res = await fetch(`${API}/spotduuka/feed?limit=10&cursor=${_spotCursor}`, { headers });
+    const d = await res.json();
+    const newVideos = d.videos || [];
+    _spotCursor = d.next_cursor || 0;
+    _spotVideos = [..._spotVideos, ...newVideos];
+    renderSpotFeed();
+  } catch(e) {
+    const feed = document.getElementById('spotFeed');
+    if (feed) feed.innerHTML = `<div class="spot-empty"><div style="font-size:48px;margin-bottom:16px">🎬</div><div style="font-size:18px;font-weight:700;margin-bottom:8px">No videos yet</div><div style="font-size:14px">Be the first to post on SpotDuuka!</div><button class="btn btn-orange" style="margin-top:20px" onclick="openSpotUpload()">Post a Video</button></div>`;
+  }
+}
+
+function renderSpotFeed() {
+  const feed = document.getElementById('spotFeed');
+  if (!feed) return;
+
+  if (!_spotVideos.length) {
+    feed.innerHTML = `<div class="spot-empty"><div style="font-size:48px;margin-bottom:16px">🎬</div><div style="font-size:18px;font-weight:700;margin-bottom:8px">No videos yet</div><div style="font-size:14px;opacity:.7">Be the first to post on SpotDuuka!</div><button class="btn btn-orange" style="margin-top:20px" onclick="openSpotUpload()">Post a Video</button></div>`;
+    return;
+  }
+
+  feed.innerHTML = _spotVideos.map((v, i) => {
+    const isLiked = !!_spotLiked[v.id];
+    const isSaved = !!_spotSaved[v.id];
+    return `<div class="spot-slide" id="spot_slide_${i}" data-video-id="${v.id}" data-idx="${i}">
+      <div class="spot-skeleton" id="spot_skel_${i}"><div class="spinner" style="border-color:rgba(255,255,255,.2);border-top-color:var(--orange)"></div></div>
+      <video class="spot-video" id="spot_vid_${i}" src="${v.video_url}"
+        playsinline webkit-playsinline loop muted preload="none"
+        onclick="toggleSpotPlay(${i})"
+        onloadeddata="onSpotVideoReady(${i})">
+      </video>
+      <div class="spot-pause-indicator" id="spot_pause_${i}">⏸</div>
+      <!-- Header overlay -->
+      <div class="spot-overlay-top">
+        <div></div>
+        <div style="font-size:20px;cursor:pointer;color:rgba(255,255,255,.7)" onclick="closeSpot()">✕</div>
+      </div>
+      <!-- Bottom overlay -->
+      <div class="spot-overlay">
+        <div class="spot-seller" onclick="navigate('/seller/${v.seller_id}')">
+          <div class="spot-seller-av">${(v.seller_name||'S')[0].toUpperCase()}</div>
+          <span class="spot-seller-name">${v.seller_name||'Seller'}</span>
+        </div>
+        <div class="spot-title">${v.title||''}</div>
+        ${v.description ? `<div class="spot-desc">${v.description}</div>` : ''}
+        ${v.listing_id ? `<button class="spot-listing-btn" onclick="navigate('/listing/${v.listing_id}')">🛍️ View Listing</button>` : ''}
+      </div>
+      <!-- Right actions -->
+      <div class="spot-actions">
+        <div class="spot-action-btn${isLiked?' liked':''}" id="spot_like_${i}" onclick="spotAction('like',${i},'${v.id}')">
+          <div class="spot-action-icon">${isLiked?'❤️':'🤍'}</div>
+          <div class="spot-action-label" id="spot_like_count_${i}">${fmtCount(v.likes)}</div>
+        </div>
+        <div class="spot-action-btn${isSaved?' saved':''}" id="spot_save_${i}" onclick="spotAction('save',${i},'${v.id}')">
+          <div class="spot-action-icon">${isSaved?'🔖':'📌'}</div>
+          <div class="spot-action-label">Save</div>
+        </div>
+        <div class="spot-action-btn" onclick="spotShare(${i},'${v.id}','${(v.title||'').replace(/'/g,'')}')">
+          <div class="spot-action-icon">↗️</div>
+          <div class="spot-action-label">Share</div>
+        </div>
+        ${v.seller_id !== (currentUser?.id||'') ? `
+        <div class="spot-action-btn" onclick="spotChat('${v.seller_id}','${v.listing_id||''}','${(v.title||'').replace(/'/g,'')}')">
+          <div class="spot-action-icon">💬</div>
+          <div class="spot-action-label">Chat</div>
+        </div>` : ''}
+        <div class="spot-action-btn" onclick="spotViewCount(${i},'${v.id}')">
+          <div class="spot-action-icon">👁️</div>
+          <div class="spot-action-label">${fmtCount(v.views)}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Set up intersection observer for auto-play
+  setupSpotObserver();
+}
+
+function setupSpotObserver() {
+  if (window._spotObserver) window._spotObserver.disconnect();
+  window._spotObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const idx = parseInt(entry.target.dataset.idx);
+      const vid = document.getElementById('spot_vid_' + idx);
+      const videoId = entry.target.dataset.videoId;
+      if (!vid) return;
+      if (entry.isIntersecting && entry.intersectionRatio > 0.7) {
+        // Pause all others
+        _spotVideos.forEach((_, i) => {
+          if (i !== idx) {
+            const v = document.getElementById('spot_vid_' + i);
+            if (v && !v.paused) { v.pause(); }
+            // Log watch time for previous video
+            if (_spotWatchStart[i]) {
+              const secs = (Date.now() - _spotWatchStart[i]) / 1000;
+              if (secs > 1) sendEngagement(_spotVideos[i]?.id, 'watch_time', secs);
+              delete _spotWatchStart[i];
+            }
+          }
+        });
+        // Play current
+        vid.play().catch(() => {});
+        _spotWatchStart[idx] = Date.now();
+        _spotCurrentIdx = idx;
+        // Track view
+        sendEngagement(videoId, 'view');
+        // Load more when near end
+        if (idx >= _spotVideos.length - 3 && _spotCursor > 0) loadMoreSpotVideos();
+      } else {
+        if (!vid.paused) vid.pause();
+        if (_spotWatchStart[idx]) {
+          const secs = (Date.now() - _spotWatchStart[idx]) / 1000;
+          if (secs > 1) sendEngagement(videoId, 'watch_time', secs);
+          delete _spotWatchStart[idx];
+        }
+      }
+    });
+  }, { threshold: 0.7 });
+
+  document.querySelectorAll('.spot-slide').forEach(slide => {
+    window._spotObserver.observe(slide);
+  });
+}
+
+function onSpotVideoReady(idx) {
+  const skel = document.getElementById('spot_skel_' + idx);
+  if (skel) skel.style.display = 'none';
+}
+
+function toggleSpotPlay(idx) {
+  const vid = document.getElementById('spot_vid_' + idx);
+  const indicator = document.getElementById('spot_pause_' + idx);
+  if (!vid) return;
+  if (vid.paused) {
+    vid.play().catch(() => {});
+    if (indicator) { indicator.innerHTML = '▶'; indicator.classList.add('show'); setTimeout(() => indicator.classList.remove('show'), 600); }
+  } else {
+    vid.pause();
+    if (indicator) { indicator.innerHTML = '⏸'; indicator.classList.add('show'); setTimeout(() => indicator.classList.remove('show'), 800); }
+  }
+}
+
+function closeSpot() {
+  // Stop all videos
+  _spotVideos.forEach((_, i) => {
+    const v = document.getElementById('spot_vid_' + i);
+    if (v) v.pause();
+  });
+  if (window._spotObserver) window._spotObserver.disconnect();
+  navigate('/');
+}
+
+function spotAction(type, idx, videoId) {
+  if (!currentUser) { openAuth(); return; }
+  if (type === 'like') {
+    const isLiked = !!_spotLiked[videoId];
+    const btn = document.getElementById('spot_like_' + idx);
+    const countEl = document.getElementById('spot_like_count_' + idx);
+    const icon = btn?.querySelector('.spot-action-icon');
+    if (isLiked) {
+      delete _spotLiked[videoId];
+      if (icon) icon.textContent = '🤍';
+      btn?.classList.remove('liked');
+      if (_spotVideos[idx]) _spotVideos[idx].likes = Math.max(0, (_spotVideos[idx].likes||0) - 1);
+      sendEngagement(videoId, 'unlike');
+    } else {
+      _spotLiked[videoId] = true;
+      if (icon) icon.textContent = '❤️';
+      btn?.classList.add('liked');
+      if (_spotVideos[idx]) _spotVideos[idx].likes = (_spotVideos[idx].likes||0) + 1;
+      sendEngagement(videoId, 'like');
+    }
+    if (countEl && _spotVideos[idx]) countEl.textContent = fmtCount(_spotVideos[idx].likes);
+    localStorage.setItem('spot_liked', JSON.stringify(_spotLiked));
+  } else if (type === 'save') {
+    const isSaved = !!_spotSaved[videoId];
+    const btn = document.getElementById('spot_save_' + idx);
+    const icon = btn?.querySelector('.spot-action-icon');
+    if (isSaved) {
+      delete _spotSaved[videoId];
+      if (icon) icon.textContent = '📌';
+      btn?.classList.remove('saved');
+      sendEngagement(videoId, 'unsave');
+    } else {
+      _spotSaved[videoId] = true;
+      if (icon) icon.textContent = '🔖';
+      btn?.classList.add('saved');
+      sendEngagement(videoId, 'save');
+      showToast('Video saved ✓');
+    }
+    localStorage.setItem('spot_saved', JSON.stringify(_spotSaved));
+  }
+}
+
+function spotShare(idx, videoId, title) {
+  sendEngagement(videoId, 'share');
+  if (navigator.share) {
+    navigator.share({ title: 'SpotDuuka: ' + title, url: window.location.origin + '/#/spot' }).catch(() => {});
+  } else {
+    navigator.clipboard?.writeText(window.location.origin + '/#/spot').then(() => showToast('Link copied!')).catch(() => showToast('Share: ' + window.location.origin + '/#/spot'));
+  }
+}
+
+function spotChat(sellerId, listingId, title) {
+  if (!currentUser) { openAuth(); return; }
+  navigate('/messages?with=' + sellerId + (listingId ? '&listing=' + listingId : '') + (title ? '&title=' + encodeURIComponent(title) : ''));
+}
+
+function spotViewCount(idx, videoId) {
+  const v = _spotVideos[idx];
+  if (v) showToast(fmtCount(v.views) + ' views · ' + fmtCount(v.likes) + ' likes');
+}
+
+function sendEngagement(videoId, event, value) {
+  if (!videoId) return;
+  const headers = { 'Content-Type': 'application/json' };
+  if (getToken()) headers.Authorization = 'Bearer ' + getToken();
+  fetch(`${API}/spotduuka/engage`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ video_id: videoId, event, value }),
+  }).catch(() => {});
+}
+
+function fmtCount(n) {
+  if (!n) return '0';
+  if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n/1000).toFixed(1) + 'K';
+  return String(n);
+}
+
+// ── SpotDuuka Upload ─────────────────────────────────────────
+let _spotUploadFile = null;
+let _spotUploadPreview = null;
+
+function openSpotUpload() {
+  if (!currentUser) { openAuth(); return; }
+  const overlay = document.getElementById('spotUploadOverlay');
+  const sheet = document.getElementById('spotUploadSheet');
+  if (!overlay) return;
+  // Reset form
+  _spotUploadFile = null;
+  document.getElementById('suVideoPreview').style.display = 'none';
+  document.getElementById('suPickBtn').style.display = 'flex';
+  document.getElementById('suTitle').value = '';
+  document.getElementById('suDesc').value = '';
+  document.getElementById('suListingId').value = '';
+  document.getElementById('suSubmitBtn').textContent = '🚀 Post to SpotDuuka';
+  document.getElementById('suSubmitBtn').disabled = false;
+  overlay.style.opacity = '1';
+  overlay.style.pointerEvents = 'all';
+  sheet.style.transform = 'translateY(0)';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSpotUpload() {
+  const overlay = document.getElementById('spotUploadOverlay');
+  const sheet = document.getElementById('spotUploadSheet');
+  overlay.style.opacity = '0';
+  overlay.style.pointerEvents = 'none';
+  sheet.style.transform = 'translateY(100%)';
+  document.body.style.overflow = '';
+  if (_spotUploadPreview) { URL.revokeObjectURL(_spotUploadPreview); _spotUploadPreview = null; }
+}
+
+function onSpotVideoSelected(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('video/')) { showToast('Please select a video file'); return; }
+  if (file.size > 100 * 1024 * 1024) { showToast('Video must be under 100MB'); return; }
+  _spotUploadFile = file;
+  _spotUploadPreview = URL.createObjectURL(file);
+  const preview = document.getElementById('suVideoPreview');
+  const pick = document.getElementById('suPickBtn');
+  preview.src = _spotUploadPreview;
+  preview.style.display = 'block';
+  pick.style.display = 'none';
+}
+
+async function submitSpotVideo() {
+  if (!_spotUploadFile) { showToast('Please select a video first'); return; }
+  const title = document.getElementById('suTitle')?.value.trim();
+  const desc = document.getElementById('suDesc')?.value.trim();
+  const listingId = document.getElementById('suListingId')?.value.trim();
+  const category = document.getElementById('suCategory')?.value || 'general';
+  if (!title) { showToast('Please add a title'); return; }
+
+  const btn = document.getElementById('suSubmitBtn');
+  btn.textContent = 'Uploading… 0%';
+  btn.disabled = true;
+
+  try {
+    const formData = new FormData();
+    formData.append('video', _spotUploadFile);
+    formData.append('title', title);
+    formData.append('description', desc);
+    if (listingId) formData.append('listing_id', listingId);
+    formData.append('category', category);
+
+    const res = await fetch(`${API}/spotduuka/upload`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + getToken() },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const e = await res.json();
+      throw new Error(e.error || 'Upload failed');
+    }
+
+    const d = await res.json();
+    showToast('Video posted to SpotDuuka! 🎬', 3000);
+    closeSpotUpload();
+    // Reload feed
+    setTimeout(() => renderSpotDuuka(), 500);
+  } catch(e) {
+    showToast('Error: ' + e.message, 4000);
+    btn.textContent = '🚀 Post to SpotDuuka';
+    btn.disabled = false;
   }
 }
 
