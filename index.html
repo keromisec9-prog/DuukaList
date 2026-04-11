@@ -493,6 +493,33 @@ input,select,textarea{font-family:var(--fb)}
 /* Video loading skeleton */
 .spot-skeleton{position:absolute;inset:0;background:linear-gradient(180deg,#111 0%,#1a1a1a 100%);display:flex;align-items:center;justify-content:center}
 
+/* SpotDuuka TikTok-style nav tabs */
+.spot-tabs{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:28px;padding:14px 0 10px;z-index:11;pointer-events:all;background:linear-gradient(rgba(0,0,0,.35),transparent)}
+.spot-tab{font-size:15px;font-weight:700;color:rgba(255,255,255,.6);cursor:pointer;padding:4px 0;position:relative;transition:color .15s}
+.spot-tab.active{color:#fff}
+.spot-tab.active::after{content:'';position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);width:24px;height:3px;background:#fff;border-radius:2px}
+/* Profile on right side */
+.spot-profile-btn{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;pointer-events:all}
+.spot-profile-av{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--orange),#ffaa00);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;color:#fff;border:2px solid rgba(255,255,255,.7)}
+.spot-follow-btn{background:var(--orange);color:#fff;font-size:10px;font-weight:800;border:none;border-radius:100px;padding:3px 8px;cursor:pointer;margin-top:-6px;position:relative;z-index:1;font-family:var(--fb)}
+/* Comments panel */
+.spot-comments-panel{position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:0 auto;background:var(--white);border-radius:16px 16px 0 0;z-index:200;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);max-height:70vh;display:flex;flex-direction:column}
+.spot-comments-panel.open{transform:translateY(0)}
+.spot-comments-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:199;opacity:0;pointer-events:none;transition:opacity .3s}
+.spot-comments-overlay.open{opacity:1;pointer-events:all}
+.spot-comments-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
+.spot-comments-title{font-weight:800;font-size:15px;color:var(--ink)}
+.spot-comments-list{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:14px}
+.spot-comment-item{display:flex;gap:10px;align-items:flex-start}
+.spot-comment-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--orange),#ffaa00);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+.spot-comment-body{flex:1}
+.spot-comment-name{font-size:12px;font-weight:700;color:var(--ink);margin-bottom:2px}
+.spot-comment-text{font-size:13px;color:var(--ink2);line-height:1.5}
+.spot-comment-time{font-size:11px;color:var(--muted2);margin-top:2px}
+.spot-comment-input-bar{display:flex;gap:8px;padding:10px 14px 20px;border-top:1px solid var(--border);flex-shrink:0;align-items:center;background:var(--white)}
+.spot-comment-input{flex:1;border:1.5px solid var(--border);border-radius:22px;padding:9px 14px;font-size:14px;color:var(--ink);outline:none;font-family:var(--fb);background:var(--bg)}
+.spot-comment-input:focus{border-color:var(--orange)}
+.spot-comment-send{width:38px;height:38px;background:var(--orange);border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;cursor:pointer;flex-shrink:0}
 /* ═══════════════════════ MESSAGING ═══════════════════════ */
 .thread-item{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border2);cursor:pointer;transition:background .15s;background:var(--white)}
 .thread-item:hover{background:var(--bg)}
@@ -715,6 +742,22 @@ input,select,textarea{font-family:var(--fb)}
   </div>
   <div class="pv-scroll" id="pvScroll"></div>
   <div class="pv-thumbs" id="pvThumbs"></div>
+</div>
+
+<!-- SPOTDUUKA COMMENTS PANEL -->
+<div id="spotCommentsOverlay" class="spot-comments-overlay" onclick="closeSpotComments()"></div>
+<div id="spotCommentsPanel" class="spot-comments-panel">
+  <div class="spot-comments-header">
+    <div class="spot-comments-title" id="spotCommentCount">Comments</div>
+    <div onclick="closeSpotComments()" style="font-size:20px;cursor:pointer;color:var(--muted);padding:4px">✕</div>
+  </div>
+  <div class="spot-comments-list" id="spotCommentsList">
+    <div style="text-align:center;color:var(--muted);padding:32px 0;font-size:14px">No comments yet. Be first!</div>
+  </div>
+  <div class="spot-comment-input-bar">
+    <input class="spot-comment-input" id="spotCommentInput" placeholder="Add a comment…" maxlength="300" onkeydown="if(event.key==='Enter')submitSpotComment()">
+    <button class="spot-comment-send" onclick="submitSpotComment()">➤</button>
+  </div>
 </div>
 
 <!-- SPOTDUUKA UPLOAD SHEET -->
@@ -2187,6 +2230,7 @@ function renderPost(_, params = {}) {
     </div>`;
 
   setPostType(postType);
+  setTimeout(checkListingLimitForBoost, 300);
 }
 
 let selectedBoost = 'none';
@@ -2224,6 +2268,30 @@ window.selectBoost = (tier) => {
     document.getElementById('boost'+t.charAt(0).toUpperCase()+t.slice(1))?.classList.toggle('selected', t===tier);
   });
 };
+
+// Check if free user is at listing limit — hide Free boost option
+async function checkListingLimitForBoost() {
+  if (!currentUser) return;
+  if (currentUser.subscription_tier && currentUser.subscription_tier !== 'free') return;
+  try {
+    const res = await fetch(`${API}/listings?seller_id=${currentUser.id}&limit=50`, {
+      headers: { Authorization: 'Bearer ' + getToken() }
+    });
+    const d = await res.json();
+    const activeCount = (d.listings||[]).filter(l => l.status === 'active').length;
+    const freeOpt = document.getElementById('boostNone');
+    if (!freeOpt) return;
+    if (activeCount >= 5) {
+      freeOpt.style.display = 'none';
+      // Auto-select standard if none was selected
+      if (selectedBoost === 'none') {
+        selectBoost('standard');
+      }
+    } else {
+      freeOpt.style.display = '';
+    }
+  } catch(e) {}
+}
 
 // Store original File objects for direct upload to B2
 let postPhotoFiles = [];
@@ -3167,12 +3235,17 @@ let _spotLiked = {};
 let _spotSaved = {};
 let _spotWatchStart = {};
 
+let _spotTab = 'foryou'; // 'following' | 'foryou'
+
 async function renderSpotDuuka() {
   const app = document.getElementById('app');
   app.innerHTML = `
     <div class="spot-container" id="spotContainer">
-      <div class="spot-header">
-        <div class="spot-logo">Spot<span>Duuka</span> 🎬</div>
+      <div class="spot-tabs">
+        <div class="spot-tab${_spotTab==='following'?' active':''}" onclick="switchSpotTab('following')">Following</div>
+        <div class="spot-tab${_spotTab==='foryou'?' active':''}" onclick="switchSpotTab('foryou')">For You</div>
+      </div>
+      <div style="position:absolute;top:10px;right:14px;z-index:12;pointer-events:all">
         <button class="spot-upload-trigger" onclick="openSpotUpload()">+ Post Video</button>
       </div>
       <div class="spot-feed" id="spotFeed">
@@ -3188,6 +3261,20 @@ async function renderSpotDuuka() {
   _spotCurrentIdx = 0;
 
   await loadMoreSpotVideos();
+}
+
+function switchSpotTab(tab) {
+  _spotTab = tab;
+  // Update tab active state
+  document.querySelectorAll('.spot-tab').forEach(el => {
+    el.classList.toggle('active', el.textContent.toLowerCase().replace(' ','') === tab);
+  });
+  // Reload feed (Following would filter by followed users in future)
+  _spotVideos = [];
+  _spotCursor = 0;
+  const feed = document.getElementById('spotFeed');
+  if (feed) feed.innerHTML = `<div class="spot-skeleton"><div class="spinner" style="border-color:rgba(255,255,255,.2);border-top-color:var(--orange)"></div></div>`;
+  loadMoreSpotVideos();
 }
 
 async function loadMoreSpotVideos() {
@@ -3217,6 +3304,7 @@ function renderSpotFeed() {
   feed.innerHTML = _spotVideos.map((v, i) => {
     const isLiked = !!_spotLiked[v.id];
     const isSaved = !!_spotSaved[v.id];
+    const isOwner = v.seller_id === (currentUser?.id||'');
     return `<div class="spot-slide" id="spot_slide_${i}" data-video-id="${v.id}" data-idx="${i}">
       <div class="spot-skeleton" id="spot_skel_${i}"><div class="spinner" style="border-color:rgba(255,255,255,.2);border-top-color:var(--orange)"></div></div>
       <video class="spot-video" id="spot_vid_${i}" src="${v.video_url}"
@@ -3225,13 +3313,8 @@ function renderSpotFeed() {
         onloadeddata="onSpotVideoReady(${i})">
       </video>
       <div class="spot-pause-indicator" id="spot_pause_${i}">⏸</div>
-      <!-- Header overlay -->
-      <div class="spot-overlay-top">
-        <div></div>
-        <div style="font-size:20px;cursor:pointer;color:rgba(255,255,255,.7)" onclick="closeSpot()">✕</div>
-      </div>
-      <!-- Bottom overlay -->
-      <div class="spot-overlay">
+      <!-- Bottom overlay: seller name + description only -->
+      <div class="spot-overlay" style="padding-right:80px">
         <div class="spot-seller" onclick="navigate('/seller/${v.seller_id}')">
           <div class="spot-seller-av">${(v.seller_name||'S')[0].toUpperCase()}</div>
           <span class="spot-seller-name">${v.seller_name||'Seller'}</span>
@@ -3240,30 +3323,39 @@ function renderSpotFeed() {
         ${v.description ? `<div class="spot-desc">${v.description}</div>` : ''}
         ${v.listing_id ? `<button class="spot-listing-btn" onclick="navigate('/listing/${v.listing_id}')">🛍️ View Listing</button>` : ''}
       </div>
-      <!-- Right actions -->
+      <!-- Right actions: profile at top, then like/comment/save/share -->
       <div class="spot-actions">
+        <!-- Profile + Follow -->
+        <div class="spot-profile-btn" onclick="navigate('/seller/${v.seller_id}')">
+          <div class="spot-profile-av">${(v.seller_name||'S')[0].toUpperCase()}</div>
+          ${!isOwner ? `<button class="spot-follow-btn" onclick="event.stopPropagation();showToast('Follow coming soon!')">Follow</button>` : ''}
+        </div>
+        <!-- Like -->
         <div class="spot-action-btn${isLiked?' liked':''}" id="spot_like_${i}" onclick="spotAction('like',${i},'${v.id}')">
           <div class="spot-action-icon">${isLiked?'❤️':'🤍'}</div>
           <div class="spot-action-label" id="spot_like_count_${i}">${fmtCount(v.likes)}</div>
         </div>
+        <!-- Comments -->
+        <div class="spot-action-btn" onclick="openSpotComments('${v.id}',${i})">
+          <div class="spot-action-icon">💬</div>
+          <div class="spot-action-label" id="spot_comment_count_${i}">${fmtCount(v.comments)}</div>
+        </div>
+        <!-- Save -->
         <div class="spot-action-btn${isSaved?' saved':''}" id="spot_save_${i}" onclick="spotAction('save',${i},'${v.id}')">
           <div class="spot-action-icon">${isSaved?'🔖':'🏷️'}</div>
           <div class="spot-action-label">Save</div>
         </div>
+        <!-- Share -->
         <div class="spot-action-btn" onclick="spotShare(${i},'${v.id}','${(v.title||'').replace(/'/g,'')}')">
           <div class="spot-action-icon">↗️</div>
           <div class="spot-action-label">Share</div>
         </div>
-        <div class="spot-action-btn" onclick="spotChat('${v.seller_id}','${v.listing_id||''}','${(v.title||'').replace(/'/g,'')}')">
-          <div class="spot-action-icon">💬</div>
-          <div class="spot-action-label">Chat</div>
-        </div>
-        ${v.seller_id === (currentUser?.id||'') ? `
-        ${v.seller_id === (currentUser?.id||'') ? `
+        <!-- Views: owner only -->
+        ${isOwner ? `
         <div class="spot-action-btn" onclick="spotViewCount(${i},'${v.id}')">
           <div class="spot-action-icon">👁️</div>
           <div class="spot-action-label">${fmtCount(v.views)}</div>
-        </div>` : ''}` : ''}
+        </div>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -3397,9 +3489,97 @@ function spotShare(idx, videoId, title) {
   }
 }
 
-function spotChat(sellerId, listingId, title) {
+let _spotActiveCommentVideoId = null;
+let _spotActiveCommentIdx = null;
+
+async function openSpotComments(videoId, idx) {
+  _spotActiveCommentVideoId = videoId;
+  _spotActiveCommentIdx = idx;
+  const panel = document.getElementById('spotCommentsPanel');
+  const overlay = document.getElementById('spotCommentsOverlay');
+  const list = document.getElementById('spotCommentsList');
+  const countEl = document.getElementById('spotCommentCount');
+  if (!panel) return;
+  panel.classList.add('open');
+  overlay.classList.add('open');
+  list.innerHTML = `<div style="text-align:center;padding:24px"><div class="spinner" style="margin:0 auto;border-color:var(--border2);border-top-color:var(--orange)"></div></div>`;
+  try {
+    const res = await fetch(`${API}/spotduuka/video/${videoId}/comments`);
+    const d = await res.json();
+    const comments = d.comments || [];
+    if (countEl) countEl.textContent = comments.length + ' comment' + (comments.length !== 1 ? 's' : '');
+    if (!comments.length) {
+      list.innerHTML = `<div style="text-align:center;color:var(--muted);padding:32px 0;font-size:14px">No comments yet. Be first!</div>`;
+    } else {
+      list.innerHTML = comments.map(c => `
+        <div class="spot-comment-item">
+          <div class="spot-comment-av">${(c.user_name||'U')[0].toUpperCase()}</div>
+          <div class="spot-comment-body">
+            <div class="spot-comment-name">${c.user_name||'User'}</div>
+            <div class="spot-comment-text">${c.text}</div>
+            <div class="spot-comment-time">${timeAgo(c.created_at)}</div>
+          </div>
+        </div>`).join('');
+    }
+  } catch(e) {
+    list.innerHTML = `<div style="text-align:center;color:var(--muted);padding:24px">Could not load comments</div>`;
+  }
+}
+
+function closeSpotComments() {
+  document.getElementById('spotCommentsPanel')?.classList.remove('open');
+  document.getElementById('spotCommentsOverlay')?.classList.remove('open');
+  _spotActiveCommentVideoId = null;
+}
+
+async function submitSpotComment() {
   if (!currentUser) { openAuth(); return; }
-  navigate('/messages?with=' + sellerId + (listingId ? '&listing=' + listingId : '') + (title ? '&title=' + encodeURIComponent(title) : ''));
+  const input = document.getElementById('spotCommentInput');
+  const text = input?.value.trim();
+  if (!text || !_spotActiveCommentVideoId) return;
+  input.value = '';
+  try {
+    const res = await fetch(`${API}/spotduuka/video/${_spotActiveCommentVideoId}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+      body: JSON.stringify({ video_id: _spotActiveCommentVideoId, text }),
+    });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.error || 'Failed');
+    // Prepend new comment to list
+    const list = document.getElementById('spotCommentsList');
+    const emptyMsg = list?.querySelector('div[style*="text-align:center"]');
+    if (emptyMsg) emptyMsg.remove();
+    const el = document.createElement('div');
+    el.className = 'spot-comment-item';
+    el.innerHTML = `
+      <div class="spot-comment-av">${(currentUser.name||'U')[0].toUpperCase()}</div>
+      <div class="spot-comment-body">
+        <div class="spot-comment-name">${currentUser.name||'You'}</div>
+        <div class="spot-comment-text">${text}</div>
+        <div class="spot-comment-time">just now</div>
+      </div>`;
+    list?.prepend(el);
+    // Update count in feed
+    if (_spotActiveCommentIdx !== null && _spotVideos[_spotActiveCommentIdx]) {
+      _spotVideos[_spotActiveCommentIdx].comments = (_spotVideos[_spotActiveCommentIdx].comments||0) + 1;
+      const countEl = document.getElementById('spot_comment_count_' + _spotActiveCommentIdx);
+      if (countEl) countEl.textContent = fmtCount(_spotVideos[_spotActiveCommentIdx].comments);
+      const headerCount = document.getElementById('spotCommentCount');
+      if (headerCount) headerCount.textContent = _spotVideos[_spotActiveCommentIdx].comments + ' comment' + (_spotVideos[_spotActiveCommentIdx].comments !== 1 ? 's' : '');
+    }
+  } catch(e) {
+    showToast('Error: ' + e.message, 3000);
+    input.value = text; // restore
+  }
+}
+
+function timeAgo(ts) {
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return 'just now';
+  if (s < 3600) return Math.floor(s/60) + 'm ago';
+  if (s < 86400) return Math.floor(s/3600) + 'h ago';
+  return Math.floor(s/86400) + 'd ago';
 }
 
 function spotViewCount(idx, videoId) {
