@@ -473,7 +473,7 @@ input,select,textarea{font-family:var(--fb)}
 /* Right side actions */
 .spot-actions{position:absolute;right:12px;bottom:100px;display:flex;flex-direction:column;gap:18px;align-items:center}
 .spot-action-btn{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;pointer-events:all}
-.spot-action-icon{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.15);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;font-size:20px;border:1px solid rgba(255,255,255,.2);transition:all .15s}
+.spot-action-icon{width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,.25);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;font-size:20px;border:1px solid rgba(255,255,255,.12);transition:all .15s}
 .spot-action-btn:active .spot-action-icon{transform:scale(.9);background:rgba(255,255,255,.3)}
 .spot-action-label{font-size:11px;color:rgba(255,255,255,.85);font-weight:600;text-shadow:0 1px 2px rgba(0,0,0,.5)}
 .spot-action-btn.liked .spot-action-icon{background:rgba(255,106,0,.4);border-color:var(--orange)}
@@ -753,6 +753,15 @@ input,select,textarea{font-family:var(--fb)}
       <div class="field"><label>Listing ID (optional)</label><input type="text" id="suListingId" placeholder="Link to a listing"></div>
     </div>
     <button id="suSubmitBtn" class="btn btn-orange btn-full btn-lg" style="margin-bottom:10px" onclick="submitSpotVideo()">🚀 Post to SpotDuuka</button>
+    <div id="spotProgressWrap" style="display:none;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px">
+        <span id="spotProgressLabel">Uploading video…</span>
+        <span id="spotProgressPct">0%</span>
+      </div>
+      <div style="background:var(--border2);border-radius:100px;height:6px;overflow:hidden">
+        <div id="spotProgressBar" style="height:100%;background:var(--orange);border-radius:100px;width:0%;transition:width .3s"></div>
+      </div>
+    </div>
     <button class="btn btn-outline btn-full" onclick="closeSpotUpload()">Cancel</button>
   </div>
 </div>
@@ -2164,6 +2173,15 @@ function renderPost(_, params = {}) {
 
       <div style="padding-bottom:24px">
         <button class="btn btn-orange btn-full btn-lg" id="submitBtn" onclick="submitListing()">🚀 Post Listing</button>
+        <div id="listingProgressWrap" style="display:none;margin-top:10px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px">
+            <span id="listingProgressLabel">Uploading…</span>
+            <span id="listingProgressPct">0%</span>
+          </div>
+          <div style="background:var(--border2);border-radius:100px;height:6px;overflow:hidden">
+            <div id="listingProgressBar" style="height:100%;background:var(--orange);border-radius:100px;width:0%;transition:width .3s"></div>
+          </div>
+        </div>
         <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--muted)">By posting you agree to our <a href="https://keromisec9-prog.github.io/DuukaList-SellerPolicy/" target="_blank" style="color:var(--orange)">Seller Policy</a></div>
       </div>
     </div>`;
@@ -2258,15 +2276,24 @@ async function submitListing() {
   btn.textContent = 'Uploading photos…';
   btn.disabled = true;
 
-  // ── Upload photos directly to B2 (presigned URL) ────────────
+  // ── Upload photos with progress bar ─────────────────────────
+  const progressWrap = document.getElementById('listingProgressWrap');
+  const progressBar = document.getElementById('listingProgressBar');
+  const progressPct = document.getElementById('listingProgressPct');
+  const progressLabel = document.getElementById('listingProgressLabel');
+  if (progressWrap) progressWrap.style.display = 'block';
+
   let imageUrls = [];
   try {
     const filesToUpload = postPhotoFiles.filter(Boolean);
     for (let i = 0; i < filesToUpload.length; i++) {
       const file = filesToUpload[i];
       btn.textContent = `Uploading photo ${i+1}/${filesToUpload.length}…`;
+      if (progressLabel) progressLabel.textContent = `Photo ${i+1} of ${filesToUpload.length}`;
+      if (progressBar) progressBar.style.width = '0%';
+      if (progressPct) progressPct.textContent = '0%';
 
-      // Step 1: Get presigned upload URL from Worker
+      // Get presigned upload URL from Worker
       const urlRes = await fetch(
         `${API}/upload-url?fileName=${encodeURIComponent(file.name||'photo.jpg')}&fileType=${encodeURIComponent(file.type||'image/jpeg')}&folder=listings`,
         { headers: { Authorization: `Bearer ${getToken()}` } }
@@ -2275,27 +2302,43 @@ async function submitListing() {
       const urlData = await urlRes.json();
       if (!urlData.uploadUrl) throw new Error(urlData.error || 'No upload URL returned');
 
-      // Step 2: Upload directly to B2 — Worker never touches the bytes
       const sha1 = await computeFileSHA1(file);
-      const b2Res = await fetch(urlData.uploadUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': urlData.authorizationToken,
-          'X-Bz-File-Name': encodeURIComponent(urlData.fileName),
-          'Content-Type': file.type || 'image/jpeg',
-          'Content-Length': String(file.size),
-          'X-Bz-Content-Sha1': sha1,
-        },
-        body: file,
+
+      // Upload to B2 via XMLHttpRequest for real progress tracking
+      const downloadUrl = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', urlData.uploadUrl);
+        xhr.setRequestHeader('Authorization', urlData.authorizationToken);
+        xhr.setRequestHeader('X-Bz-File-Name', encodeURIComponent(urlData.fileName));
+        xhr.setRequestHeader('Content-Type', file.type || 'image/jpeg');
+        xhr.setRequestHeader('X-Bz-Content-Sha1', sha1);
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const pct = Math.round(e.loaded / e.total * 100);
+            if (progressBar) progressBar.style.width = pct + '%';
+            if (progressPct) progressPct.textContent = pct + '%';
+          }
+        };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve(urlData.downloadUrl);
+          } else {
+            let msg = 'Upload failed';
+            try { msg = JSON.parse(xhr.responseText).message || msg; } catch {}
+            reject(new Error(msg + ' (' + xhr.status + ')'));
+          }
+        };
+        xhr.onerror = () => reject(new Error('Network error during upload'));
+        xhr.send(file);
       });
-      if (!b2Res.ok) {
-        const e = await b2Res.json().catch(() => ({}));
-        throw new Error(e.message || `B2 upload failed (${b2Res.status})`);
-      }
-      imageUrls.push(urlData.downloadUrl);
+      imageUrls.push(downloadUrl);
     }
     if (!imageUrls.length) throw new Error('No photos were uploaded');
+    if (progressBar) progressBar.style.width = '100%';
+    if (progressPct) progressPct.textContent = '100%';
+    if (progressLabel) progressLabel.textContent = 'Photos uploaded ✓';
   } catch (uploadErr) {
+    if (progressWrap) progressWrap.style.display = 'none';
     showToast('Photo upload failed: ' + uploadErr.message, 4000);
     btn.textContent = '🚀 Post Listing';
     btn.disabled = false;
@@ -2356,6 +2399,7 @@ async function submitListing() {
     const d = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(d.error || d.message || `Server error (${res.status})`);
     showToast('Posted successfully! 🎉');
+    if (progressWrap) progressWrap.style.display = 'none';
     const id = d.id || d.listing?.id || d.gig?.id;
     if (id) {
       setTimeout(() => navigate(postType === 'gig' ? `/gig/${id}` : `/listing/${id}`), 800);
@@ -3176,7 +3220,7 @@ function renderSpotFeed() {
     return `<div class="spot-slide" id="spot_slide_${i}" data-video-id="${v.id}" data-idx="${i}">
       <div class="spot-skeleton" id="spot_skel_${i}"><div class="spinner" style="border-color:rgba(255,255,255,.2);border-top-color:var(--orange)"></div></div>
       <video class="spot-video" id="spot_vid_${i}" src="${v.video_url}"
-        playsinline webkit-playsinline loop muted preload="none"
+        playsinline webkit-playsinline loop preload="none"
         onclick="toggleSpotPlay(${i})"
         onloadeddata="onSpotVideoReady(${i})">
       </video>
@@ -3203,22 +3247,23 @@ function renderSpotFeed() {
           <div class="spot-action-label" id="spot_like_count_${i}">${fmtCount(v.likes)}</div>
         </div>
         <div class="spot-action-btn${isSaved?' saved':''}" id="spot_save_${i}" onclick="spotAction('save',${i},'${v.id}')">
-          <div class="spot-action-icon">${isSaved?'🔖':'📌'}</div>
+          <div class="spot-action-icon">${isSaved?'🔖':'🏷️'}</div>
           <div class="spot-action-label">Save</div>
         </div>
         <div class="spot-action-btn" onclick="spotShare(${i},'${v.id}','${(v.title||'').replace(/'/g,'')}')">
           <div class="spot-action-icon">↗️</div>
           <div class="spot-action-label">Share</div>
         </div>
-        ${v.seller_id !== (currentUser?.id||'') ? `
         <div class="spot-action-btn" onclick="spotChat('${v.seller_id}','${v.listing_id||''}','${(v.title||'').replace(/'/g,'')}')">
           <div class="spot-action-icon">💬</div>
           <div class="spot-action-label">Chat</div>
-        </div>` : ''}
+        </div>
+        ${v.seller_id === (currentUser?.id||'') ? `
+        ${v.seller_id === (currentUser?.id||'') ? `
         <div class="spot-action-btn" onclick="spotViewCount(${i},'${v.id}')">
           <div class="spot-action-icon">👁️</div>
           <div class="spot-action-label">${fmtCount(v.views)}</div>
-        </div>
+        </div>` : ''}` : ''}
       </div>
     </div>`;
   }).join('');
@@ -3329,7 +3374,7 @@ function spotAction(type, idx, videoId) {
     const icon = btn?.querySelector('.spot-action-icon');
     if (isSaved) {
       delete _spotSaved[videoId];
-      if (icon) icon.textContent = '📌';
+      if (icon) icon.textContent = '🏷️';
       btn?.classList.remove('saved');
       sendEngagement(videoId, 'unsave');
     } else {
@@ -3398,6 +3443,10 @@ function openSpotUpload() {
   document.getElementById('suListingId').value = '';
   document.getElementById('suSubmitBtn').textContent = '🚀 Post to SpotDuuka';
   document.getElementById('suSubmitBtn').disabled = false;
+  const _spw = document.getElementById('spotProgressWrap');
+  const _spb = document.getElementById('spotProgressBar');
+  if (_spw) _spw.style.display = 'none';
+  if (_spb) _spb.style.width = '0%';
   overlay.style.opacity = '1';
   overlay.style.pointerEvents = 'all';
   sheet.style.transform = 'translateY(0)';
@@ -3440,15 +3489,15 @@ async function submitSpotVideo() {
   btn.textContent = 'Uploading… 0%';
   btn.disabled = true;
 
-  try {
-    const formData = new FormData();
-    formData.append('video', _spotUploadFile);
-    formData.append('title', title);
-    formData.append('description', desc);
-    if (listingId) formData.append('listing_id', listingId);
-    formData.append('category', category);
+  const spotProgWrap = document.getElementById('spotProgressWrap');
+  const spotProgBar = document.getElementById('spotProgressBar');
+  const spotProgPct = document.getElementById('spotProgressPct');
+  const spotProgLabel = document.getElementById('spotProgressLabel');
+  if (spotProgWrap) spotProgWrap.style.display = 'block';
 
+  try {
     // Step 1: Get presigned URL for video
+    btn.textContent = 'Preparing upload…';
     const urlRes = await fetch(
       `${API}/upload-url?fileName=${encodeURIComponent(_spotUploadFile.name||'video.mp4')}&fileType=${encodeURIComponent(_spotUploadFile.type||'video/mp4')}&folder=spotduuka`,
       { headers: { Authorization: 'Bearer ' + getToken() } }
@@ -3458,28 +3507,43 @@ async function submitSpotVideo() {
     if (!urlData.uploadUrl) throw new Error(urlData.error || 'No upload URL');
 
     btn.textContent = 'Uploading video…';
+    if (spotProgLabel) spotProgLabel.textContent = 'Uploading video…';
 
-    // Step 2: Upload directly to B2
+    // Step 2: Compute SHA1 then upload directly to B2 with progress
     const sha1 = await computeFileSHA1(_spotUploadFile);
-    const b2Res = await fetch(urlData.uploadUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': urlData.authorizationToken,
-        'X-Bz-File-Name': encodeURIComponent(urlData.fileName),
-        'Content-Type': _spotUploadFile.type || 'video/mp4',
-        'Content-Length': String(_spotUploadFile.size),
-        'X-Bz-Content-Sha1': sha1,
-      },
-      body: _spotUploadFile,
+    const videoUrl = await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', urlData.uploadUrl);
+      xhr.setRequestHeader('Authorization', urlData.authorizationToken);
+      xhr.setRequestHeader('X-Bz-File-Name', encodeURIComponent(urlData.fileName));
+      xhr.setRequestHeader('Content-Type', _spotUploadFile.type || 'video/mp4');
+      xhr.setRequestHeader('X-Bz-Content-Sha1', sha1);
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          const pct = Math.round(e.loaded / e.total * 100);
+          if (spotProgBar) spotProgBar.style.width = pct + '%';
+          if (spotProgPct) spotProgPct.textContent = pct + '%';
+        }
+      };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(urlData.downloadUrl);
+        } else {
+          let msg = 'Upload failed';
+          try { msg = JSON.parse(xhr.responseText).message || msg; } catch {}
+          reject(new Error(msg + ' (' + xhr.status + ')'));
+        }
+      };
+      xhr.onerror = () => reject(new Error('Network error during upload'));
+      xhr.send(_spotUploadFile);
     });
-    if (!b2Res.ok) {
-      const e = await b2Res.json().catch(() => ({}));
-      throw new Error(e.message || 'B2 upload failed');
-    }
-    const videoUrl = urlData.downloadUrl;
+
+    if (spotProgBar) spotProgBar.style.width = '100%';
+    if (spotProgPct) spotProgPct.textContent = '100%';
 
     // Step 3: Register video metadata with Worker
     btn.textContent = 'Saving…';
+    if (spotProgLabel) spotProgLabel.textContent = 'Saving…';
     const metaRes = await fetch(`${API}/spotduuka/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
@@ -3497,6 +3561,7 @@ async function submitSpotVideo() {
     closeSpotUpload();
     setTimeout(() => renderSpotDuuka(), 500);
   } catch(e) {
+    if (spotProgWrap) spotProgWrap.style.display = 'none';
     showToast('Error: ' + e.message, 4000);
     btn.textContent = '🚀 Post to SpotDuuka';
     btn.disabled = false;
