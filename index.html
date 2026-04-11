@@ -503,7 +503,7 @@ input,select,textarea{font-family:var(--fb)}
 .spot-profile-av{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--orange),#ffaa00);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;color:#fff;border:2px solid rgba(255,255,255,.7)}
 .spot-follow-btn{background:var(--orange);color:#fff;font-size:10px;font-weight:800;border:none;border-radius:100px;padding:3px 8px;cursor:pointer;margin-top:-6px;position:relative;z-index:1;font-family:var(--fb)}
 /* Comments panel */
-.spot-comments-panel{position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:0 auto;background:var(--white);border-radius:16px 16px 0 0;z-index:200;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);max-height:70vh;display:flex;flex-direction:column}
+.spot-comments-panel{position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:0 auto;background:var(--white);border-radius:16px 16px 0 0;z-index:200;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);max-height:75vh;height:75vh;display:flex;flex-direction:column}
 .spot-comments-panel.open{transform:translateY(0)}
 .spot-comments-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:199;opacity:0;pointer-events:none;transition:opacity .3s}
 .spot-comments-overlay.open{opacity:1;pointer-events:all}
@@ -516,7 +516,7 @@ input,select,textarea{font-family:var(--fb)}
 .spot-comment-name{font-size:12px;font-weight:700;color:var(--ink);margin-bottom:2px}
 .spot-comment-text{font-size:13px;color:var(--ink2);line-height:1.5}
 .spot-comment-time{font-size:11px;color:var(--muted2);margin-top:2px}
-.spot-comment-input-bar{display:flex;gap:8px;padding:10px 14px 20px;border-top:1px solid var(--border);flex-shrink:0;align-items:center;background:var(--white)}
+.spot-comment-input-bar{display:flex;gap:8px;padding:10px 14px 20px;border-top:1px solid var(--border);flex-shrink:0;align-items:center;background:var(--white);position:sticky;bottom:0;z-index:10}
 .spot-comment-input{flex:1;border:1.5px solid var(--border);border-radius:22px;padding:9px 14px;font-size:14px;color:var(--ink);outline:none;font-family:var(--fb);background:var(--bg)}
 .spot-comment-input:focus{border-color:var(--orange)}
 .spot-comment-send{width:38px;height:38px;background:var(--orange);border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;cursor:pointer;flex-shrink:0}
@@ -1188,6 +1188,42 @@ async function loadUnreadCount() {
     const dot = document.getElementById('msgDot');
     if (dot) dot.style.display = total > 0 ? 'block' : 'none';
   } catch {}
+}
+
+// ── Follow System ────────────────────────────────────────────
+let _followedSellers = JSON.parse(localStorage.getItem('followed_sellers') || '{}');
+
+async function toggleFollow(sellerId, sellerName) {
+  if (!currentUser) { openAuth(); return; }
+  if (sellerId === currentUser.id || sellerId === currentUser.sub) {
+    showToast("That's you!");
+    return;
+  }
+  const isFollowing = !!_followedSellers[sellerId];
+  if (isFollowing) {
+    delete _followedSellers[sellerId];
+    showToast('Unfollowed ' + sellerName);
+  } else {
+    _followedSellers[sellerId] = { name: sellerName, at: Date.now() };
+    showToast('Following ' + sellerName + ' ✓');
+  }
+  localStorage.setItem('followed_sellers', JSON.stringify(_followedSellers));
+
+  // Update all follow buttons for this seller in the feed
+  document.querySelectorAll('.spot-follow-btn').forEach(btn => {
+    if (btn.dataset.sellerId === sellerId) {
+      btn.textContent = _followedSellers[sellerId] ? 'Following' : 'Follow';
+      btn.style.background = _followedSellers[sellerId] ? 'rgba(255,255,255,.15)' : 'rgba(255,255,255,.9)';
+      btn.style.color = _followedSellers[sellerId] ? '#fff' : 'var(--ink)';
+    }
+  });
+
+  // Persist to server
+  fetch(`${API}/follow`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+    body: JSON.stringify({ seller_id: sellerId, action: isFollowing ? 'unfollow' : 'follow' }),
+  }).catch(() => {});
 }
 
 function logout() {
@@ -2281,14 +2317,23 @@ async function checkListingLimitForBoost() {
     const activeCount = (d.listings||[]).filter(l => l.status === 'active').length;
     const freeOpt = document.getElementById('boostNone');
     if (!freeOpt) return;
+    const submitBtn = document.getElementById('submitBtn');
     if (activeCount >= 5) {
-      freeOpt.style.display = 'none';
-      // Auto-select standard if none was selected
-      if (selectedBoost === 'none') {
-        selectBoost('standard');
+      // Keep free option visible but mark it as "requires upgrade"
+      freeOpt.style.opacity = '0.4';
+      freeOpt.style.pointerEvents = 'none';
+      if (submitBtn) {
+        submitBtn.textContent = '💳 Pay to Post — select a boost above';
+        submitBtn.style.background = 'var(--blue)';
       }
+      if (selectedBoost === 'none') selectBoost('standard');
     } else {
-      freeOpt.style.display = '';
+      freeOpt.style.opacity = '';
+      freeOpt.style.pointerEvents = '';
+      if (submitBtn && submitBtn.textContent.includes('Pay to Post')) {
+        submitBtn.textContent = '🚀 Post Listing';
+        submitBtn.style.background = '';
+      }
     }
   } catch(e) {}
 }
@@ -2354,53 +2399,24 @@ async function submitListing() {
   let imageUrls = [];
   try {
     const filesToUpload = postPhotoFiles.filter(Boolean);
-    for (let i = 0; i < filesToUpload.length; i++) {
-      const file = filesToUpload[i];
-      btn.textContent = `Uploading photo ${i+1}/${filesToUpload.length}…`;
-      if (progressLabel) progressLabel.textContent = `Photo ${i+1} of ${filesToUpload.length}`;
-      if (progressBar) progressBar.style.width = '0%';
-      if (progressPct) progressPct.textContent = '0%';
+    // Upload via Worker (avoids CORS issues with direct B2)
+    const formData = new FormData();
+    filesToUpload.forEach((f, i) => formData.append('file', f, f.name || `photo_${i}.jpg`));
+    btn.textContent = `Uploading ${filesToUpload.length} photo${filesToUpload.length>1?'s':''}…`;
+    if (progressLabel) progressLabel.textContent = 'Uploading photos…';
+    if (progressBar) progressBar.style.width = '50%';
 
-      // Get presigned upload URL from Worker
-      const urlRes = await fetch(
-        `${API}/upload-url?fileName=${encodeURIComponent(file.name||'photo.jpg')}&fileType=${encodeURIComponent(file.type||'image/jpeg')}&folder=listings`,
-        { headers: { Authorization: `Bearer ${getToken()}` } }
-      );
-      if (!urlRes.ok) throw new Error(`Could not get upload URL (${urlRes.status})`);
-      const urlData = await urlRes.json();
-      if (!urlData.uploadUrl) throw new Error(urlData.error || 'No upload URL returned');
-
-      const sha1 = await computeFileSHA1(file);
-
-      // Upload to B2 via XMLHttpRequest for real progress tracking
-      const downloadUrl = await new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', urlData.uploadUrl);
-        xhr.setRequestHeader('Authorization', urlData.authorizationToken);
-        xhr.setRequestHeader('X-Bz-File-Name', encodeURIComponent(urlData.fileName));
-        xhr.setRequestHeader('Content-Type', file.type || 'image/jpeg');
-        xhr.setRequestHeader('X-Bz-Content-Sha1', sha1);
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) {
-            const pct = Math.round(e.loaded / e.total * 100);
-            if (progressBar) progressBar.style.width = pct + '%';
-            if (progressPct) progressPct.textContent = pct + '%';
-          }
-        };
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve(urlData.downloadUrl);
-          } else {
-            let msg = 'Upload failed';
-            try { msg = JSON.parse(xhr.responseText).message || msg; } catch {}
-            reject(new Error(msg + ' (' + xhr.status + ')'));
-          }
-        };
-        xhr.onerror = () => reject(new Error('Network error during upload'));
-        xhr.send(file);
-      });
-      imageUrls.push(downloadUrl);
+    const uploadRes = await fetch(`${API}/upload`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${getToken()}` },
+      body: formData,
+    });
+    if (!uploadRes.ok) {
+      const e = await uploadRes.json().catch(() => ({}));
+      throw new Error(e.error || `Upload failed (${uploadRes.status})`);
     }
+    const uploadData = await uploadRes.json();
+    imageUrls = uploadData.urls || [];
     if (!imageUrls.length) throw new Error('No photos were uploaded');
     if (progressBar) progressBar.style.width = '100%';
     if (progressPct) progressPct.textContent = '100%';
@@ -3328,7 +3344,7 @@ function renderSpotFeed() {
         <!-- Profile + Follow -->
         <div class="spot-profile-btn" onclick="navigate('/seller/${v.seller_id}')">
           <div class="spot-profile-av">${(v.seller_name||'S')[0].toUpperCase()}</div>
-          ${!isOwner ? `<button class="spot-follow-btn" onclick="event.stopPropagation();showToast('Follow coming soon!')">Follow</button>` : ''}
+          ${!isOwner ? `<button class="spot-follow-btn" data-seller-id="${v.seller_id}" onclick="event.stopPropagation();toggleFollow('${v.seller_id}','${v.seller_name||&quot;Seller&quot;}')" style="background:rgba(255,255,255,.9);color:var(--ink)">${_followedSellers[v.seller_id] ? 'Following' : 'Follow'}</button>` : ''}
         </div>
         <!-- Like -->
         <div class="spot-action-btn${isLiked?' liked':''}" id="spot_like_${i}" onclick="spotAction('like',${i},'${v.id}')">
