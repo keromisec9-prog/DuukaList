@@ -3344,7 +3344,7 @@ function renderSpotFeed() {
         <!-- Profile + Follow -->
         <div class="spot-profile-btn" onclick="navigate('/seller/${v.seller_id}')">
           <div class="spot-profile-av">${(v.seller_name||'S')[0].toUpperCase()}</div>
-          ${!isOwner ? `<button class="spot-follow-btn" data-seller-id="${v.seller_id}" onclick="event.stopPropagation();toggleFollow('${v.seller_id}','${v.seller_name||&quot;Seller&quot;}')" style="background:rgba(255,255,255,.9);color:var(--ink)">${_followedSellers[v.seller_id] ? 'Following' : 'Follow'}</button>` : ''}
+          ${!isOwner ? `<button class="spot-follow-btn" data-seller-id="${v.seller_id}" onclick="event.stopPropagation();toggleFollow('${v.seller_id}','${(v.seller_name||'Seller').replace(/'/g,'')}')"  style="background:rgba(255,255,255,.9);color:var(--ink)">${_followedSellers[v.seller_id] ? 'Following' : 'Follow'}</button>` : ''}
         </div>
         <!-- Like -->
         <div class="spot-action-btn${isLiked?' liked':''}" id="spot_like_${i}" onclick="spotAction('like',${i},'${v.id}')">
