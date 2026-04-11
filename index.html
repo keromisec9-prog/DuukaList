@@ -488,6 +488,25 @@ input,select,textarea{font-family:var(--fb)}
 .spot-logo{font-family:var(--fd);font-weight:900;font-size:18px;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.5)}
 .spot-logo span{color:var(--orange)}
 .spot-upload-trigger{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:100px;padding:6px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;backdrop-filter:blur(6px);font-family:var(--fb)}
+/* Seek bar */
+.spot-seekbar-wrap{position:absolute;bottom:72px;left:12px;right:12px;z-index:20;opacity:0;transition:opacity .3s;pointer-events:all}
+.spot-seekbar-wrap.visible{opacity:1}
+.spot-seekbar{width:100%;height:3px;background:rgba(255,255,255,.3);border-radius:2px;cursor:pointer;position:relative;-webkit-appearance:none;appearance:none}
+.spot-seekbar::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.4);margin-top:-5.5px;cursor:pointer}
+.spot-seekbar::-webkit-slider-runnable-track{height:3px;border-radius:2px;background:linear-gradient(to right,var(--orange) var(--seek-pct,0%),rgba(255,255,255,.3) var(--seek-pct,0%))}
+.spot-time{font-size:10px;color:rgba(255,255,255,.8);text-align:right;margin-top:3px;font-weight:600}
+/* Speed indicator */
+.spot-speed-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.6);color:#fff;font-size:18px;font-weight:900;padding:8px 18px;border-radius:8px;pointer-events:none;opacity:0;transition:opacity .2s;z-index:30}
+.spot-speed-badge.show{opacity:1}
+/* Download progress */
+.spot-dl-bar{position:fixed;bottom:calc(var(--bnav) + 8px);left:16px;right:16px;background:rgba(0,0,0,.85);border-radius:12px;padding:10px 16px;z-index:2000;display:none;backdrop-filter:blur(8px)}
+.spot-dl-bar.show{display:block}
+.spot-dl-bar-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.spot-dl-bar-label{color:#fff;font-size:12px;font-weight:700}
+.spot-dl-bar-cancel{color:var(--orange);font-size:12px;font-weight:700;cursor:pointer}
+.spot-dl-progress{height:4px;background:rgba(255,255,255,.2);border-radius:2px;overflow:hidden}
+.spot-dl-progress-fill{height:100%;background:var(--orange);border-radius:2px;width:0%;transition:width .1s}
+
 /* Empty feed */
 .spot-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(255,255,255,.7);text-align:center;padding:40px}
 /* Video loading skeleton */
@@ -745,6 +764,15 @@ input,select,textarea{font-family:var(--fb)}
 </div>
 
 <!-- SPOTDUUKA COMMENTS PANEL -->
+<!-- DOWNLOAD PROGRESS BAR -->
+<div class="spot-dl-bar" id="spotDlBar">
+  <div class="spot-dl-bar-top">
+    <div class="spot-dl-bar-label" id="spotDlLabel">Downloading…</div>
+    <div class="spot-dl-bar-cancel" onclick="cancelSpotDownload()">Cancel</div>
+  </div>
+  <div class="spot-dl-progress"><div class="spot-dl-progress-fill" id="spotDlFill"></div></div>
+</div>
+
 <div id="spotCommentsOverlay" class="spot-comments-overlay" onclick="closeSpotComments()"></div>
 <div id="spotCommentsPanel" class="spot-comments-panel">
   <div class="spot-comments-header">
@@ -1071,6 +1099,26 @@ async function checkPendingBoost() {
   const raw = localStorage.getItem('pending_boost');
   if (!raw || !currentUser) return;
   const boost = JSON.parse(raw);
+
+  // Verify payment status with PesaPal before applying boost
+  try {
+    const verifyRes = await fetch(PAY_API + '/payments/status?tracking_id=' + boost.tracking_id, {
+      headers: { Authorization: 'Bearer ' + getToken() }
+    });
+    const verifyData = await verifyRes.json();
+    const status = (verifyData.payment_status_description || '').toLowerCase();
+    const completed = status === 'completed' || status === 'paid' || verifyData.status_code === 1;
+
+    if (!completed) {
+      // Payment not confirmed — don't apply boost, clean up silently
+      localStorage.removeItem('pending_boost');
+      return;
+    }
+  } catch {
+    // If verification fails, don't apply — wait for next attempt
+    return;
+  }
+
   localStorage.removeItem('pending_boost');
   try {
     const res = await fetch(API + '/listings/' + boost.listing_id + '/boost', {
@@ -2473,6 +2521,50 @@ async function submitListing() {
     payload.currency = 'UGX';
   }
 
+  // ── If paid boost required, redirect to PesaPal first ──────
+  const BOOST_PRICES = { standard:5000, top:15000, vip:30000, diamond:50000 };
+  if (selectedBoost !== 'none' && selectedBoost !== 'free' && BOOST_PRICES[selectedBoost]) {
+    btn.textContent = 'Redirecting to payment…';
+    const boostPrice = BOOST_PRICES[selectedBoost];
+    const orderId = 'newlisting_' + Date.now();
+    try {
+      const payRes = await fetch(PAY_API + '/payments/initiate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+        body: JSON.stringify({
+          order_id: orderId,
+          amount: boostPrice,
+          currency: 'UGX',
+          description: 'Post listing with ' + selectedBoost + ' boost',
+          buyer_name: currentUser.name || 'Seller',
+          buyer_email: currentUser.email,
+          buyer_phone: currentUser.phone || '',
+        }),
+      });
+      const payData = await payRes.json();
+      if (!payData.redirect_url) throw new Error(payData.error || 'No payment URL');
+
+      // Save full payload to sessionStorage — post after payment confirmed
+      sessionStorage.setItem('pending_listing_post', JSON.stringify({
+        payload,
+        postType,
+        orderId,
+        tracking_id: payData.order_tracking_id,
+        boost_tier: selectedBoost,
+        boost_price: boostPrice,
+      }));
+
+      window.location.href = payData.redirect_url;
+      return;
+    } catch(e) {
+      showToast('Payment error: ' + e.message, 4000);
+      btn.textContent = '💳 Pay to Post — select a boost above';
+      btn.disabled = false;
+      return;
+    }
+  }
+
+  // ── Free post OR payment already confirmed ────────────────
   try {
     const endpoint = postType === 'gig' ? `${API}/gigs` : `${API}/listings`;
     const res = await fetch(endpoint, {
@@ -2494,6 +2586,61 @@ async function submitListing() {
     showToast('Error: ' + err.message, 5000);
     btn.textContent = '🚀 Post Listing';
     btn.disabled = false;
+  }
+}
+
+// ── Check pending listing post after returning from PesaPal ──
+async function checkPendingListingPost() {
+  const raw = sessionStorage.getItem('pending_listing_post');
+  if (!raw || !currentUser) return;
+  const pending = JSON.parse(raw);
+
+  // Verify payment
+  try {
+    const verifyRes = await fetch(PAY_API + '/payments/status?tracking_id=' + pending.tracking_id, {
+      headers: { Authorization: 'Bearer ' + getToken() }
+    });
+    const v = await verifyRes.json();
+    const paid = (v.payment_status_description||'').toLowerCase() === 'completed'
+               || v.status_code === 1;
+    if (!paid) {
+      sessionStorage.removeItem('pending_listing_post');
+      showToast('Payment was not completed — listing not posted');
+      return;
+    }
+  } catch {
+    sessionStorage.removeItem('pending_listing_post');
+    return;
+  }
+
+  sessionStorage.removeItem('pending_listing_post');
+
+  // Post the listing now with confirmed payment
+  try {
+    const endpoint = pending.postType === 'gig' ? `${API}/gigs` : `${API}/listings`;
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+      body: JSON.stringify(pending.payload)
+    });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(d.error || 'Post failed');
+
+    const listingId = d.id || d.listing?.id;
+
+    // Apply boost now that payment confirmed
+    if (listingId && pending.boost_tier) {
+      await fetch(`${API}/listings/${listingId}/boost`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+        body: JSON.stringify({ tier: pending.boost_tier, payment_ref: pending.tracking_id }),
+      });
+    }
+
+    showToast('Listing posted & boosted! 🎉⭐', 4000);
+    setTimeout(() => navigate(listingId ? '/listing/' + listingId : '/dashboard'), 800);
+  } catch(e) {
+    showToast('Listing post failed: ' + e.message, 4000);
   }
 }
 
@@ -3325,14 +3472,26 @@ function renderSpotFeed() {
     const isLiked = !!_spotLiked[v.id];
     const isSaved = !!_spotSaved[v.id];
     const isOwner = v.seller_id === (currentUser?.id||'');
-    return `<div class="spot-slide" id="spot_slide_${i}" data-video-id="${v.id}" data-idx="${i}">
+    return `<div class="spot-slide" id="spot_slide_${i}" data-video-id="${v.id}" data-idx="${i}"
+      onmousedown="startSpotLongPress(${i})" onmouseup="endSpotLongPress(${i})" onmouseleave="endSpotLongPress(${i})"
+      ontouchstart="startSpotLongPress(${i})" ontouchend="endSpotLongPress(${i})" ontouchcancel="endSpotLongPress(${i})">
       <div class="spot-skeleton" id="spot_skel_${i}"><div class="spinner" style="border-color:rgba(255,255,255,.2);border-top-color:var(--orange)"></div></div>
       <video class="spot-video" id="spot_vid_${i}" src="${v.video_url}"
         playsinline webkit-playsinline loop preload="none"
         onclick="toggleSpotPlay(${i})"
-        onloadeddata="onSpotVideoReady(${i})">
+        onloadeddata="onSpotVideoReady(${i})"
+        ontimeupdate="updateSpotSeek(${i})">
       </video>
       <div class="spot-pause-indicator" id="spot_pause_${i}">⏸</div>
+      <div class="spot-speed-badge" id="spot_speed_${i}">2×</div>
+      <!-- Seek bar -->
+      <div class="spot-seekbar-wrap" id="spot_seek_wrap_${i}">
+        <input type="range" class="spot-seekbar" id="spot_seek_${i}" min="0" max="100" value="0" step="0.1"
+          oninput="seekSpotVideo(${i},this.value)"
+          ontouchstart="event.stopPropagation()"
+          ontouchmove="event.stopPropagation()">
+        <div class="spot-time" id="spot_time_${i}">0:00</div>
+      </div>
       <!-- Bottom overlay: seller name + description only -->
       <div class="spot-overlay" style="padding-right:80px">
         <div class="spot-seller" onclick="navigate('/seller/${v.seller_id}')">
@@ -3360,9 +3519,9 @@ function renderSpotFeed() {
           <div class="spot-action-icon">💬</div>
           <div class="spot-action-label" id="spot_comment_count_${i}">${fmtCount(v.comments)}</div>
         </div>
-        <!-- Save -->
-        <div class="spot-action-btn${isSaved?' saved':''}" id="spot_save_${i}" onclick="spotAction('save',${i},'${v.id}')">
-          <div class="spot-action-icon">${isSaved?'🔖':'🏷️'}</div>
+        <!-- Download -->
+        <div class="spot-action-btn" id="spot_dl_${i}" onclick="downloadSpotVideo(${i},'${v.video_url}','${(v.title||'video').replace(/'/g,'')}')">
+          <div class="spot-action-icon" id="spot_dl_icon_${i}">⬇️</div>
           <div class="spot-action-label">Save</div>
         </div>
         <!-- Share -->
@@ -3769,6 +3928,119 @@ async function submitSpotVideo() {
   }
 }
 
+// ── Seek bar ──────────────────────────────────────────────────
+function updateSpotSeek(idx) {
+  const vid = document.getElementById('spot_vid_' + idx);
+  const seek = document.getElementById('spot_seek_' + idx);
+  const wrap = document.getElementById('spot_seek_wrap_' + idx);
+  const timeEl = document.getElementById('spot_time_' + idx);
+  if (!vid || !seek || isNaN(vid.duration)) return;
+  const pct = (vid.currentTime / vid.duration) * 100;
+  seek.value = pct;
+  seek.style.setProperty('--seek-pct', pct + '%');
+  if (wrap) wrap.classList.add('visible');
+  if (timeEl) {
+    const s = Math.floor(vid.currentTime);
+    timeEl.textContent = Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+  }
+  // Track completion
+  if (vid.duration && vid.currentTime / vid.duration > 0.9) {
+    sendEngagement(_spotVideos[idx]?.id, 'complete');
+  }
+}
+
+function seekSpotVideo(idx, pct) {
+  const vid = document.getElementById('spot_vid_' + idx);
+  if (!vid || isNaN(vid.duration)) return;
+  vid.currentTime = (pct / 100) * vid.duration;
+}
+
+// ── Long press → 2× speed ─────────────────────────────────────
+let _longPressTimer = {};
+function startSpotLongPress(idx) {
+  _longPressTimer[idx] = setTimeout(() => {
+    const vid = document.getElementById('spot_vid_' + idx);
+    const badge = document.getElementById('spot_speed_' + idx);
+    if (vid) { vid.playbackRate = 2; }
+    if (badge) badge.classList.add('show');
+  }, 300);
+}
+function endSpotLongPress(idx) {
+  clearTimeout(_longPressTimer[idx]);
+  const vid = document.getElementById('spot_vid_' + idx);
+  const badge = document.getElementById('spot_speed_' + idx);
+  if (vid && vid.playbackRate === 2) { vid.playbackRate = 1; }
+  if (badge) badge.classList.remove('show');
+}
+
+// ── Download video ─────────────────────────────────────────────
+let _activeDownload = null;
+
+async function downloadSpotVideo(idx, videoUrl, title) {
+  if (_activeDownload) { showToast('A download is already in progress'); return; }
+  const bar = document.getElementById('spotDlBar');
+  const fill = document.getElementById('spotDlFill');
+  const label = document.getElementById('spotDlLabel');
+  bar.classList.add('show');
+  label.textContent = 'Downloading: ' + title.slice(0,30) + '…';
+  fill.style.width = '0%';
+
+  const controller = new AbortController();
+  _activeDownload = controller;
+
+  try {
+    const res = await fetch(videoUrl, { signal: controller.signal });
+    if (!res.ok) throw new Error('Failed to fetch video');
+    const total = parseInt(res.headers.get('Content-Length') || '0');
+    const reader = res.body.getReader();
+    const chunks = [];
+    let received = 0;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      received += value.length;
+      if (total > 0) {
+        const pct = Math.round(received / total * 100);
+        fill.style.width = pct + '%';
+        label.textContent = 'Downloading ' + pct + '%…';
+      } else {
+        // Unknown size — pulse animation
+        fill.style.width = Math.min(received / 1000000 * 10, 90) + '%';
+      }
+    }
+
+    fill.style.width = '100%';
+    label.textContent = 'Saving…';
+
+    const blob = new Blob(chunks, { type: 'video/mp4' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (title || 'spotduuka-video') + '.mp4';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Video saved! ✓');
+  } catch(e) {
+    if (e.name !== 'AbortError') showToast('Download failed: ' + e.message, 3000);
+  } finally {
+    _activeDownload = null;
+    bar.classList.remove('show');
+  }
+}
+
+function cancelSpotDownload() {
+  if (_activeDownload) {
+    _activeDownload.abort();
+    _activeDownload = null;
+  }
+  document.getElementById('spotDlBar')?.classList.remove('show');
+  showToast('Download cancelled');
+}
+
 function renderFooter() {
   return `<footer class="site-footer">
     <div class="footer-logo">DuukaList<em>+</em></div>
@@ -3830,7 +4102,7 @@ window.onGoogleLibraryLoad = function() {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-  checkAuth().then(() => checkPendingBoost());
+  checkAuth().then(() => { checkPendingBoost(); checkPendingListingPost(); });
   handleRoute();
   // Google One Tap — show after short delay so page renders first
   setTimeout(() => {
