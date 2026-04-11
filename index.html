@@ -1274,6 +1274,65 @@ async function toggleFollow(sellerId, sellerName) {
   }).catch(() => {});
 }
 
+async function renderMyVideos() {
+  if (!currentUser) { openAuth(); return; }
+  const app = document.getElementById('app');
+  app.innerHTML = `<div onclick="history.back()" class="detail-back">← Back</div>
+    <div class="page-hero"><h1>🎬 My Videos</h1><p>Manage your SpotDuuka videos</p></div>
+    <div id="myVideosList" style="padding:16px"><div class="spinner"></div></div>`;
+  try {
+    const res = await fetch(`${API}/spotduuka/seller/${currentUser.id}`, {
+      headers: { Authorization: `Bearer ${getToken()}` }
+    });
+    const d = await res.json();
+    const videos = d.videos || [];
+    const el = document.getElementById('myVideosList');
+    if (!videos.length) {
+      el.innerHTML = `<div class="empty-state"><div class="empty-icon">🎬</div><div class="empty-title">No videos yet</div><button class="btn btn-orange" onclick="openSpotUpload()">Post a Video</button></div>`;
+      return;
+    }
+    el.innerHTML = videos.map(v => `
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--rm);padding:12px;margin-bottom:12px">
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <video src="${v.video_url}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;flex-shrink:0;background:#000" preload="none" controls muted playsinline></video>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:14px;margin-bottom:4px">${v.title||'Untitled'}</div>
+            <div style="font-size:12px;color:var(--muted)">${v.category||'General'} · ${timeAgo(v.created_at)}</div>
+            <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap">
+              <span style="font-size:12px">❤️ <b>${v.likes||0}</b></span>
+              <span style="font-size:12px">💬 <b>${v.comments||0}</b></span>
+              <span style="font-size:12px">↗️ <b>${v.shares||0}</b></span>
+              <span style="font-size:12px">👁️ <b>${v.views||0}</b> views</span>
+              <span style="font-size:12px">⬇️ <b>${v.saves||0}</b> saves</span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px" onclick="event.stopPropagation()">
+          <button onclick="deleteMyVideo('${v.id}')" class="btn" style="flex:1;font-size:12px;padding:8px;border:1.5px solid rgba(229,62,62,.3);background:var(--white);color:var(--red)">🗑 Delete</button>
+          <button onclick="navigate('/spot')" class="btn btn-outline" style="flex:1;font-size:12px;padding:8px">▶ View in Feed</button>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    document.getElementById('myVideosList').innerHTML = `<div class="empty-state"><div class="empty-title">Could not load videos</div></div>`;
+  }
+}
+
+async function deleteMyVideo(videoId) {
+  if (!confirm('Delete this video? This cannot be undone.')) return;
+  try {
+    const res = await fetch(`${API}/spotduuka/video/${videoId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${getToken()}` }
+    });
+    if (res.ok) {
+      showToast('Video deleted ✓');
+      renderDashboard();
+    } else {
+      showToast('Could not delete video');
+    }
+  } catch { showToast('Network error'); }
+}
+
 function logout() {
   clearToken();
   updateAuthUI(null);
@@ -1310,6 +1369,7 @@ const routes = {
   '/checkout': renderCheckout,
   '/messages': renderMessages,
   '/spot': renderSpotDuuka,
+  '/spot/manage': renderMyVideos,
   '/edit': renderEditListing,
   '/setup-store': renderSetupStore,
 };
@@ -2892,6 +2952,14 @@ async function renderDashboard() {
         <div id="dashListings"><div class="spinner"></div></div>
       </div>
       <div class="dash-section">
+        <div class="dash-section-title" style="display:flex;justify-content:space-between;align-items:center">
+          <span>🎬 My SpotDuuka Videos</span>
+          <span style="font-size:12px;color:var(--orange);cursor:pointer;font-weight:700" onclick="navigate('/spot/manage')">Manage →</span>
+        </div>
+        <div id="dashMyVideos"><div class="spinner"></div></div>
+      </div>
+
+      <div class="dash-section">
         <div class="dash-section-title">📊 Listing Performance</div>
         <div id="dashPerf"><div style="text-align:center;padding:16px;color:var(--muted);font-size:13px">Tap a listing to see its stats</div></div>
       </div>
@@ -2944,6 +3012,31 @@ async function renderDashboard() {
       }).join('');
     }
   } catch { document.getElementById('dashListings').innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">Could not load listings.</div>`; }
+
+  // Load my videos
+  try {
+    const vRes = await fetch(`${API}/spotduuka/seller/${currentUser.id}`, {
+      headers: { Authorization: `Bearer ${getToken()}` }
+    });
+    const vd = await vRes.json();
+    const myVideos = vd.videos || [];
+    const vEl = document.getElementById('dashMyVideos');
+    if (!myVideos.length) {
+      vEl.innerHTML = `<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px">No videos yet. <span style="color:var(--orange);cursor:pointer;font-weight:700" onclick="openSpotUpload()">Post a video →</span></div>`;
+    } else {
+      vEl.innerHTML = myVideos.map(v => `
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border2)">
+          <video src="${v.video_url}" style="width:52px;height:52px;object-fit:cover;border-radius:6px;flex-shrink:0;background:#000" preload="none"></video>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${v.title||'Untitled'}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">❤️ ${v.likes||0} · 💬 ${v.comments||0} · ↗️ ${v.shares||0} · 👁️ ${v.views||0} views</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0" onclick="event.stopPropagation()">
+            <button onclick="deleteMyVideo('${v.id}')" style="font-size:10px;padding:4px 8px;border-radius:100px;border:1.5px solid rgba(229,62,62,.3);background:var(--white);color:var(--red);cursor:pointer;font-family:var(--fb);font-weight:700">🗑 Delete</button>
+          </div>
+        </div>`).join('');
+    }
+  } catch {}
 }
 
 /* ═══════════════════════════════════════
@@ -3504,36 +3597,39 @@ function renderSpotFeed() {
       </div>
       <!-- Right actions: profile at top, then like/comment/save/share -->
       <div class="spot-actions">
-        <!-- Profile + Follow -->
+        <!-- Profile avatar → goes to seller profile (NOT comments) -->
         <div class="spot-profile-btn" onclick="navigate('/seller/${v.seller_id}')">
           <div class="spot-profile-av">${(v.seller_name||'S')[0].toUpperCase()}</div>
-          ${!isOwner ? `<button class="spot-follow-btn" data-seller-id="${v.seller_id}" onclick="event.stopPropagation();toggleFollow('${v.seller_id}','${(v.seller_name||'Seller').replace(/'/g,'')}')"  style="background:rgba(255,255,255,.9);color:var(--ink)">${_followedSellers[v.seller_id] ? 'Following' : 'Follow'}</button>` : ''}
+          ${!isOwner ? `<button class="spot-follow-btn" data-seller-id="${v.seller_id}"
+            onclick="event.stopPropagation();toggleFollow('${v.seller_id}','${(v.seller_name||'X').replace(/'/g,'')}')"
+            style="background:${_followedSellers[v.seller_id]?'var(--orange)':'rgba(255,255,255,.9)'};color:${_followedSellers[v.seller_id]?'#fff':'var(--ink)'}"
+            >${_followedSellers[v.seller_id] ? 'Following' : 'Follow'}</button>` : ''}
         </div>
         <!-- Like -->
         <div class="spot-action-btn${isLiked?' liked':''}" id="spot_like_${i}" onclick="spotAction('like',${i},'${v.id}')">
           <div class="spot-action-icon">${isLiked?'❤️':'🤍'}</div>
           <div class="spot-action-label" id="spot_like_count_${i}">${fmtCount(v.likes)}</div>
         </div>
-        <!-- Comments -->
+        <!-- Comments — opens comment panel -->
         <div class="spot-action-btn" onclick="openSpotComments('${v.id}',${i})">
           <div class="spot-action-icon">💬</div>
           <div class="spot-action-label" id="spot_comment_count_${i}">${fmtCount(v.comments)}</div>
         </div>
-        <!-- Download -->
+        <!-- Download with count -->
         <div class="spot-action-btn" id="spot_dl_${i}" onclick="downloadSpotVideo(${i},'${v.video_url}','${(v.title||'video').replace(/'/g,'')}')">
-          <div class="spot-action-icon" id="spot_dl_icon_${i}">⬇️</div>
-          <div class="spot-action-label">Save</div>
+          <div class="spot-action-icon">⬇️</div>
+          <div class="spot-action-label" id="spot_dl_count_${i}">${fmtCount(v.saves||0)}</div>
         </div>
-        <!-- Share -->
+        <!-- Share with count -->
         <div class="spot-action-btn" onclick="spotShare(${i},'${v.id}','${(v.title||'').replace(/'/g,'')}')">
           <div class="spot-action-icon">↗️</div>
-          <div class="spot-action-label">Share</div>
+          <div class="spot-action-label" id="spot_share_count_${i}">${fmtCount(v.shares||0)}</div>
         </div>
-        <!-- Views: owner only -->
+        <!-- Views + Stats: owner only -->
         ${isOwner ? `
-        <div class="spot-action-btn" onclick="spotViewCount(${i},'${v.id}')">
-          <div class="spot-action-icon">👁️</div>
-          <div class="spot-action-label">${fmtCount(v.views)}</div>
+        <div class="spot-action-btn" onclick="navigate('/spot/manage')">
+          <div class="spot-action-icon">⚙️</div>
+          <div class="spot-action-label">Manage</div>
         </div>` : ''}
       </div>
     </div>`;
@@ -3662,6 +3758,12 @@ function spotAction(type, idx, videoId) {
 
 function spotShare(idx, videoId, title) {
   sendEngagement(videoId, 'share');
+  // Update share count in UI
+  const shareCount = document.getElementById('spot_share_count_' + idx);
+  if (shareCount && _spotVideos[idx]) {
+    _spotVideos[idx].shares = (_spotVideos[idx].shares || 0) + 1;
+    shareCount.textContent = fmtCount(_spotVideos[idx].shares);
+  }
   if (navigator.share) {
     navigator.share({ title: 'SpotDuuka: ' + title, url: window.location.origin + '/#/spot' }).catch(() => {});
   } else {
@@ -3977,20 +4079,23 @@ function endSpotLongPress(idx) {
 let _activeDownload = null;
 
 async function downloadSpotVideo(idx, videoUrl, title) {
-  if (_activeDownload) { showToast('A download is already in progress'); return; }
+  if (_activeDownload) { showToast('Download already in progress'); return; }
   const bar = document.getElementById('spotDlBar');
   const fill = document.getElementById('spotDlFill');
   const label = document.getElementById('spotDlLabel');
-  bar.classList.add('show');
-  label.textContent = 'Downloading: ' + title.slice(0,30) + '…';
-  fill.style.width = '0%';
-
-  const controller = new AbortController();
-  _activeDownload = controller;
 
   try {
+    _activeDownload = true;
+    bar.classList.add('show');
+    label.textContent = 'Starting download…';
+    fill.style.width = '10%';
+
+    const controller = new AbortController();
+    _activeDownload = controller;
+
     const res = await fetch(videoUrl, { signal: controller.signal });
-    if (!res.ok) throw new Error('Failed to fetch video');
+    if (!res.ok) throw new Error('Network error');
+
     const total = parseInt(res.headers.get('Content-Length') || '0');
     const reader = res.body.getReader();
     const chunks = [];
@@ -4001,14 +4106,9 @@ async function downloadSpotVideo(idx, videoUrl, title) {
       if (done) break;
       chunks.push(value);
       received += value.length;
-      if (total > 0) {
-        const pct = Math.round(received / total * 100);
-        fill.style.width = pct + '%';
-        label.textContent = 'Downloading ' + pct + '%…';
-      } else {
-        // Unknown size — pulse animation
-        fill.style.width = Math.min(received / 1000000 * 10, 90) + '%';
-      }
+      const pct = total > 0 ? Math.round(received / total * 100) : Math.min(Math.round(received / 5000000 * 80), 80);
+      fill.style.width = pct + '%';
+      label.textContent = total > 0 ? `Downloading ${pct}%` : `Downloaded ${(received/1024/1024).toFixed(1)} MB…`;
     }
 
     fill.style.width = '100%';
@@ -4018,12 +4118,20 @@ async function downloadSpotVideo(idx, videoUrl, title) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = (title || 'spotduuka-video') + '.mp4';
+    a.download = (title || 'spotduuka') + '.mp4';
+    a.style.display = 'none';
     document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showToast('Video saved! ✓');
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+    showToast('Video saved to your device ✓', 3000);
+    sendEngagement(_spotVideos[idx]?.id, 'save');
+    // Update download count in UI
+    const dlCount = document.getElementById('spot_dl_count_' + idx);
+    if (dlCount && _spotVideos[idx]) {
+      _spotVideos[idx].saves = (_spotVideos[idx].saves || 0) + 1;
+      dlCount.textContent = fmtCount(_spotVideos[idx].saves);
+    }
+
   } catch(e) {
     if (e.name !== 'AbortError') showToast('Download failed: ' + e.message, 3000);
   } finally {
@@ -4033,10 +4141,10 @@ async function downloadSpotVideo(idx, videoUrl, title) {
 }
 
 function cancelSpotDownload() {
-  if (_activeDownload) {
+  if (_activeDownload && typeof _activeDownload.abort === 'function') {
     _activeDownload.abort();
-    _activeDownload = null;
   }
+  _activeDownload = null;
   document.getElementById('spotDlBar')?.classList.remove('show');
   showToast('Download cancelled');
 }
