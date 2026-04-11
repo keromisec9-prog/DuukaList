@@ -456,7 +456,7 @@ input,select,textarea{font-family:var(--fb)}
 .boost-badge{background:rgba(255,106,0,.1);color:var(--orange);font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px}
 
 /* ═══════════════════════ SPOTDUUKA ═══════════════════════ */
-.spot-container{position:fixed;inset:0;top:var(--nav);bottom:var(--bnav);background:#000;z-index:50;overflow:hidden}
+.spot-container{position:fixed;inset:0;top:0;bottom:var(--bnav);background:#000;z-index:600;overflow:hidden}
 .spot-feed{width:100%;height:100%;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none}
 .spot-feed::-webkit-scrollbar{display:none}
 .spot-slide{width:100%;height:100%;scroll-snap-align:start;position:relative;overflow:hidden;flex-shrink:0;display:block}
@@ -751,12 +751,12 @@ input,select,textarea{font-family:var(--fb)}
     <div class="spot-comments-title" id="spotCommentCount">Comments</div>
     <div onclick="closeSpotComments()" style="font-size:20px;cursor:pointer;color:var(--muted);padding:4px">✕</div>
   </div>
-  <div class="spot-comments-list" id="spotCommentsList">
-    <div style="text-align:center;color:var(--muted);padding:32px 0;font-size:14px">No comments yet. Be first!</div>
-  </div>
-  <div class="spot-comment-input-bar">
+  <div class="spot-comment-input-bar" style="border-top:none;border-bottom:1px solid var(--border);padding:10px 14px 12px">
     <input class="spot-comment-input" id="spotCommentInput" placeholder="Add a comment…" maxlength="300" onkeydown="if(event.key==='Enter')submitSpotComment()">
     <button class="spot-comment-send" onclick="submitSpotComment()">➤</button>
+  </div>
+  <div class="spot-comments-list" id="spotCommentsList">
+    <div style="text-align:center;color:var(--muted);padding:32px 0;font-size:14px">No comments yet. Be first!</div>
   </div>
 </div>
 
@@ -1602,7 +1602,7 @@ async function loadHomeListings() {
     const res = await fetch(`${API}/listings?limit=8&sort=boost`);
     if (!res.ok) throw new Error();
     const d = await res.json();
-    const items = d.listings || d.items || (Array.isArray(d) ? d : []);
+    const items = (d.listings || d.items || (Array.isArray(d) ? d : [])).filter(l => l.status !== 'deleted');
     if (!items.length) {
       grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state"><div class="empty-icon">🏪</div><div class="empty-title">No listings yet</div><div class="empty-sub">Be the first to post on DuukaList+!</div><button class="btn btn-orange" onclick="requireAuth(()=>navigate('/post'))">Post First Listing</button></div></div>`;
       return;
@@ -1643,7 +1643,7 @@ async function loadHomeResources() {
     const res = await fetch(`${API}/listings?type=resource&limit=4`);
     if (!res.ok) throw new Error();
     const d = await res.json();
-    const items = d.listings || d.items || (Array.isArray(d) ? d : []);
+    const items = (d.listings || d.items || (Array.isArray(d) ? d : [])).filter(l => l.status !== 'deleted');
     if (!items.length) {
       grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--muted);font-size:13px">No resources listed yet. <span style="color:var(--purple);cursor:pointer;font-weight:700" onclick="requireAuth(()=>navigate('/post?type=resource'))">List yours →</span></div>`;
       return;
@@ -1661,7 +1661,7 @@ async function loadHomeNeeds() {
     const res = await fetch(`${API}/listings?type=need&limit=3`);
     if (!res.ok) throw new Error();
     const d = await res.json();
-    const items = d.listings || d.items || (Array.isArray(d) ? d : []);
+    const items = (d.listings || d.items || (Array.isArray(d) ? d : [])).filter(l => l.status !== 'deleted');
     if (!items.length) {
       el.innerHTML = `<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px">No requests yet. Be the first to post what you need.</div>`;
       return;
@@ -1745,7 +1745,7 @@ async function fetchBrowseListings(q, category, sort) {
     const res = await fetch(`${API}/listings?${params}`);
     if (!res.ok) throw new Error();
     const d = await res.json();
-    const items = d.listings || d.items || (Array.isArray(d) ? d : []);
+    const items = (d.listings || d.items || (Array.isArray(d) ? d : [])).filter(l => l.status !== 'deleted');
     const total = d.total || items.length;
     if (countEl) countEl.textContent = `${total} listing${total !== 1 ? 's' : ''}`;
     if (!items.length) {
@@ -1881,7 +1881,7 @@ async function renderResources(_, params = {}) {
     const res = await fetch(`${API}/listings?${p}`);
     if (!res.ok) throw new Error();
     const d = await res.json();
-    const items = d.listings || d.items || (Array.isArray(d) ? d : []);
+    const items = (d.listings || d.items || (Array.isArray(d) ? d : [])).filter(l => l.status !== 'deleted');
     const grid = document.getElementById('resourcesGrid');
     if (!items.length) {
       grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state"><div class="empty-icon">🏗️</div><div class="empty-title">No resources yet</div><div class="empty-sub">Be the first to list land, tools or capital for partnership</div><button class="btn btn-orange" onclick="requireAuth(()=>navigate('/post?type=resource'))">List a Resource</button></div></div>`;
@@ -1959,7 +1959,7 @@ async function renderNeeds(_, params = {}) {
     const res = await fetch(`${API}/listings?type=need&limit=20`);
     if (!res.ok) throw new Error();
     const d = await res.json();
-    const items = d.listings || d.items || (Array.isArray(d) ? d : []);
+    const items = (d.listings || d.items || (Array.isArray(d) ? d : [])).filter(l => l.status !== 'deleted');
     const grid = document.getElementById('needsGrid');
     if (!items.length) {
       grid.innerHTML = `<div class="empty-state"><div class="empty-icon">📢</div><div class="empty-title">No requests yet</div><div class="empty-sub">Be the first to post what you need. Sellers will respond to you.</div></div>`;
@@ -2769,7 +2769,7 @@ async function renderDashboard() {
   try {
     const res = await fetch(`${API}/listings?seller_id=${currentUser.id}&limit=20`, { headers: { Authorization: `Bearer ${getToken()}` } });
     const d = await res.json();
-    const items = d.listings || d.items || (Array.isArray(d) ? d : []);
+    const items = (d.listings || d.items || (Array.isArray(d) ? d : [])).filter(l => l.status !== 'deleted');
     document.getElementById('dListings').textContent = items.length;
     const listingsEl = document.getElementById('dashListings');
     if (!items.length) {
@@ -3254,6 +3254,10 @@ let _spotWatchStart = {};
 let _spotTab = 'foryou'; // 'following' | 'foryou'
 
 async function renderSpotDuuka() {
+  // Hide site header for true fullscreen experience
+  const siteHeader = document.querySelector('.site-header');
+  if (siteHeader) siteHeader.style.display = 'none';
+  document.body.style.paddingBottom = 'var(--bnav)';
   const app = document.getElementById('app');
   app.innerHTML = `
     <div class="spot-container" id="spotContainer">
@@ -3445,12 +3449,13 @@ function toggleSpotPlay(idx) {
 }
 
 function closeSpot() {
-  // Stop all videos
   _spotVideos.forEach((_, i) => {
     const v = document.getElementById('spot_vid_' + i);
     if (v) v.pause();
   });
-  if (window._spotObserver) window._spotObserver.disconnect();
+  if (window._spotObserver) { window._spotObserver.disconnect(); window._spotObserver = null; }
+  const siteHeader = document.querySelector('.site-header');
+  if (siteHeader) siteHeader.style.display = '';
   navigate('/');
 }
 
