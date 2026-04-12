@@ -908,7 +908,11 @@ function updateAuthUI(user) {
   if (user) {
     btn.style.display = 'none';
     wrap.style.display = 'block';
-    av.textContent = (user.name || user.email || 'U')[0].toUpperCase();
+    if (user.profile_picture) {
+      av.innerHTML = `<img src="${user.profile_picture}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    } else {
+      av.textContent = (user.name || user.email || 'U')[0].toUpperCase();
+    }
   } else {
     btn.style.display = 'flex';
     wrap.style.display = 'none';
@@ -1346,6 +1350,45 @@ async function deleteMyVideo(videoId) {
   } catch { showToast('Network error'); }
 }
 
+async function uploadProfilePhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { showToast('Photo must be under 5MB'); return; }
+  showToast('Uploading…');
+  try {
+    const fd = new FormData();
+    fd.append('file', file, file.name || 'profile.jpg');
+    const r = await fetch(`${API}/upload`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${getToken()}` },
+      body: fd,
+    });
+    if (!r.ok) throw new Error('Upload failed (' + r.status + ')');
+    const d = await r.json();
+    const url = d.urls?.[0];
+    if (!url) throw new Error('No URL returned');
+
+    // Save to profile
+    const res = await fetch(`${API}/me`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify({ profile_picture: url }),
+    });
+    if (!res.ok) throw new Error('Could not save photo');
+    const ud = await res.json();
+    if (ud.user) Object.assign(currentUser, ud.user);
+
+    // Update all avatar displays immediately
+    updateAuthUI(currentUser);
+    showToast('Profile photo updated! ✓', 3000);
+
+    // Re-render dashboard to show new photo
+    renderDashboard();
+  } catch(e) {
+    showToast('Error: ' + e.message, 4000);
+  }
+}
+
 function logout() {
   clearToken();
   updateAuthUI(null);
@@ -1396,7 +1439,19 @@ function parseRoute() {
   return { path: '/' + (parts[0] || ''), id: parts[1] || null, params };
 }
 
-function navigate(path) { window.location.hash = path; }
+function navigate(path) {
+  // Restore site header when leaving SpotDuuka
+  const siteHeader = document.querySelector('.site-header');
+  if (siteHeader) {
+    siteHeader.style.display = (path === '/spot' || path.startsWith('/spot/')) ? 'none' : '';
+  }
+  // Stop SpotDuuka videos when leaving
+  if (!path.startsWith('/spot')) {
+    if (window._spotObserver) { window._spotObserver.disconnect(); window._spotObserver = null; }
+    document.querySelectorAll('.spot-video').forEach(v => { try { v.pause(); } catch{} });
+  }
+  window.location.hash = path;
+}
 
 function setActiveNav(path) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -2936,7 +2991,14 @@ async function renderDashboard() {
   app.innerHTML = `
     <div class="dash-header">
       <div class="dash-user">
-        <div class="dash-avatar">${initial}</div>
+        <div class="dash-avatar" onclick="document.getElementById('dashAvatarInput').click()"
+          style="${currentUser.profile_picture ? 'background:none;padding:0;overflow:hidden;' : ''}cursor:pointer;position:relative" title="Tap to change photo">
+          ${currentUser.profile_picture
+            ? `<img src="${currentUser.profile_picture}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+            : initial}
+          <div style="position:absolute;bottom:0;right:0;width:18px;height:18px;background:var(--orange);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;border:2px solid var(--blue)">📷</div>
+        </div>
+        <input type="file" id="dashAvatarInput" accept="image/*" style="display:none" onchange="uploadProfilePhoto(this)">
         <div class="dash-user-info">
           <h2>${currentUser.name||'User'}</h2>
           <p>${currentUser.email||''} · ${currentUser.seller_level||'New Seller'}</p>
@@ -3076,8 +3138,9 @@ async function renderSeller(id) {
       <div onclick="history.back()" class="detail-back">← Back</div>
 
       <!-- Store Banner -->
-      <div class="store-banner" style="${bannerStyle}">
-        <div class="store-av" style="${(seller.profile_picture||seller.avatar_url) ? 'background:none;padding:0;overflow:hidden;' : ''}">
+      <div class="store-banner" style="${bannerStyle}" ${seller.banner_image ? `onclick="openPhotoViewer(['${seller.banner_image}'],0)" style="${bannerStyle};cursor:zoom-in"` : ''}>
+        <div class="store-av" style="${(seller.profile_picture||seller.avatar_url) ? 'background:none;padding:0;overflow:hidden;' : ''}${seller.profile_picture ? 'cursor:zoom-in' : ''}"
+          ${seller.profile_picture ? `onclick="event.stopPropagation();openPhotoViewer(['${seller.profile_picture}'],0)"` : ''}>
           ${(seller.profile_picture||seller.avatar_url) ? `<img src="${seller.profile_picture||seller.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--rm)">` : initial}
         </div>
         <div class="store-identity">
