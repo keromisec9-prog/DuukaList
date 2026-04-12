@@ -3817,25 +3817,43 @@ async function saveStore() {
   const busType = typeEl?.dataset.type || null;
 
   // Upload profile/banner photos if changed
-  let profilePicUrl = null, bannerImgUrl = null;
+  // Always start with existing URLs so they're preserved even if no new photo selected
+  let profilePicUrl = currentUser?.profile_picture || null;
+  let bannerImgUrl = currentUser?.banner_image || null;
+
   try {
     if (_cbProfileFile) {
       btn.textContent = 'Uploading profile photo…';
       const fd = new FormData();
-      fd.append('file', _cbProfileFile, _cbProfileFile.name);
-      const r = await fetch(`${API}/upload`, { method:'POST', headers:{Authorization:`Bearer ${getToken()}`}, body:fd });
+      fd.append('file', _cbProfileFile, _cbProfileFile.name || 'profile.jpg');
+      const r = await fetch(`${API}/upload-proxy?folder=listings`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${getToken()}` },
+        body: fd,
+      });
       const d = await r.json();
-      profilePicUrl = d.urls?.[0] || null;
+      if (!r.ok || !d.url) throw new Error(d.error || 'Profile photo upload failed');
+      profilePicUrl = d.url;
     }
     if (_cbBannerFile) {
       btn.textContent = 'Uploading banner…';
       const fd = new FormData();
-      fd.append('file', _cbBannerFile, _cbBannerFile.name);
-      const r = await fetch(`${API}/upload`, { method:'POST', headers:{Authorization:`Bearer ${getToken()}`}, body:fd });
+      fd.append('file', _cbBannerFile, _cbBannerFile.name || 'banner.jpg');
+      const r = await fetch(`${API}/upload-proxy?folder=listings`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${getToken()}` },
+        body: fd,
+      });
       const d = await r.json();
-      bannerImgUrl = d.urls?.[0] || null;
+      if (!r.ok || !d.url) throw new Error(d.error || 'Banner upload failed');
+      bannerImgUrl = d.url;
     }
-  } catch(e) { showToast('Photo upload failed: ' + e.message, 3000); }
+  } catch(e) {
+    showToast('Photo upload failed: ' + e.message, 4000);
+    btn.textContent = '☁️ Save Cloud Business Profile';
+    btn.disabled = false;
+    return;
+  }
 
   btn.textContent = 'Saving…';
 
@@ -3856,10 +3874,11 @@ async function saveStore() {
     social_instagram: document.getElementById('ssInstagram')?.value.trim() || null,
     social_twitter: document.getElementById('ssTwitter')?.value.trim() || null,
     social_website: document.getElementById('ssWebsite')?.value.trim() || null,
+    // Always include photo URLs (existing or newly uploaded)
+    profile_picture: profilePicUrl,
+    banner_image: bannerImgUrl,
   };
   if (_cbLat) { payload.store_lat = _cbLat; payload.store_lng = _cbLng; }
-  if (profilePicUrl) payload.profile_picture = profilePicUrl;
-  if (bannerImgUrl) payload.banner_image = bannerImgUrl;
 
   try {
     const res = await fetch(`${API}/me`, {
@@ -3871,6 +3890,9 @@ async function saveStore() {
     const d = await res.json();
     if (d.user) Object.assign(currentUser, d.user);
     showToast('Cloud Business profile saved! ☁️✓', 3000);
+    // Reset file refs so re-saving doesn't re-upload
+    _cbProfileFile = null;
+    _cbBannerFile = null;
     setTimeout(() => navigate('/seller/' + currentUser.id), 800);
   } catch(e) {
     showToast('Error: ' + e.message);
