@@ -522,9 +522,9 @@ input,select,textarea{font-family:var(--fb)}
 .spot-profile-av{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--orange),#ffaa00);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;color:#fff;border:2px solid rgba(255,255,255,.7)}
 .spot-follow-btn{background:var(--orange);color:#fff;font-size:10px;font-weight:800;border:none;border-radius:100px;padding:3px 8px;cursor:pointer;margin-top:-6px;position:relative;z-index:1;font-family:var(--fb)}
 /* Comments panel */
-.spot-comments-panel{position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:0 auto;background:var(--white);border-radius:16px 16px 0 0;z-index:200;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);max-height:75vh;height:75vh;display:flex;flex-direction:column}
+.spot-comments-panel{position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:0 auto;background:var(--white);border-radius:16px 16px 0 0;z-index:800;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);max-height:75vh;height:75vh;display:flex;flex-direction:column}
 .spot-comments-panel.open{transform:translateY(0)}
-.spot-comments-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:199;opacity:0;pointer-events:none;transition:opacity .3s}
+.spot-comments-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:799;opacity:0;pointer-events:none;transition:opacity .3s}
 .spot-comments-overlay.open{opacity:1;pointer-events:all}
 .spot-comments-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
 .spot-comments-title{font-weight:800;font-size:15px;color:var(--ink)}
@@ -3074,7 +3074,9 @@ async function renderSeller(id) {
 
       <!-- Store Banner -->
       <div class="store-banner" style="background:${bannerColor}">
-        <div class="store-av">${initial}</div>
+        <div class="store-av" style="${seller.profile_picture ? 'background:none;padding:0;overflow:hidden;' : ''}">
+          ${seller.profile_picture ? `<img src="${seller.profile_picture}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--rm)">` : initial}
+        </div>
         <div class="store-identity">
           <div class="store-name">${storeName}</div>
           <div class="store-handle">${seller.store_name ? seller.name + ' · ' : ''}Member since ${joinYear}</div>
@@ -3993,7 +3995,11 @@ function renderSpotFeed() {
       <div class="spot-actions">
         <!-- Profile avatar → goes to seller profile (NOT comments) -->
         <div class="spot-profile-btn" onclick="navigate('/seller/${v.seller_id}')">
-          <div class="spot-profile-av">${(v.seller_name||'S')[0].toUpperCase()}</div>
+          <div class="spot-profile-av" style="${v.seller_avatar ? 'padding:0;overflow:hidden;background:none;' : ''}">
+            ${v.seller_avatar
+              ? `<img src="${v.seller_avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+              : (v.seller_name||'S')[0].toUpperCase()}
+          </div>
           ${!isOwner ? `<button class="spot-follow-btn" data-seller-id="${v.seller_id}"
             onclick="event.stopPropagation();toggleFollow('${v.seller_id}','${(v.seller_name||'X').replace(/'/g,'')}')"
             style="background:${_followedSellers[v.seller_id]?'var(--orange)':'rgba(255,255,255,.9)'};color:${_followedSellers[v.seller_id]?'#fff':'var(--ink)'}"
