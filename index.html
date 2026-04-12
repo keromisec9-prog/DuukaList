@@ -591,6 +591,19 @@ input,select,textarea{font-family:var(--fb)}
 .prog-line{flex:1;height:2px;background:var(--border);margin-top:-11px}
 .prog-line.done{background:var(--green)}
 
+/* ═══════════════════════ CLOUD BUSINESS ═══════════════════════ */
+.cb-type-opt{border:2px solid var(--border);border-radius:var(--rm);padding:10px 8px;cursor:pointer;transition:all .15s;text-align:center;background:var(--white)}
+.cb-type-opt:hover{border-color:var(--orange);background:var(--orange-light)}
+.cb-type-opt.selected{border-color:var(--orange);background:var(--orange-light)}
+.cb-open-badge{display:inline-flex;align-items:center;gap:4px;background:#e8faf2;color:var(--green);font-size:11px;font-weight:700;padding:3px 8px;border-radius:100px;border:1px solid #bbf7d0}
+.cb-closed-badge{display:inline-flex;align-items:center;gap:4px;background:#fef2f2;color:var(--red);font-size:11px;font-weight:700;padding:3px 8px;border-radius:100px}
+.store-social-row{display:flex;gap:10px;flex-wrap:wrap;padding:10px 16px;background:var(--white);border-bottom:1px solid var(--border)}
+.store-social-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:100px;border:1.5px solid var(--border);background:var(--white);font-size:13px;font-weight:600;color:var(--ink2);cursor:pointer;text-decoration:none;white-space:nowrap}
+.store-hours-row{padding:12px 16px;background:var(--white);border-bottom:1px solid var(--border)}
+.store-hours-day{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;border-bottom:1px solid var(--border2)}
+.store-hours-day:last-child{border-bottom:none}
+.store-map-wrap{height:200px;border-bottom:1px solid var(--border)}
+
 /* ═══════════════════════ STOREFRONT ═══════════════════════ */
 .store-banner{height:120px;display:flex;align-items:flex-end;padding:0 16px 16px;position:relative;overflow:hidden}
 .store-banner::before{content:'';position:absolute;inset:0;background:inherit;filter:brightness(.7)}
@@ -3068,21 +3081,54 @@ async function renderSeller(id) {
         </div>
       </div>
 
-      <!-- Store Info Row -->
+      <!-- Business type + open status -->
       <div class="store-info-row">
+        ${seller.business_type ? `<div class="store-info-chip">🏢 ${CB_TYPES.find(t=>t.id===seller.business_type)?.label||seller.business_type}</div>` : ''}
         <div class="store-info-chip">📦 <strong>${listings.length}</strong> listings</div>
         ${seller.store_location ? `<div class="store-info-chip">📍 ${seller.store_location}</div>` : ''}
-        ${seller.seller_level ? `<div class="store-info-chip">⭐ ${seller.seller_level}</div>` : ''}
+        ${cbIsOpenNow(seller) ? `<div class="cb-open-badge">🟢 Open Now</div>` : seller.business_hours ? `<div class="cb-closed-badge">🔴 Closed</div>` : ''}
+        ${seller.delivery_available ? `<div class="store-info-chip">🚚 Delivers</div>` : ''}
       </div>
 
-      <!-- Store Description -->
+      <!-- Tagline + Description -->
+      ${seller.business_tagline ? `<div style="padding:8px 16px;font-size:13px;font-weight:700;color:var(--muted);background:var(--white);border-bottom:1px solid var(--border)">${seller.business_tagline}</div>` : ''}
       ${seller.store_description ? `<div class="store-desc">${seller.store_description}</div>` : ''}
 
       <!-- Contact Actions -->
       ${seller.store_whatsapp ? `
       <div class="store-actions">
-        <button class="wa-btn" style="flex:1" onclick="window.open('https://wa.me/${(seller.store_whatsapp||'').replace(/[^0-9]/g,'')}?text=Hi, I found your store on DuukaList+','_blank')">💬 WhatsApp</button>
+        <button class="wa-btn" style="flex:1" onclick="window.open('https://wa.me/${(seller.store_whatsapp||'').replace(/[^0-9]/g,'')}?text=Hi, I found your business on DuukaList+','_blank')">💬 WhatsApp</button>
         <button class="call-btn" style="flex:1" onclick="window.open('tel:+${(seller.store_whatsapp||'').replace(/[^0-9]/g,'')}')">📞 Call</button>
+      </div>` : ''}
+
+      <!-- Social links -->
+      ${(seller.social_facebook||seller.social_instagram||seller.social_twitter||seller.social_website) ? `
+      <div class="store-social-row">
+        ${seller.social_facebook ? `<a href="${seller.social_facebook}" target="_blank" class="store-social-btn">📘 Facebook</a>` : ''}
+        ${seller.social_instagram ? `<a href="https://instagram.com/${seller.social_instagram.replace('@','')}" target="_blank" class="store-social-btn">📸 Instagram</a>` : ''}
+        ${seller.social_twitter ? `<a href="https://twitter.com/${seller.social_twitter.replace('@','')}" target="_blank" class="store-social-btn">🐦 Twitter</a>` : ''}
+        ${seller.social_website ? `<a href="${seller.social_website}" target="_blank" class="store-social-btn">🌐 Website</a>` : ''}
+      </div>` : ''}
+
+      <!-- Business Hours -->
+      ${seller.business_hours && Object.keys(seller.business_hours).length ? `
+      <div class="store-hours-row">
+        <div style="font-weight:700;font-size:13px;margin-bottom:8px">🕒 Business Hours</div>
+        ${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => `
+          <div class="store-hours-day">
+            <span style="font-weight:600">${d}</span>
+            <span style="color:${seller.business_hours[d]?'var(--green)':'var(--muted)'}">${seller.business_hours[d]||'Closed'}</span>
+          </div>`).join('')}
+      </div>` : ''}
+
+      <!-- Map (if location set) -->
+      ${seller.store_lat ? `
+      <div class="store-map-wrap" id="storeMapWrap">
+        <div id="storeMap" style="height:100%"></div>
+      </div>
+      <div style="padding:8px 16px;background:var(--white);border-bottom:1px solid var(--border)">
+        <a href="https://www.google.com/maps/dir/?api=1&destination=${seller.store_lat},${seller.store_lng}" target="_blank"
+          style="font-size:13px;font-weight:700;color:var(--blue);text-decoration:none">🗺 Get Directions →</a>
       </div>` : ''}
 
       <!-- Stats Row -->
@@ -3100,6 +3146,10 @@ async function renderSeller(id) {
           ? `<div class="listings-grid">${listings.map(listingCard).join('')}</div>`
           : `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No listings yet</div></div>`}
       </div>`;
+    // Init store map if location available
+    if (seller.store_lat) {
+      setTimeout(() => initStoreMap(seller.store_lat, seller.store_lng), 400);
+    }
   } catch {
     app.innerHTML = `<div class="empty-state"><div class="empty-icon">❌</div><div class="empty-title">Store not found</div><button class="btn btn-orange" onclick="navigate('/browse')">Browse Listings</button></div>`;
   }
@@ -3390,35 +3440,153 @@ async function saveEditListing(id) {
   }
 }
 
+// ── Cloud Business helpers ───────────────────────────────────
+
+function cbIsOpenNow(seller) {
+  if (!seller.business_hours || !seller.working_days) return false;
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const now = new Date();
+  const day = days[now.getDay()];
+  const hrs = seller.business_hours[day];
+  if (!hrs) return false;
+  const [open, close] = hrs.split('-');
+  const [oh, om] = open.split(':').map(Number);
+  const [ch, cm] = close.split(':').map(Number);
+  const nowMins = now.getHours() * 60 + now.getMinutes();
+  return nowMins >= (oh*60+om) && nowMins <= (ch*60+cm);
+}
+
+function initStoreMap(lat, lng) {
+  if (window._storeMapLoaded) { _doInitStoreMap(lat, lng); return; }
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+  document.head.appendChild(link);
+  const script = document.createElement('script');
+  script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+  script.onload = () => { window._storeMapLoaded = true; _doInitStoreMap(lat, lng); };
+  document.head.appendChild(script);
+}
+
+function _doInitStoreMap(lat, lng) {
+  const el = document.getElementById('storeMap');
+  if (!el) return;
+  const map = L.map('storeMap', { zoomControl: false }).setView([lat, lng], 16);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+  L.marker([lat, lng]).addTo(map).bindPopup('Business Location').openPopup();
+}
+
+// ── Cloud Business Setup ─────────────────────────────────────
+const CB_TYPES = [
+  {id:'retail',label:'🛍 Retail Shop',desc:'Electronics, clothing, groceries, general merchandise'},
+  {id:'food',label:'🍔 Food & Drinks',desc:'Restaurant, bakery, catering, cloud kitchen'},
+  {id:'services',label:'🔧 Services',desc:'Plumber, mechanic, electrician, cleaning, repairs'},
+  {id:'property',label:'🏠 Property',desc:'Rentals, sales, land, real estate agent'},
+  {id:'transport',label:'🚗 Transport',desc:'Taxi, boda boda, trucking, delivery'},
+  {id:'health',label:'💊 Health',desc:'Pharmacy, clinic, wellness, beauty, salon'},
+  {id:'tech',label:'💻 Tech',desc:'Software, repairs, IT services, printing'},
+  {id:'education',label:'📚 Education',desc:'Tutoring, school, training, courses'},
+  {id:'agriculture',label:'🌾 Agriculture',desc:'Farm produce, seeds, equipment, livestock'},
+  {id:'creative',label:'🎨 Creative',desc:'Photography, design, events, entertainment'},
+  {id:'wholesale',label:'📦 Wholesale / B2B',desc:'Bulk supply, distribution, manufacturing'},
+  {id:'other',label:'🏢 Other Business',desc:'Any other type of business'},
+];
+
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const COLORS = [
+  'linear-gradient(135deg,#0B2E6E,#1445A8)',
+  'linear-gradient(135deg,#FF6A00,#dd5500)',
+  'linear-gradient(135deg,#7c3aed,#5b21b6)',
+  'linear-gradient(135deg,#0891b2,#0e7490)',
+  'linear-gradient(135deg,#0dab5b,#059669)',
+  'linear-gradient(135deg,#1a1a2e,#16213e)',
+];
+
+let _cbLat = null, _cbLng = null, _cbMap = null, _cbMarker = null;
+
 async function renderSetupStore() {
   if (!currentUser) { openAuth(); return; }
   const app = document.getElementById('app');
-  // Load current profile
+  app.innerHTML = `<div style="padding:20px"><div class="spinner"></div></div>`;
   let profile = {};
   try {
     const res = await fetch(`${API}/me`, { headers: { Authorization: `Bearer ${getToken()}` } });
-    const d = await res.json();
-    profile = d.user || {};
+    profile = (await res.json()).user || {};
   } catch {}
 
-  const COLORS = [
-    'linear-gradient(135deg,#0B2E6E,#1445A8)',
-    'linear-gradient(135deg,#FF6A00,#dd5500)',
-    'linear-gradient(135deg,#7c3aed,#5b21b6)',
-    'linear-gradient(135deg,#0891b2,#0e7490)',
-    'linear-gradient(135deg,#0dab5b,#059669)',
-    'linear-gradient(135deg,#1a1a2e,#16213e)',
-  ];
+  _cbLat = profile.store_lat || null;
+  _cbLng = profile.store_lng || null;
+  window._selectedBannerColor = profile.store_banner_color || null;
+
+  const hours = profile.business_hours || {};
+  const workDays = profile.working_days || ['Mon','Tue','Wed','Thu','Fri'];
+  const busType = profile.business_type || '';
 
   app.innerHTML = `
     <div onclick="history.back()" class="detail-back">← Back</div>
-    <div class="page-hero"><h1>🏪 My Store</h1><p>Set up your storefront</p></div>
+    <div class="page-hero" style="background:linear-gradient(135deg,var(--blue),#1a3a8f)">
+      <h1>☁️ Cloud Business</h1>
+      <p>Set up your digital business profile</p>
+    </div>
     <div class="post-form">
+
+      <!-- SECTION: Business Type -->
       <div class="form-section">
-        <div class="form-section-title">🏪 Store Identity</div>
-        <div class="field"><label>Store Name <span>*</span></label><input type="text" id="ssName" value="${profile.store_name||''}" placeholder="e.g. Kelly's Electronics, Kampala Deals…"></div>
-        <div class="field"><label>Store Description</label><textarea id="ssDesc" placeholder="Tell customers what you sell, your location, working hours…" style="min-height:80px">${profile.store_description||''}</textarea></div>
+        <div class="form-section-title">🏢 Business Type</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="cbTypeGrid">
+          ${CB_TYPES.map(t => `
+            <div class="cb-type-opt${busType===t.id?' selected':''}" data-type="${t.id}" onclick="selectBizType(this,'${t.id}')">
+              <div style="font-size:18px">${t.label.split(' ')[0]}</div>
+              <div style="font-weight:700;font-size:12px;margin-top:2px">${t.label.split(' ').slice(1).join(' ')}</div>
+            </div>`).join('')}
+        </div>
       </div>
+
+      <!-- SECTION: Identity -->
+      <div class="form-section">
+        <div class="form-section-title">🪪 Identity</div>
+        <div class="field"><label>Business Name <span>*</span></label>
+          <input type="text" id="ssName" value="${profile.store_name||''}" placeholder="e.g. Kelly's Boutique, Kampala Fast Foods…">
+        </div>
+        <div class="field"><label>Tagline</label>
+          <input type="text" id="ssTagline" value="${profile.business_tagline||''}" placeholder="e.g. Fresh food, fast delivery" maxlength="60">
+        </div>
+        <div class="field"><label>About your business</label>
+          <textarea id="ssDesc" style="min-height:80px" placeholder="What you sell, services offered, why customers should choose you…">${profile.store_description||''}</textarea>
+        </div>
+      </div>
+
+      <!-- SECTION: Photos -->
+      <div class="form-section">
+        <div class="form-section-title">📸 Photos</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px">PROFILE PHOTO</div>
+            <div id="cbProfilePreview" style="width:72px;height:72px;border-radius:50%;background:var(--border2);display:flex;align-items:center;justify-content:center;font-size:28px;cursor:pointer;border:2px dashed var(--border);overflow:hidden;margin-bottom:6px"
+              onclick="document.getElementById('cbProfileInput').click()">
+              ${profile.profile_picture ? `<img src="${profile.profile_picture}" style="width:100%;height:100%;object-fit:cover">` : '📷'}
+            </div>
+            <input type="file" id="cbProfileInput" accept="image/*" style="display:none" onchange="previewCbPhoto('profile',this)">
+            <div style="font-size:11px;color:var(--muted)">Tap to change</div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px">BANNER IMAGE</div>
+            <div id="cbBannerPreview" style="width:100%;height:72px;border-radius:var(--r);background:var(--border2);display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer;border:2px dashed var(--border);overflow:hidden;margin-bottom:6px;background:${profile.store_banner_color||'var(--border2)'}"
+              onclick="document.getElementById('cbBannerInput').click()">
+              ${profile.banner_image ? `<img src="${profile.banner_image}" style="width:100%;height:100%;object-fit:cover">` : '🖼'}
+            </div>
+            <input type="file" id="cbBannerInput" accept="image/*" style="display:none" onchange="previewCbPhoto('banner',this)">
+            <div style="font-size:11px;color:var(--muted)">Tap to change</div>
+          </div>
+        </div>
+        <div style="font-size:12px;font-weight:700;color:var(--muted);margin-top:12px;margin-bottom:8px">BANNER COLOUR (if no banner image)</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${COLORS.map(c => `<div onclick="selectBannerColor(this,'${c}')" data-color="${c}"
+            style="width:40px;height:40px;border-radius:var(--r);background:${c};cursor:pointer;border:3px solid ${profile.store_banner_color===c?'var(--orange)':'transparent'}"></div>`).join('')}
+        </div>
+      </div>
+
+      <!-- SECTION: Contact -->
       <div class="form-section">
         <div class="form-section-title">📞 Contact</div>
         <div class="field"><label>WhatsApp / Phone</label>
@@ -3427,55 +3595,281 @@ async function renderSetupStore() {
             <input type="tel" id="ssPhone" value="${(profile.store_whatsapp||profile.phone||'').replace(/^256/,'')}" placeholder="07XX XXX XXX">
           </div>
         </div>
-        <div class="field"><label>Store Location</label><input type="text" id="ssLocation" value="${profile.store_location||''}" placeholder="e.g. Ntinda, Kampala"></div>
-      </div>
-      <div class="form-section">
-        <div class="form-section-title">🎨 Banner Color</div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap">
-          ${COLORS.map((c,i) => `
-            <div onclick="selectBannerColor(this,'${c}')" data-color="${c}"
-              style="width:52px;height:52px;border-radius:var(--rm);background:${c};cursor:pointer;border:3px solid ${profile.store_banner_color===c?'var(--orange)':'transparent'};transition:all .15s">
-            </div>`).join('')}
+        <div class="field"><label>Location / Area</label>
+          <input type="text" id="ssLocation" value="${profile.store_location||''}" placeholder="e.g. Ntinda, Kampala">
         </div>
       </div>
-      <button class="btn btn-orange btn-full btn-lg" id="ssSaveBtn" onclick="saveStore()" style="margin-bottom:12px">💾 Save Store</button>
-      <button class="btn btn-outline btn-full" onclick="navigate('/seller/' + currentUser.id)">👁 Preview My Store</button>
+
+      <!-- SECTION: Map Location -->
+      <div class="form-section">
+        <div class="form-section-title">📍 Precise Location (Optional)</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:10px">Pin your exact business location so customers can find you and get directions.</div>
+        <button class="btn btn-outline btn-full" style="margin-bottom:10px" onclick="cbUseMyLocation()">📍 Use My Current Location</button>
+        <div id="cbMapWrap" style="border-radius:var(--rm);overflow:hidden;border:1px solid var(--border);height:220px;display:${(_cbLat?'block':'none')}" >
+          <div id="cbMap" style="height:100%"></div>
+        </div>
+        <div id="cbLocationLabel" style="font-size:12px;color:var(--green);margin-top:6px;font-weight:600">
+          ${_cbLat ? '📍 Location set: ' + (_cbLat.toFixed(4)) + ', ' + (_cbLng.toFixed(4)) : ''}
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">You can also tap anywhere on the map to move the pin.</div>
+      </div>
+
+      <!-- SECTION: Business Hours -->
+      <div class="form-section">
+        <div class="form-section-title">🕒 Business Hours</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:12px">Set your opening hours for each day</div>
+        ${DAYS.map(day => `
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <label style="display:flex;align-items:center;gap:6px;min-width:60px;cursor:pointer">
+              <input type="checkbox" class="cb-day-check" data-day="${day}" ${workDays.includes(day)?'checked':''} style="width:16px;height:16px;accent-color:var(--orange)">
+              <span style="font-weight:600;font-size:13px">${day}</span>
+            </label>
+            <input type="time" class="cb-open-time" data-day="${day}" value="${hours[day]?.split('-')[0]||'08:00'}"
+              style="flex:1;padding:7px 10px;border:1.5px solid var(--border);border-radius:var(--r);font-size:13px;color:var(--ink)">
+            <span style="color:var(--muted);font-size:12px">to</span>
+            <input type="time" class="cb-close-time" data-day="${day}" value="${hours[day]?.split('-')[1]||'18:00'}"
+              style="flex:1;padding:7px 10px;border:1.5px solid var(--border);border-radius:var(--r);font-size:13px;color:var(--ink)">
+          </div>`).join('')}
+      </div>
+
+      <!-- SECTION: Social Links -->
+      <div class="form-section">
+        <div class="form-section-title">🔗 Social & Online Presence</div>
+        <div class="field"><label>📘 Facebook Page URL</label>
+          <input type="url" id="ssFacebook" value="${profile.social_facebook||''}" placeholder="https://facebook.com/yourbusiness">
+        </div>
+        <div class="field"><label>📸 Instagram Handle</label>
+          <input type="text" id="ssInstagram" value="${profile.social_instagram||''}" placeholder="@yourbusiness">
+        </div>
+        <div class="field"><label>🐦 Twitter / X</label>
+          <input type="text" id="ssTwitter" value="${profile.social_twitter||''}" placeholder="@yourbusiness">
+        </div>
+        <div class="field"><label>🌐 Website</label>
+          <input type="url" id="ssWebsite" value="${profile.social_website||''}" placeholder="https://yourbusiness.com">
+        </div>
+      </div>
+
+      <!-- SECTION: Delivery -->
+      <div class="form-section">
+        <div class="form-section-title">🚚 Delivery Options</div>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:700;font-size:14px">
+            <input type="checkbox" id="ssDelivery" ${profile.delivery_available?'checked':''} style="width:18px;height:18px;accent-color:var(--orange)">
+            <span>We offer delivery</span>
+          </label>
+        </div>
+        <div class="field"><label>Base Delivery Fee (UGX)</label>
+          <input type="number" id="ssDeliveryFee" value="${profile.delivery_fee_base||''}" placeholder="e.g. 5000">
+        </div>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:700;font-size:14px">
+            <input type="checkbox" id="ssOnlineOrders" ${profile.accepts_online_orders?'checked':''} style="width:18px;height:18px;accent-color:var(--orange)">
+            <span>Accept online orders</span>
+          </label>
+        </div>
+      </div>
+
+      <button class="btn btn-orange btn-full btn-lg" id="ssSaveBtn" onclick="saveStore()" style="margin-bottom:12px">☁️ Save Cloud Business Profile</button>
+      <button class="btn btn-outline btn-full" onclick="navigate('/seller/' + currentUser.id)">👁 Preview My Profile</button>
     </div>`;
 
   window._selectedBannerColor = profile.store_banner_color || null;
+
+  // Init map if location already set
+  if (_cbLat && _cbLng) {
+    setTimeout(() => initCbMap(_cbLat, _cbLng), 300);
+  }
 }
 
+// Business type selector
+window.selectBizType = (el, type) => {
+  document.querySelectorAll('.cb-type-opt').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+};
+
+// Banner color selector
 window.selectBannerColor = (el, color) => {
   window._selectedBannerColor = color;
   document.querySelectorAll('[data-color]').forEach(e => e.style.borderColor = 'transparent');
   el.style.borderColor = 'var(--orange)';
 };
 
+// Profile/banner photo preview
+let _cbProfileFile = null, _cbBannerFile = null;
+window.previewCbPhoto = (type, input) => {
+  const file = input.files[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  if (type === 'profile') {
+    _cbProfileFile = file;
+    document.getElementById('cbProfilePreview').innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+  } else {
+    _cbBannerFile = file;
+    document.getElementById('cbBannerPreview').innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover">`;
+  }
+};
+
+// Leaflet map for location
+function initCbMap(lat, lng) {
+  if (window._cbMapLoaded) {
+    // Already loaded — just init the map
+    _startCbMap(lat, lng);
+    return;
+  }
+  // Load Leaflet CSS + JS dynamically
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+  document.head.appendChild(link);
+  const script = document.createElement('script');
+  script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+  script.onload = () => { window._cbMapLoaded = true; _startCbMap(lat, lng); };
+  document.head.appendChild(script);
+}
+
+function _startCbMap(lat, lng) {
+  const wrap = document.getElementById('cbMapWrap');
+  const mapEl = document.getElementById('cbMap');
+  if (!wrap || !mapEl) return;
+  wrap.style.display = 'block';
+  if (_cbMap) { _cbMap.remove(); _cbMap = null; }
+  _cbMap = L.map('cbMap').setView([lat, lng], 15);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap'
+  }).addTo(_cbMap);
+  _cbMarker = L.marker([lat, lng], { draggable: true }).addTo(_cbMap);
+  _cbMarker.on('dragend', (e) => {
+    _cbLat = e.target.getLatLng().lat;
+    _cbLng = e.target.getLatLng().lng;
+    updateCbLocationLabel();
+    reverseGeocode(_cbLat, _cbLng);
+  });
+  _cbMap.on('click', (e) => {
+    _cbLat = e.latlng.lat;
+    _cbLng = e.latlng.lng;
+    _cbMarker.setLatLng([_cbLat, _cbLng]);
+    updateCbLocationLabel();
+    reverseGeocode(_cbLat, _cbLng);
+  });
+}
+
+function updateCbLocationLabel() {
+  const el = document.getElementById('cbLocationLabel');
+  if (el && _cbLat) el.textContent = '📍 Location set: ' + _cbLat.toFixed(5) + ', ' + _cbLng.toFixed(5);
+}
+
+async function reverseGeocode(lat, lng) {
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+    const d = await res.json();
+    const label = d.display_name?.split(',').slice(0,3).join(', ') || '';
+    if (label) {
+      const locInput = document.getElementById('ssLocation');
+      if (locInput && !locInput.value) locInput.value = label;
+      const el = document.getElementById('cbLocationLabel');
+      if (el) el.textContent = '📍 ' + label;
+    }
+  } catch {}
+}
+
+window.cbUseMyLocation = () => {
+  if (!navigator.geolocation) { showToast('Geolocation not supported'); return; }
+  showToast('Getting your location…');
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      _cbLat = pos.coords.latitude;
+      _cbLng = pos.coords.longitude;
+      initCbMap(_cbLat, _cbLng);
+      updateCbLocationLabel();
+      reverseGeocode(_cbLat, _cbLng);
+    },
+    () => showToast('Could not get location. Please allow location access.')
+  );
+};
+
 async function saveStore() {
   const btn = document.getElementById('ssSaveBtn');
   btn.textContent = 'Saving…'; btn.disabled = true;
+
   const phone = document.getElementById('ssPhone')?.value.trim();
+
+  // Collect business hours
+  const hours = {};
+  const workDays = [];
+  DAYS.forEach(day => {
+    const check = document.querySelector(`.cb-day-check[data-day="${day}"]`);
+    const open = document.querySelector(`.cb-open-time[data-day="${day}"]`);
+    const close = document.querySelector(`.cb-close-time[data-day="${day}"]`);
+    if (check?.checked) {
+      workDays.push(day);
+      hours[day] = (open?.value || '08:00') + '-' + (close?.value || '18:00');
+    }
+  });
+
+  // Get selected business type
+  const typeEl = document.querySelector('.cb-type-opt.selected');
+  const busType = typeEl?.dataset.type || null;
+
+  // Upload profile/banner photos if changed
+  let profilePicUrl = null, bannerImgUrl = null;
+  try {
+    if (_cbProfileFile) {
+      btn.textContent = 'Uploading profile photo…';
+      const fd = new FormData();
+      fd.append('file', _cbProfileFile, _cbProfileFile.name);
+      const r = await fetch(`${API}/upload`, { method:'POST', headers:{Authorization:`Bearer ${getToken()}`}, body:fd });
+      const d = await r.json();
+      profilePicUrl = d.urls?.[0] || null;
+    }
+    if (_cbBannerFile) {
+      btn.textContent = 'Uploading banner…';
+      const fd = new FormData();
+      fd.append('file', _cbBannerFile, _cbBannerFile.name);
+      const r = await fetch(`${API}/upload`, { method:'POST', headers:{Authorization:`Bearer ${getToken()}`}, body:fd });
+      const d = await r.json();
+      bannerImgUrl = d.urls?.[0] || null;
+    }
+  } catch(e) { showToast('Photo upload failed: ' + e.message, 3000); }
+
+  btn.textContent = 'Saving…';
+
+  const payload = {
+    store_name: document.getElementById('ssName')?.value.trim(),
+    business_tagline: document.getElementById('ssTagline')?.value.trim(),
+    store_description: document.getElementById('ssDesc')?.value.trim(),
+    store_whatsapp: phone ? '256' + phone.replace(/^0/,'') : null,
+    store_location: document.getElementById('ssLocation')?.value.trim(),
+    store_banner_color: window._selectedBannerColor,
+    business_type: busType,
+    business_hours: hours,
+    working_days: workDays,
+    delivery_available: document.getElementById('ssDelivery')?.checked || false,
+    delivery_fee_base: document.getElementById('ssDeliveryFee')?.value ? parseInt(document.getElementById('ssDeliveryFee').value) : null,
+    accepts_online_orders: document.getElementById('ssOnlineOrders')?.checked || false,
+    social_facebook: document.getElementById('ssFacebook')?.value.trim() || null,
+    social_instagram: document.getElementById('ssInstagram')?.value.trim() || null,
+    social_twitter: document.getElementById('ssTwitter')?.value.trim() || null,
+    social_website: document.getElementById('ssWebsite')?.value.trim() || null,
+  };
+  if (_cbLat) { payload.store_lat = _cbLat; payload.store_lng = _cbLng; }
+  if (profilePicUrl) payload.profile_picture = profilePicUrl;
+  if (bannerImgUrl) payload.banner_image = bannerImgUrl;
+
   try {
     const res = await fetch(`${API}/me`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-      body: JSON.stringify({
-        store_name: document.getElementById('ssName')?.value.trim(),
-        store_description: document.getElementById('ssDesc')?.value.trim(),
-        store_whatsapp: phone ? '256' + phone.replace(/^0/,'') : null,
-        store_location: document.getElementById('ssLocation')?.value.trim(),
-        store_banner_color: window._selectedBannerColor,
-      }),
+      body: JSON.stringify(payload),
     });
     if (!res.ok) throw new Error('Failed: ' + res.status);
     const d = await res.json();
-    // Update currentUser
     if (d.user) Object.assign(currentUser, d.user);
-    showToast('Store saved! ✓');
+    showToast('Cloud Business profile saved! ☁️✓', 3000);
     setTimeout(() => navigate('/seller/' + currentUser.id), 800);
   } catch(e) {
     showToast('Error: ' + e.message);
-    btn.textContent = '💾 Save Store'; btn.disabled = false;
+    btn.textContent = '☁️ Save Cloud Business Profile'; btn.disabled = false;
   }
 }
 
@@ -3854,14 +4248,6 @@ async function submitSpotComment() {
     showToast('Error: ' + e.message, 3000);
     input.value = text; // restore
   }
-}
-
-function timeAgo(ts) {
-  const s = Math.floor((Date.now() - ts) / 1000);
-  if (s < 60) return 'just now';
-  if (s < 3600) return Math.floor(s/60) + 'm ago';
-  if (s < 86400) return Math.floor(s/3600) + 'h ago';
-  return Math.floor(s/86400) + 'd ago';
 }
 
 function spotViewCount(idx, videoId) {
