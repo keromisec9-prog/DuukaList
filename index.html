@@ -205,7 +205,7 @@ input,select,textarea{font-family:var(--fb)}
 .lbadge-new{background:var(--green);color:#fff}
 .lbadge-resource{background:var(--purple);color:#fff}
 .lbadge-need{background:var(--teal);color:#fff}
-.lfav{position:absolute;top:8px;right:8px;width:30px;height:30px;background:rgba(255,255,255,.9);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:var(--sh);transition:transform .15s;backdrop-filter:blur(4px);cursor:pointer;border:none}
+.lfav{position:absolute;top:6px;right:6px;width:28px;height:28px;background:rgba(255,255,255,.9);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:var(--sh);transition:transform .15s;backdrop-filter:blur(4px);cursor:pointer;border:none}
 .lfav:hover{transform:scale(1.15)}
 .lcard-body{padding:10px 12px 12px}
 .lcard-title{font-weight:700;font-size:13px;color:var(--ink);margin-bottom:4px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -1525,14 +1525,18 @@ const RESOURCE_TYPES = ['Land & Space', 'Tools & Equipment', 'Capital / Investme
 const SKILL_CATS = ['Design & Creative', 'Tech & Programming', 'Construction & Trades', 'Mechanics & Auto', 'Tailoring & Fashion', 'Food & Catering', 'Beauty & Wellness', 'Media & Content', 'Business & Finance', 'Teaching & Tutoring', 'Agriculture', 'Other'];
 
 function fmtPrice(p, currency = 'UGX') {
-  if (!p && p !== 0) return 'Negotiable';
-  return currency + ' ' + Number(p).toLocaleString();
+  if (p === null || p === undefined || p === '' ) return 'Negotiable';
+  if (Number(p) === 0) return 'Negotiable';
+  const n = Number(p);
+  if (n >= 1000000) return currency + ' ' + (n/1000000).toFixed(1).replace('.0','') + 'M';
+  if (n >= 1000) return currency + ' ' + Math.round(n/1000) + 'K';
+  return currency + ' ' + n.toLocaleString();
 }
 
 function skeletonCards(n = 4) {
   return Array(n).fill(0).map(() => `
     <div class="lcard">
-      <div class="sk" style="aspect-ratio:1/1;border-radius:0"></div>
+      <div class="sk" style="aspect-ratio:4/3;border-radius:0"></div>
       <div style="padding:10px 12px 12px">
         <div class="sk" style="height:13px;margin-bottom:6px;width:80%"></div>
         <div class="sk" style="height:15px;margin-bottom:7px;width:50%"></div>
@@ -1561,19 +1565,23 @@ function listingCard(l) {
   const favKey = `fav_${l.id}`;
   const isFav = localStorage.getItem(favKey);
   const route = isResource ? `/resource/${l.id}` : `/listing/${l.id}`;
+  const priceLabel = isResource && !l.price ? 'Open for partnership'
+    : l.price === null || l.price === 0 ? 'Negotiable'
+    : fmtPrice(l.price, l.currency||'UGX');
+  const isPriceNeg = !l.price || l.price === 0;
   return `
     <article class="${isResource?'rcard lcard':'lcard'}" onclick="navigate('${route}')">
       <div class="lcard-img" style="background:${meta.bg}">
         ${imgContent}${badge}
-        <button class="lfav" onclick="toggleFav(event,'${l.id}')">${isFav?'❤️':'🤍'}</button>
+        <button class="lfav" onclick="toggleFav(event,'${l.id}')" style="top:6px;right:6px">${isFav?'❤️':'🤍'}</button>
+        ${l.delivery_available ? `<div style="position:absolute;bottom:6px;left:6px;background:var(--green);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:100px">🚚 Delivery</div>` : ''}
       </div>
       <div class="lcard-body">
+        <div class="lcard-price" style="${isPriceNeg?'color:var(--green)':''}">${priceLabel}</div>
         <div class="lcard-title">${l.title||'Listing'}</div>
-        <div class="lcard-price">${isResource && !l.price ? 'Open for partnership' : fmtPrice(l.price, l.currency||'UGX')}</div>
         <div class="lcard-meta">
-          <span class="lcard-loc">📍 ${l.location||'Uganda'}</span>
+          <span class="lcard-loc">📍 ${(l.location||'Uganda').split(',')[0]}</span>
           ${l.condition?`<span class="lcard-cond">${l.condition}</span>`:''}
-          ${l.delivery_available?`<span class="delivery-badge">🚚 Delivery</span>`:''}
         </div>
       </div>
     </article>`;
@@ -4805,7 +4813,11 @@ function renderSpotFeed() {
       <!-- Bottom overlay: seller name + description only -->
       <div class="spot-overlay" style="padding-right:80px">
         <div class="spot-seller" onclick="navigate('/seller/${v.seller_id}')">
-          <div class="spot-seller-av">${(v.seller_name||'S')[0].toUpperCase()}</div>
+          <div class="spot-seller-av" style="${v.seller_avatar ? 'background:none;padding:0;overflow:hidden;' : ''}">
+            ${v.seller_avatar
+              ? `<img src="${v.seller_avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+              : (v.seller_name||'S')[0].toUpperCase()}
+          </div>
           <span class="spot-seller-name">${v.seller_name||'Seller'}</span>
         </div>
         <div class="spot-title">${v.title||''}</div>
