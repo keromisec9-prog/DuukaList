@@ -199,7 +199,9 @@ input,select,textarea{font-family:var(--fb)}
 .lcard:hover{opacity:.92}
 .lcard:active{opacity:.8}
 .lcard-img{width:100%;aspect-ratio:3/4;background:var(--border2);display:flex;align-items:center;justify-content:center;font-size:32px;position:relative;overflow:hidden}
-.lcard-img img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.lcard-img img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;transition:opacity .3s}
+.lcard-img img[loading]{opacity:0}
+.lcard-img img.loaded{opacity:1}
 .lbadge{position:absolute;top:8px;left:8px;font-size:10px;font-weight:700;padding:3px 8px;border-radius:100px;letter-spacing:.04em;text-transform:uppercase}
 .lbadge-boost{background:#ff3d00;color:#fff}
 .lbadge-new{background:var(--green);color:#fff}
@@ -1382,11 +1384,13 @@ async function deleteMyVideo(videoId) {
 }
 
 async function uploadProfilePhoto(input) {
-  const file = input.files[0];
+  let file = input.files[0];
   if (!file) return;
-  if (file.size > 5 * 1024 * 1024) { showToast('Photo must be under 5MB'); return; }
-  showToast('Uploading…');
+  if (file.size > 10 * 1024 * 1024) { showToast('Photo must be under 10MB'); return; }
+  showToast('Optimising photo…');
   try {
+    file = await compressImage(file, 400, 0.88);
+    showToast('Uploading…');
     const fd = new FormData();
     fd.append('file', file, file.name || 'profile.jpg');
     const r = await fetch(`${API}/upload`, {
@@ -1469,6 +1473,11 @@ function parseRoute() {
   rest.join('?').split('&').forEach(p => { const [k,v] = p.split('='); if(k) params[k] = decodeURIComponent(v||''); });
   return { path: '/' + (parts[0] || ''), id: parts[1] || null, params };
 }
+
+// Make images fade in when loaded (prevents layout shift + looks smooth)
+document.addEventListener('load', (e) => {
+  if (e.target.tagName === 'IMG') e.target.classList.add('loaded');
+}, true);
 
 function navigate(path) {
   // Restore site header when leaving SpotDuuka
@@ -2025,7 +2034,7 @@ async function renderListing(id) {
     const meta = CAT_META[listing.category] || { icon:'📦', bg:'#f0f0f0' };
     const images = listing.images || [];
     const imgSlides = images.length
-      ? images.map(src => `<div class="detail-img"><img src="${src}" alt="${listing.title}" loading="lazy"></div>`).join('')
+      ? images.map(src => `<div class="detail-img"><img src="${imgUrl(src, 900, 0)}" alt="${listing.title}" loading="lazy" decoding="async"></div>`).join('')
       : `<div class="detail-img" style="background:${meta.bg}"><span style="font-size:60px">${meta.icon}</span></div>`;
     const dots = images.length > 1
       ? `<div class="detail-dots">${images.map((_,i)=>`<div class="detail-dot${i===0?' active':''}" id="dot_${i}"></div>`).join('')}</div>` : '';
@@ -2958,19 +2967,23 @@ async function checkListingLimitForBoost() {
 // Store original File objects for direct upload to B2
 let postPhotoFiles = [];
 
-window.handlePhotos = (input) => {
+window.handlePhotos = async (input) => {
   const previews = document.getElementById('photoPreviews');
   const files = Array.from(input.files).slice(0, 5);
   postPhotos = [];
   postPhotoFiles = [];
-  previews.innerHTML = '';
-  files.forEach((f, i) => {
-    // Store original file for upload
-    postPhotoFiles[i] = f;
-    // Show preview using object URL (no quality loss for preview)
-    const previewUrl = URL.createObjectURL(f);
+  previews.innerHTML = '<div style="padding:8px;font-size:12px;color:var(--muted)">Optimising photos…</div>';
+
+  for (let i = 0; i < files.length; i++) {
+    // Compress before storing — huge speed boost on upload + load
+    const compressed = await compressImage(files[i], 1200, 0.82);
+    postPhotoFiles[i] = compressed;
+    const previewUrl = URL.createObjectURL(compressed);
     postPhotos[i] = previewUrl;
-    previews.innerHTML += `<div class="photo-preview"><img src="${previewUrl}" alt="photo ${i+1}"><div class="photo-remove" onclick="removePhoto(${i})">✕</div></div>`;
+  }
+  previews.innerHTML = '';
+  postPhotos.filter(Boolean).forEach((previewUrl, i) => {
+    previews.innerHTML += `<div class="photo-preview"><img src="${previewUrl}" alt="photo ${i+1}" loading="lazy"><div class="photo-remove" onclick="removePhoto(${i})">✕</div></div>`;
   });
 };
 
@@ -3083,6 +3096,57 @@ function collectDynAttrs() {
   const subCat = document.getElementById('fSubCat')?.value;
   if (subCat) attrs['_subcat'] = subCat;
   return attrs;
+}
+
+// ── Image compression (runs in browser before upload) ─────────
+function compressImage(file, maxWidth = 1200, quality = 0.82) {
+  return new Promise((resolve) => {
+    // Skip if already small enough
+    if (file.size < 200 * 1024 && file.type === 'image/jpeg') {
+      resolve(file);
+      return;
+    }
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      // Calculate target dimensions
+      let w = img.width, h = img.height;
+      if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+      // Draw to canvas
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      canvas.toBlob(
+        (blob) => {
+          if (!blob || blob.size >= file.size) { resolve(file); return; }
+          resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }));
+        },
+        'image/jpeg', quality
+      );
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+    img.src = url;
+  });
+}
+
+// ── Cloudflare Image CDN URL helper ────────────────────────────
+// Serves images through Cloudflare's edge — auto WebP, cached
+function imgUrl(src, width = 0, height = 0) {
+  if (!src) return '';
+  // Only apply CDN transform to B2 images
+  if (!src.includes('backblazeb2.com') && !src.includes('f003.')) return src;
+  if (!width && !height) return src; // No transform needed
+  const opts = [
+    width ? `width=${width}` : '',
+    height ? `height=${height}` : '',
+    'format=auto',
+    'quality=80',
+    'fit=cover',
+  ].filter(Boolean).join(',');
+  // Route through Cloudflare Image Resizing
+  return `https://keromisec9-prog.github.io/cdn-cgi/image/${opts}/${src}`;
 }
 
 // ── SHA1 helper for direct B2 uploads ───────────────────────
@@ -5078,6 +5142,8 @@ async function saveStore() {
 
   try {
     if (_cbProfileFile) {
+      btn.textContent = 'Optimising profile photo…';
+      _cbProfileFile = await compressImage(_cbProfileFile, 400, 0.88);
       btn.textContent = 'Uploading profile photo…';
       const fd = new FormData();
       fd.append('file', _cbProfileFile, _cbProfileFile.name || 'profile.jpg');
@@ -5092,6 +5158,8 @@ async function saveStore() {
       if (!profilePicUrl) throw new Error('No profile photo URL returned');
     }
     if (_cbBannerFile) {
+      btn.textContent = 'Optimising banner…';
+      _cbBannerFile = await compressImage(_cbBannerFile, 1200, 0.85);
       btn.textContent = 'Uploading banner…';
       const fd = new FormData();
       fd.append('file', _cbBannerFile, _cbBannerFile.name || 'banner.jpg');
