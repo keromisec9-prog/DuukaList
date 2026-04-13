@@ -3131,22 +3131,13 @@ function compressImage(file, maxWidth = 1200, quality = 0.82) {
   });
 }
 
-// ── Cloudflare Image CDN URL helper ────────────────────────────
-// Serves images through Cloudflare's edge — auto WebP, cached
-function imgUrl(src, width = 0, height = 0) {
+// ── Image URL helper ───────────────────────────────────────────
+// Returns the image src directly — B2 URLs are served as-is.
+// (Cloudflare Image Resizing requires a Cloudflare-proxied domain,
+//  not GitHub Pages — routing through it was causing 404s.)
+function imgUrl(src) {
   if (!src) return '';
-  // Only apply CDN transform to B2 images
-  if (!src.includes('backblazeb2.com') && !src.includes('f003.')) return src;
-  if (!width && !height) return src; // No transform needed
-  const opts = [
-    width ? `width=${width}` : '',
-    height ? `height=${height}` : '',
-    'format=auto',
-    'quality=80',
-    'fit=cover',
-  ].filter(Boolean).join(',');
-  // Route through Cloudflare Image Resizing
-  return `https://keromisec9-prog.github.io/cdn-cgi/image/${opts}/${src}`;
+  return src;
 }
 
 // ── SHA1 helper for direct B2 uploads ───────────────────────
