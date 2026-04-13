@@ -1991,29 +1991,6 @@ async function fetchBrowseListings(q, category, sort) {
 /* ═══════════════════════════════════════
    LISTING DETAIL
 ═══════════════════════════════════════ */
-// Render dynamic attributes as dmeta chips in listing detail
-function renderListingAttrs(listing) {
-  const attrs = listing.attributes;
-  if (!attrs || typeof attrs !== 'object') return '';
-  const catSlug = listing.category;
-  const subcat = listing.subcategory || attrs._subcat;
-  const fields = getCatFields(catSlug, subcat);
-  if (!fields.length) return '';
-
-  const fieldMap = {};
-  fields.forEach(f => { fieldMap[f.id] = f; });
-
-  return Object.entries(attrs)
-    .filter(([k, v]) => k !== '_subcat' && v !== null && v !== '' && v !== false && v !== undefined)
-    .map(([k, v]) => {
-      const field = fieldMap[k];
-      if (!field) return '';
-      const label = field?.label || k.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase());
-      const display = v === true ? '✓ Yes' : String(v);
-      return `<div class="dmeta-item"><div class="dmeta-lbl">${label}</div><div class="dmeta-val">${display}</div></div>`;
-    }).join('');
-}
-
 async function renderListing(id) {
   const app = document.getElementById('app');
   app.innerHTML = `<div style="padding:20px"><div class="spinner"></div></div>`;
@@ -2043,13 +2020,12 @@ async function renderListing(id) {
         <div class="detail-title">${listing.title}</div>
         <div class="detail-price">${fmtPrice(listing.price, listing.currency||'UGX')}</div>
         <div class="detail-meta-grid">
-          <div class="dmeta-item"><div class="dmeta-lbl">Category</div><div class="dmeta-val">${listing.subcategory ? listing.subcategory : (listing.category||'—')}</div></div>
+          <div class="dmeta-item"><div class="dmeta-lbl">Category</div><div class="dmeta-val">${listing.category||'—'}</div></div>
           <div class="dmeta-item"><div class="dmeta-lbl">Condition</div><div class="dmeta-val">${listing.condition||'—'}</div></div>
           <div class="dmeta-item"><div class="dmeta-lbl">Location</div><div class="dmeta-val">📍 ${listing.location||'Uganda'}</div></div>
           <div class="dmeta-item"><div class="dmeta-lbl">Posted</div><div class="dmeta-val">${listing.created_at ? new Date(listing.created_at).toLocaleDateString() : '—'}</div></div>
           ${listing.delivery_available ? `<div class="dmeta-item"><div class="dmeta-lbl">Delivery</div><div class="dmeta-val" style="color:var(--green)">✓ Available${listing.delivery_fee ? ' · UGX ' + Number(listing.delivery_fee).toLocaleString() : ' (Free)'}</div></div>` : ''}
           ${listing.pickup_location ? `<div class="dmeta-item"><div class="dmeta-lbl">Pickup</div><div class="dmeta-val">📍 ${listing.pickup_location}</div></div>` : ''}
-          ${renderListingAttrs(listing)}
         </div>
         ${listing.description ? `<div class="detail-desc">${listing.description}</div>` : ''}
         ${listing.seller_id ? `
@@ -2344,361 +2320,6 @@ async function renderGigDetail(id) {
 let postType = 'product';
 let postPhotos = [];
 
-
-// ═══════════════════════════════════════════════════════════════
-// DYNAMIC LISTING ATTRIBUTES — Category-specific smart fields
-// ═══════════════════════════════════════════════════════════════
-const LISTING_ATTRS = {
-  'vehicles': {
-    label: '🚗 Vehicles',
-    subcats: ['Cars','Motorcycles','Trucks & Buses','Boats','Tractors & Machinery','Vehicle Parts'],
-    fields: {
-      'Cars': [
-        { id:'make', label:'Make', type:'select+other', opts:['Toyota','Nissan','Honda','Subaru','Mitsubishi','Suzuki','Mercedes','BMW','Audi','Volkswagen','Ford','Land Rover','Jeep','Mazda','Isuzu','Hyundai','Kia','Lexus','Volvo','Peugeot','Renault','Fiat','Opel','Chevrolet','Dodge','Porsche','Ferrari','Lamborghini','Bentley','Rolls Royce','Mini','Skoda','Seat','Daihatsu','Chery','Geely','BYD','Great Wall','Other'] },
-        { id:'model', label:'Model', type:'text', placeholder:'e.g. Premio, Vitz, Harrier' },
-        { id:'year', label:'Year', type:'select', opts:Array.from({length:36},(_,i)=>(2025-i).toString()) },
-        { id:'body_type', label:'Body Type', type:'select', opts:['Sedan','SUV','Hatchback','Pickup','Van','Coupe','Wagon/Estate','Convertible','Bus','Minibus'] },
-        { id:'transmission', label:'Transmission', type:'select', opts:['Automatic','Manual','CVT','Semi-Automatic','AMT'] },
-        { id:'fuel_type', label:'Fuel Type', type:'select', opts:['Petrol','Diesel','Electric','Hybrid','LPG'] },
-        { id:'mileage', label:'Mileage (km)', type:'number', placeholder:'e.g. 85000' },
-        { id:'engine_cc', label:'Engine Size (CC)', type:'select', opts:['660cc','1000cc','1200cc','1300cc','1500cc','1600cc','1800cc','2000cc','2400cc','2500cc','3000cc','3500cc','4000cc+'] },
-        { id:'drive', label:'Drive', type:'select', opts:['2WD','4WD','AWD'] },
-        { id:'color', label:'Color', type:'select', opts:['White','Silver','Black','Grey','Blue','Red','Green','Brown','Gold','Orange','Yellow','Other'] },
-        { id:'doors', label:'Doors', type:'select', opts:['2','3','4','5'] },
-        { id:'prev_owners', label:'Previous Owners', type:'select', opts:['1','2','3','4+','Unknown'] },
-        { id:'ac', label:'Air Conditioning', type:'bool' },
-        { id:'sunroof', label:'Sunroof', type:'bool' },
-        { id:'leather', label:'Leather Seats', type:'bool' },
-        { id:'nav', label:'Navigation/GPS', type:'bool' },
-        { id:'reverse_cam', label:'Reverse Camera', type:'bool' },
-        { id:'vin', label:'VIN (optional)', type:'text', placeholder:'Vehicle identification number' },
-      ],
-      'Motorcycles': [
-        { id:'brand', label:'Brand', type:'select+other', opts:['Bajaj','TVS','Honda','Yamaha','Suzuki','Kawasaki','Hero','Boxer','Lifan','Other'] },
-        { id:'model', label:'Model', type:'text', placeholder:'e.g. Boxer, Discover, Pulsar' },
-        { id:'year', label:'Year', type:'select', opts:Array.from({length:20},(_,i)=>(2024-i).toString()) },
-        { id:'engine_cc', label:'Engine (CC)', type:'select', opts:['50cc','80cc','100cc','110cc','125cc','150cc','200cc','250cc','300cc+'] },
-        { id:'mileage', label:'Mileage (km)', type:'number', placeholder:'e.g. 12000' },
-        { id:'color', label:'Color', type:'select', opts:['Black','Red','Blue','White','Silver','Green','Orange','Other'] },
-        { id:'start_type', label:'Start Type', type:'select', opts:['Electric Start','Kick Start','Both'] },
-        { id:'helmet', label:'Helmet Included', type:'bool' },
-      ],
-      'Trucks & Buses': [
-        { id:'make', label:'Make', type:'select+other', opts:['Isuzu','Hino','Mitsubishi Fuso','Mercedes','Volvo','MAN','DAF','Tata','FAW','Foton','Scania','Other'] },
-        { id:'model', label:'Model', type:'text', placeholder:'e.g. ELF, 300 Series' },
-        { id:'year', label:'Year', type:'select', opts:Array.from({length:25},(_,i)=>(2024-i).toString()) },
-        { id:'body_type', label:'Body Type', type:'select', opts:['Box Body','Tipper','Flatbed','Refrigerated','Tanker','Bus','Minibus','Pick-up'] },
-        { id:'tonnage', label:'Tonnage', type:'select', opts:['1 ton','2 ton','5 ton','7 ton','10 ton','15 ton','20 ton+'] },
-        { id:'fuel_type', label:'Fuel Type', type:'select', opts:['Diesel','Petrol','CNG'] },
-        { id:'mileage', label:'Mileage (km)', type:'number', placeholder:'e.g. 200000' },
-        { id:'transmission', label:'Transmission', type:'select', opts:['Manual','Automatic'] },
-      ],
-      'Vehicle Parts': [
-        { id:'part_type', label:'Part Type', type:'select+other', opts:['Engine Parts','Tyres','Rims','Body Parts','Lights','Suspension','Brakes','Gearbox','Battery','AC Parts','Electrical','Interior','Exhaust','Other'] },
-        { id:'brand', label:'Brand', type:'text', placeholder:'e.g. Toyota, Nissan, Universal' },
-        { id:'compatibility', label:'Compatible With', type:'text', placeholder:'e.g. Toyota Premio 2008-2015' },
-        { id:'part_condition', label:'Part Condition', type:'select', opts:['New','Used (Good)','Refurbished'] },
-      ],
-    }
-  },
-
-  'phones-tablets': {
-    label: '📱 Phones & Tablets',
-    subcats: ['Smartphones','Feature Phones','Tablets','Accessories'],
-    fields: {
-      'Smartphones': [
-        { id:'brand', label:'Brand', type:'select+other', opts:['Samsung','Apple (iPhone)','Tecno','Infinix','Itel','Xiaomi','Oppo','Vivo','OnePlus','Huawei','Realme','Nokia','Motorola','LG','Sony','Other'] },
-        { id:'model', label:'Model', type:'text', placeholder:'e.g. Galaxy S24, iPhone 15, Camon 20' },
-        { id:'storage', label:'Storage', type:'select', opts:['4GB','8GB','16GB','32GB','64GB','128GB','256GB','512GB','1TB'] },
-        { id:'ram', label:'RAM', type:'select', opts:['1GB','2GB','3GB','4GB','6GB','8GB','12GB','16GB'] },
-        { id:'battery', label:'Battery Health %', type:'select', opts:['100% (New)','90-99%','80-89%','70-79%','Below 70%','Unknown'] },
-        { id:'network', label:'Network', type:'select', opts:['2G','3G','4G LTE','5G'] },
-        { id:'screen_size', label:'Screen Size', type:'select', opts:['Under 5"','5"–5.5"','5.5"–6"','6"–6.5"','6.5"+'] },
-        { id:'color', label:'Color', type:'text', placeholder:'e.g. Midnight Black, Pearl White' },
-        { id:'warranty', label:'Warranty', type:'bool' },
-        { id:'has_charger', label:'Charger Included', type:'bool' },
-        { id:'has_box', label:'Original Box', type:'bool' },
-      ],
-      'Tablets': [
-        { id:'brand', label:'Brand', type:'select+other', opts:['Samsung','Apple (iPad)','Lenovo','Huawei','Xiaomi','Amazon','Other'] },
-        { id:'model', label:'Model', type:'text', placeholder:'e.g. iPad Pro, Galaxy Tab S9' },
-        { id:'storage', label:'Storage', type:'select', opts:['16GB','32GB','64GB','128GB','256GB','512GB'] },
-        { id:'ram', label:'RAM', type:'select', opts:['2GB','3GB','4GB','6GB','8GB','12GB'] },
-        { id:'screen_size', label:'Screen Size (inches)', type:'select', opts:['7"','8"','9"','10"','11"','12"','13"+'] },
-        { id:'cellular', label:'Has SIM Slot', type:'bool' },
-        { id:'warranty', label:'Warranty', type:'bool' },
-      ],
-    }
-  },
-
-  'electronics': {
-    label: '💻 Electronics',
-    subcats: ['TVs','Laptops','Cameras','Audio','Gaming Consoles','Computer Parts','Other Electronics'],
-    fields: {
-      'TVs': [
-        { id:'brand', label:'Brand', type:'select+other', opts:['Samsung','LG','Sony','Hisense','TCL','Skyworth','Syinix','Vision','Sharp','Panasonic','Other'] },
-        { id:'screen_size', label:'Screen Size (inches)', type:'select', opts:['19"','24"','32"','40"','43"','50"','55"','65"','75"','85"+'] },
-        { id:'resolution', label:'Resolution', type:'select', opts:['HD (720p)','Full HD (1080p)','4K UHD','8K'] },
-        { id:'smart_tv', label:'Smart TV', type:'bool' },
-        { id:'refresh_rate', label:'Refresh Rate', type:'select', opts:['50Hz','60Hz','100Hz','120Hz','144Hz'] },
-        { id:'hdmi_ports', label:'HDMI Ports', type:'select', opts:['1','2','3','4'] },
-      ],
-      'Laptops': [
-        { id:'brand', label:'Brand', type:'select+other', opts:['HP','Dell','Lenovo','Apple (MacBook)','Asus','Acer','Microsoft','Toshiba','Samsung','Sony','Other'] },
-        { id:'model', label:'Model', type:'text', placeholder:'e.g. HP EliteBook 840 G7' },
-        { id:'processor', label:'Processor', type:'select+other', opts:['Intel Core i3','Intel Core i5','Intel Core i7','Intel Core i9','AMD Ryzen 3','AMD Ryzen 5','AMD Ryzen 7','Apple M1','Apple M2','Apple M3','Celeron/Pentium','Other'] },
-        { id:'ram', label:'RAM', type:'select', opts:['4GB','8GB','12GB','16GB','32GB','64GB'] },
-        { id:'storage', label:'Storage', type:'select', opts:['128GB SSD','256GB SSD','512GB SSD','1TB SSD','1TB HDD','2TB HDD','512GB HDD'] },
-        { id:'screen_size', label:'Screen Size', type:'select', opts:['11"','13"','14"','15.6"','17"'] },
-        { id:'gpu', label:'Graphics Card', type:'select+other', opts:['Integrated','NVIDIA GTX','NVIDIA RTX','AMD Radeon','Other'] },
-        { id:'battery_health', label:'Battery Condition', type:'select', opts:['Excellent (4+ hrs)','Good (2-4 hrs)','Fair (1-2 hrs)','Poor (<1 hr)','New'] },
-        { id:'backlit_keyboard', label:'Backlit Keyboard', type:'bool' },
-      ],
-      'Cameras': [
-        { id:'brand', label:'Brand', type:'select+other', opts:['Canon','Nikon','Sony','Fujifilm','Panasonic','Olympus','GoPro','DJI','Other'] },
-        { id:'camera_type', label:'Type', type:'select', opts:['DSLR','Mirrorless','Compact','Action Camera','Drone Camera','Webcam'] },
-        { id:'megapixels', label:'Megapixels', type:'select', opts:['Under 12MP','12-24MP','24-36MP','36-50MP','50MP+'] },
-        { id:'lens_included', label:'Lens Included', type:'bool' },
-        { id:'bag_included', label:'Camera Bag Included', type:'bool' },
-      ],
-      'Gaming Consoles': [
-        { id:'brand', label:'Brand', type:'select', opts:['PlayStation','Xbox','Nintendo','PC Gaming','Other'] },
-        { id:'model', label:'Model', type:'select+other', opts:['PS5','PS4','PS4 Pro','Xbox Series X','Xbox Series S','Xbox One','Nintendo Switch','Nintendo Switch Lite','Other'] },
-        { id:'storage', label:'Storage', type:'select', opts:['500GB','1TB','2TB'] },
-        { id:'games_included', label:'Games Included', type:'text', placeholder:'e.g. FIFA 24, GTA V, God of War' },
-        { id:'controllers', label:'No. of Controllers', type:'select', opts:['1','2','3','4'] },
-      ],
-    }
-  },
-
-  'property': {
-    label: '🏠 Property',
-    subcats: ['Apartments','Houses','Land','Commercial','Hotel Rooms','Hostels'],
-    fields: {
-      'Apartments': [
-        { id:'listing_for', label:'Listing For', type:'select', opts:['For Rent','For Sale'] },
-        { id:'bedrooms', label:'Bedrooms', type:'select', opts:['Studio','1 Bedroom','2 Bedrooms','3 Bedrooms','4 Bedrooms','5+ Bedrooms'] },
-        { id:'bathrooms', label:'Bathrooms', type:'select', opts:['1','2','3','4+'] },
-        { id:'furnished', label:'Furnished', type:'select', opts:['Fully Furnished','Partly Furnished','Unfurnished'] },
-        { id:'floor', label:'Floor Level', type:'select', opts:['Ground Floor','1st Floor','2nd Floor','3rd Floor','4th+'] },
-        { id:'parking', label:'Parking', type:'bool' },
-        { id:'balcony', label:'Balcony', type:'bool' },
-        { id:'pet_friendly', label:'Pet Friendly', type:'bool' },
-        { id:'water_included', label:'Water Included', type:'bool' },
-        { id:'electricity_included', label:'Electricity Included', type:'bool' },
-        { id:'security', label:'Security Guard', type:'bool' },
-        { id:'payment_freq', label:'Payment Frequency', type:'select', opts:['Monthly','Quarterly','Bi-Annual','Annual'] },
-        { id:'deposit', label:'Deposit Required', type:'bool' },
-        { id:'available_from', label:'Available From', type:'text', placeholder:'e.g. Immediately, June 2025' },
-      ],
-      'Houses': [
-        { id:'listing_for', label:'Listing For', type:'select', opts:['For Rent','For Sale'] },
-        { id:'bedrooms', label:'Bedrooms', type:'select', opts:['1 Bedroom','2 Bedrooms','3 Bedrooms','4 Bedrooms','5 Bedrooms','6+ Bedrooms'] },
-        { id:'bathrooms', label:'Bathrooms', type:'select', opts:['1','2','3','4+'] },
-        { id:'land_size', label:'Land Size', type:'text', placeholder:'e.g. 50x100ft, 25 decimals, 1 acre' },
-        { id:'furnished', label:'Furnished', type:'select', opts:['Fully Furnished','Partly Furnished','Unfurnished'] },
-        { id:'parking', label:'Parking/Garage', type:'bool' },
-        { id:'sq_quarters', label:'Servant Quarters', type:'bool' },
-        { id:'perimeter_wall', label:'Perimeter Wall', type:'bool' },
-        { id:'title_type', label:'Land Title', type:'select', opts:['Freehold','Leasehold','Mailo','Customary','Not Available'] },
-      ],
-      'Land': [
-        { id:'listing_for', label:'Listing For', type:'select', opts:['For Sale','For Rent / Lease'] },
-        { id:'land_size', label:'Land Size', type:'text', placeholder:'e.g. 50x100ft, 1 acre, 5 decimals' },
-        { id:'title_type', label:'Title Type', type:'select', opts:['Freehold','Leasehold','Mailo','Customary','Agreement'] },
-        { id:'road_access', label:'Road Access', type:'bool' },
-        { id:'water_access', label:'Water Access', type:'bool' },
-        { id:'electricity', label:'Electricity Nearby', type:'bool' },
-        { id:'fenced', label:'Fenced', type:'bool' },
-        { id:'topography', label:'Topography', type:'select', opts:['Flat','Gentle Slope','Steep','Swampy','Mixed'] },
-        { id:'soil_type', label:'Soil Type', type:'select', opts:['Clay','Loam','Sandy','Murram','Rock','Mixed'] },
-      ],
-      'Commercial': [
-        { id:'listing_for', label:'Listing For', type:'select', opts:['For Rent','For Sale'] },
-        { id:'prop_type', label:'Property Type', type:'select', opts:['Office Space','Shop','Warehouse','Showroom','Factory','Mixed Use'] },
-        { id:'size_sqft', label:'Size (sq ft)', type:'text', placeholder:'e.g. 500 sq ft' },
-        { id:'parking', label:'Parking Available', type:'bool' },
-        { id:'washrooms', label:'Washrooms', type:'select', opts:['1','2','3','4+'] },
-        { id:'generator', label:'Generator Backup', type:'bool' },
-        { id:'lift', label:'Lift/Elevator', type:'bool' },
-      ],
-    }
-  },
-
-  'fashion': {
-    label: '👗 Fashion',
-    subcats: ['Clothes','Shoes','Bags','Accessories','Watches','Jewellery'],
-    fields: {
-      'Clothes': [
-        { id:'gender', label:'Gender', type:'select', opts:['Men','Women','Unisex','Boys','Girls','Baby'] },
-        { id:'clothing_type', label:'Type', type:'select+other', opts:['T-Shirt','Shirt','Dress','Suit','Jacket','Trousers','Jeans','Shorts','Skirt','Hoodie','Jumpsuit','Coat','Traditional Wear','Other'] },
-        { id:'size', label:'Size', type:'select', opts:['XS','S','M','L','XL','2XL','3XL','4XL','Free Size','EU 36','EU 38','EU 40','EU 42','EU 44'] },
-        { id:'material', label:'Material', type:'select+other', opts:['Cotton','Polyester','Linen','Silk','Wool','Denim','Leather','Chiffon','Other'] },
-        { id:'color', label:'Color', type:'text', placeholder:'e.g. Navy Blue, Floral Print' },
-        { id:'brand', label:'Brand', type:'text', placeholder:'e.g. Zara, H&M, Local Brand' },
-      ],
-      'Shoes': [
-        { id:'gender', label:'Gender', type:'select', opts:['Men','Women','Unisex','Boys','Girls','Baby'] },
-        { id:'shoe_type', label:'Type', type:'select+other', opts:['Sneakers','Heels','Flats','Sandals','Boots','Loafers','Sports Shoes','Formal Shoes','Slippers','Other'] },
-        { id:'size_eu', label:'Size (EU)', type:'text', placeholder:'e.g. EU 42, UK 8, US 9' },
-        { id:'material', label:'Material', type:'select', opts:['Leather','Suede','Canvas','Synthetic','Rubber'] },
-        { id:'brand', label:'Brand', type:'text', placeholder:'e.g. Nike, Adidas, Bata' },
-        { id:'color', label:'Color', type:'text', placeholder:'e.g. All White, Black' },
-      ],
-      'Bags': [
-        { id:'bag_type', label:'Type', type:'select+other', opts:['Handbag','Backpack','Travel Bag','Laptop Bag','School Bag','Clutch','Wallet','Gym Bag','Other'] },
-        { id:'gender', label:'Gender', type:'select', opts:['Women','Men','Unisex','Kids'] },
-        { id:'material', label:'Material', type:'select', opts:['Leather','Faux Leather','Canvas','Nylon','Other'] },
-        { id:'brand', label:'Brand', type:'text', placeholder:'e.g. Louis Vuitton, Zara, Generic' },
-        { id:'color', label:'Color', type:'text', placeholder:'e.g. Brown, Black, Multi-color' },
-      ],
-    }
-  },
-
-  'home-furniture': {
-    label: '🛋️ Home & Furniture',
-    subcats: ['Furniture','Kitchen Appliances','Bedding','Home Decor','Garden','Other Home Items'],
-    fields: {
-      'Furniture': [
-        { id:'furniture_type', label:'Type', type:'select+other', opts:['Sofa/Couch','Bed','Dining Set','Wardrobe','Office Chair','Desk','Bookshelf','TV Stand','Coffee Table','Kitchen Cabinet','Other'] },
-        { id:'material', label:'Material', type:'select+other', opts:['Wood','MDF','Metal','Fabric','Leather','Plastic','Glass','Other'] },
-        { id:'color', label:'Color/Finish', type:'text', placeholder:'e.g. Brown, White, Natural Wood' },
-        { id:'set_includes', label:'Set Includes', type:'text', placeholder:'e.g. 3-seater + 2 single chairs' },
-        { id:'assembly_req', label:'Assembly Required', type:'bool' },
-      ],
-      'Kitchen Appliances': [
-        { id:'appliance_type', label:'Appliance Type', type:'select+other', opts:['Refrigerator','Microwave','Gas Cooker','Electric Cooker','Blender','Juicer','Rice Cooker','Air Fryer','Washing Machine','Dishwasher','Water Dispenser','Other'] },
-        { id:'brand', label:'Brand', type:'text', placeholder:'e.g. Samsung, LG, Ramtons' },
-        { id:'capacity', label:'Capacity', type:'text', placeholder:'e.g. 200L, 1000W, 5kg' },
-        { id:'power', label:'Power Source', type:'select', opts:['Electric','Gas','Solar','Manual'] },
-      ],
-    }
-  },
-
-  'beauty': {
-    label: '💄 Beauty & Health',
-    subcats: ['Skincare','Haircare','Makeup','Perfumes','Health Products','Fitness Equipment'],
-    fields: {
-      'Skincare': [
-        { id:'product_type', label:'Product Type', type:'select+other', opts:['Face Cream','Lotion/Body Cream','Serum','Sunscreen','Face Wash','Toner','Eye Cream','Mask','Scrub','Other'] },
-        { id:'brand', label:'Brand', type:'text', placeholder:'e.g. Nivea, Dove, Neutrogena' },
-        { id:'skin_type', label:'Suitable For', type:'select', opts:['All Skin Types','Oily Skin','Dry Skin','Combination','Sensitive','Dark Skin'] },
-        { id:'organic', label:'Natural/Organic', type:'bool' },
-        { id:'expiry', label:'Expiry Date', type:'text', placeholder:'e.g. Dec 2026' },
-      ],
-      'Perfumes': [
-        { id:'brand', label:'Brand', type:'text', placeholder:"e.g. Dior, Versace, Victoria's Secret" },
-        { id:'gender', label:'Gender', type:'select', opts:['Men','Women','Unisex'] },
-        { id:'size_ml', label:'Size (ml)', type:'select', opts:['30ml','50ml','75ml','100ml','150ml','200ml+'] },
-        { id:'type', label:'Type', type:'select', opts:['Eau de Parfum','Eau de Toilette','Body Spray','Perfume Oil','Roll-on'] },
-        { id:'sealed', label:'Sealed/Original', type:'bool' },
-      ],
-    }
-  },
-
-  'babies-kids': {
-    label: '👶 Babies & Kids',
-    subcats: ['Baby Clothes','Baby Gear','Toys','Kids Books','School Supplies'],
-    fields: {
-      'Baby Clothes': [
-        { id:'age_group', label:'Age Group', type:'select', opts:['0-3 months','3-6 months','6-12 months','1-2 years','2-3 years','3-5 years','5-8 years','8-12 years'] },
-        { id:'gender', label:'Gender', type:'select', opts:['Boy','Girl','Unisex'] },
-        { id:'material', label:'Material', type:'select', opts:['Cotton','Organic Cotton','Fleece','Polyester','Mixed'] },
-        { id:'set', label:'Is a Set/Pack', type:'bool' },
-      ],
-      'Baby Gear': [
-        { id:'gear_type', label:'Type', type:'select+other', opts:['Pram/Stroller','Car Seat','Baby Cot','Baby Monitor','Baby Carrier','High Chair','Baby Bath','Nursing Pillow','Other'] },
-        { id:'brand', label:'Brand', type:'text', placeholder:'e.g. Graco, Chicco, Local' },
-        { id:'age_suitability', label:'Suitable Age', type:'text', placeholder:'e.g. 0-18 months' },
-        { id:'safety_cert', label:'Safety Certified', type:'bool' },
-      ],
-      'Toys': [
-        { id:'toy_type', label:'Type', type:'select+other', opts:['Educational Toy','Board Game','Action Figure','Doll','Outdoor Toy','Puzzle','Remote Control','Art/Craft Kit','Other'] },
-        { id:'age_group', label:'Age Group', type:'select', opts:['0-2 years','2-5 years','5-8 years','8-12 years','12+'] },
-        { id:'battery_req', label:'Batteries Required', type:'bool' },
-      ],
-    }
-  },
-
-  'food-agriculture': {
-    label: '🌾 Food & Agriculture',
-    subcats: ['Fresh Produce','Livestock & Poultry','Grains & Cereals','Agro Inputs','Processed Food','Drinks & Beverages'],
-    fields: {
-      'Fresh Produce': [
-        { id:'produce_type', label:'Produce Type', type:'text', placeholder:'e.g. Tomatoes, Maize, Bananas' },
-        { id:'quantity', label:'Quantity Available', type:'text', placeholder:'e.g. 50kg, 5 crates, 1 truck' },
-        { id:'unit', label:'Selling Unit', type:'select', opts:['Per kg','Per crate','Per bag','Per bunch','Per piece','Per lorry','Per acre'] },
-        { id:'organic', label:'Organic/Natural', type:'bool' },
-        { id:'harvest_date', label:'Harvest Date', type:'text', placeholder:'e.g. This week, Last Sunday' },
-      ],
-      'Livestock & Poultry': [
-        { id:'animal_type', label:'Animal Type', type:'select+other', opts:['Cattle','Goats','Sheep','Pigs','Chickens','Ducks','Turkeys','Rabbits','Fish','Other'] },
-        { id:'breed', label:'Breed', type:'text', placeholder:'e.g. Fresian, Boer, Kuroiler' },
-        { id:'age', label:'Age', type:'text', placeholder:'e.g. 6 months, 2 years' },
-        { id:'weight', label:'Approx. Weight', type:'text', placeholder:'e.g. 80kg, 2kg per bird' },
-        { id:'vaccinated', label:'Vaccinated', type:'bool' },
-        { id:'quantity', label:'Number Available', type:'number', placeholder:'e.g. 10' },
-      ],
-      'Agro Inputs': [
-        { id:'input_type', label:'Type', type:'select+other', opts:['Seeds','Fertilizer','Pesticide','Herbicide','Irrigation Equipment','Farm Tools','Animal Feed','Other'] },
-        { id:'brand', label:'Brand', type:'text', placeholder:'e.g. Yara, Monsanto, Koppert' },
-        { id:'quantity', label:'Quantity', type:'text', placeholder:'e.g. 50 bags, 100 litres' },
-        { id:'certified', label:'Certified/Approved', type:'bool' },
-      ],
-    }
-  },
-
-  'repair-construction': {
-    label: '🔧 Repair & Construction',
-    subcats: ['Construction Materials','Tools & Equipment','Electrical','Plumbing','Painting','Roofing'],
-    fields: {
-      'Construction Materials': [
-        { id:'material_type', label:'Material Type', type:'select+other', opts:['Bricks','Blocks','Cement','Sand','Hardcore','Iron Sheets','Steel/Iron','Timber/Wood','Tiles','Glass','Paints','Pipes','Other'] },
-        { id:'brand', label:'Brand', type:'text', placeholder:'e.g. Hima Cement, Tororo Cement' },
-        { id:'quantity', label:'Quantity', type:'text', placeholder:'e.g. 100 bags, 50 pieces' },
-        { id:'unit', label:'Selling Unit', type:'select', opts:['Per piece','Per bag','Per tonne','Per sq meter','Per batch','Negotiable'] },
-      ],
-      'Tools & Equipment': [
-        { id:'tool_type', label:'Tool Type', type:'select+other', opts:['Power Tools','Hand Tools','Measuring Tools','Lifting Equipment','Generators','Welding Equipment','Concrete Mixer','Other'] },
-        { id:'brand', label:'Brand', type:'text', placeholder:'e.g. Bosch, Makita, DeWalt' },
-        { id:'power', label:'Power Source', type:'select', opts:['Electric','Battery','Fuel/Petrol','Manual','Solar'] },
-        { id:'hire_available', label:'Available for Hire', type:'bool' },
-      ],
-    }
-  },
-
-  'commercial': {
-    label: '⚙️ Commercial & Industrial',
-    subcats: ['Office Equipment','Industrial Machinery','Medical Equipment','Restaurant Equipment','Generators','Other Commercial'],
-    fields: {
-      'Office Equipment': [
-        { id:'equipment_type', label:'Type', type:'select+other', opts:['Printer','Photocopier','Scanner','Projector','Desk','Office Chair','Filing Cabinet','Shredder','Other'] },
-        { id:'brand', label:'Brand', type:'text', placeholder:'e.g. HP, Canon, Ricoh' },
-        { id:'model', label:'Model', type:'text', placeholder:'Model number if known' },
-      ],
-      'Generators': [
-        { id:'brand', label:'Brand', type:'select+other', opts:['Kipor','Lutian','Honda','Yamaha','Pramac','Cummins','Perkins','Other'] },
-        { id:'power_kva', label:'Power (KVA)', type:'select', opts:['2.5 KVA','5 KVA','7.5 KVA','10 KVA','15 KVA','20 KVA','50 KVA','100 KVA+'] },
-        { id:'fuel_type', label:'Fuel Type', type:'select', opts:['Petrol','Diesel','Gas'] },
-        { id:'silent', label:'Silent/Soundproof', type:'bool' },
-        { id:'automatic', label:'Automatic Start', type:'bool' },
-      ],
-    }
-  },
-};
-
-// Get subcategories for a category
-function getCatSubcats(catSlug) {
-  return LISTING_ATTRS[catSlug]?.subcats || [];
-}
-
-// Get fields for a category + subcategory
-function getCatFields(catSlug, subcat) {
-  const cat = LISTING_ATTRS[catSlug];
-  if (!cat) return [];
-  return cat.fields?.[subcat] || cat.fields?.[''] || [];
-}
-
 function renderPost(_, params = {}) {
   if (!currentUser) { openAuth(); return; }
   const defaultType = params.type || 'product';
@@ -2739,20 +2360,11 @@ function renderPost(_, params = {}) {
         <div class="form-section-title">📝 Details</div>
         <div class="field"><label>Title <span>*</span></label><input type="text" id="fTitle" placeholder="e.g. Samsung Galaxy S24, Plumbing Services…"></div>
         <div class="field"><label>Category <span>*</span></label>
-          <select id="fCat" onchange="onCatChange(this.value)">
+          <select id="fCat">
             <option value="">Select category…</option>
             ${Object.keys(CAT_META).filter(s=>s!=='resources').map(s => `<option value="${s}">${s.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}</option>`).join('')}
           </select>
         </div>
-        <!-- Subcategory — shown when category has subcats -->
-        <div class="field" id="subCatField" style="display:none">
-          <label>Subcategory <span>*</span></label>
-          <select id="fSubCat" onchange="onSubCatChange(this.value)">
-            <option value="">Select subcategory…</option>
-          </select>
-        </div>
-        <!-- Dynamic category-specific attributes -->
-        <div id="dynAttrSection"></div>
         <div class="field"><label>Description <span>*</span></label><textarea id="fDesc" placeholder="Describe your listing in detail…"></textarea></div>
 
         <!-- Product/Need specific -->
@@ -2980,111 +2592,6 @@ window.removePhoto = (i) => {
   Array.from(previews.children)[i]?.remove();
 };
 
-// ══════════════════════════════════════════════════════════════
-// DYNAMIC ATTRIBUTE FIELDS — Category-specific smart listing form
-// ══════════════════════════════════════════════════════════════
-
-function onCatChange(catSlug) {
-  const subcats = getCatSubcats(catSlug);
-  const subField = document.getElementById('subCatField');
-  const subSel = document.getElementById('fSubCat');
-  const dynSection = document.getElementById('dynAttrSection');
-  if (dynSection) dynSection.innerHTML = '';
-
-  if (subcats.length) {
-    subSel.innerHTML = '<option value="">Select subcategory…</option>' +
-      subcats.map(s => `<option value="${s}">${s}</option>`).join('');
-    subField.style.display = 'block';
-  } else {
-    subField.style.display = 'none';
-    // If no subcats, render fields for the category directly
-    renderDynFields(catSlug, null);
-  }
-}
-
-function onSubCatChange(subcat) {
-  const catSlug = document.getElementById('fCat')?.value;
-  renderDynFields(catSlug, subcat);
-}
-
-function renderDynFields(catSlug, subcat) {
-  const section = document.getElementById('dynAttrSection');
-  if (!section) return;
-  const fields = getCatFields(catSlug, subcat);
-  if (!fields.length) { section.innerHTML = ''; return; }
-
-  const flds = fields.map(f => {
-    if (f.type === 'select' || f.type === 'select+other') {
-      const hasOther = f.type === 'select+other';
-      return `
-        <div class="field dyn-field" data-field-id="${f.id}">
-          <label>${f.label}</label>
-          <select id="dyn_${f.id}" onchange="${hasOther ? `toggleOtherInput('${f.id}', this.value)` : ''}">
-            <option value="">Select…</option>
-            ${(f.opts||[]).map(o => `<option value="${o}">${o}</option>`).join('')}
-          </select>
-          ${hasOther ? `<input type="text" id="dyn_${f.id}_other" placeholder="Please specify…" style="display:none;margin-top:6px;width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r);font-size:14px;font-family:var(--fb)">` : ''}
-        </div>`;
-    } else if (f.type === 'bool') {
-      return `
-        <div class="field dyn-field" data-field-id="${f.id}">
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
-            <input type="checkbox" id="dyn_${f.id}" style="width:18px;height:18px;accent-color:var(--orange)">
-            <span>${f.label}</span>
-          </label>
-        </div>`;
-    } else if (f.type === 'number') {
-      return `
-        <div class="field dyn-field" data-field-id="${f.id}">
-          <label>${f.label}</label>
-          <input type="number" id="dyn_${f.id}" placeholder="${f.placeholder||''}">
-        </div>`;
-    } else {
-      return `
-        <div class="field dyn-field" data-field-id="${f.id}">
-          <label>${f.label}</label>
-          <input type="text" id="dyn_${f.id}" placeholder="${f.placeholder||''}">
-        </div>`;
-    }
-  }).join('');
-
-  section.innerHTML = `
-    <div class="form-section" style="background:var(--orange-light);border:1.5px solid var(--orange);border-radius:var(--rm);padding:16px;margin-bottom:4px">
-      <div style="font-weight:800;font-size:13px;color:var(--orange);margin-bottom:12px;letter-spacing:.04em">⚡ ${subcat||catSlug} — Smart Fields</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        ${flds}
-      </div>
-    </div>`;
-}
-
-function toggleOtherInput(fieldId, value) {
-  const otherInput = document.getElementById('dyn_' + fieldId + '_other');
-  if (otherInput) otherInput.style.display = value === 'Other' ? 'block' : 'none';
-}
-
-function collectDynAttrs() {
-  const attrs = {};
-  document.querySelectorAll('.dyn-field').forEach(el => {
-    const fieldId = el.dataset.fieldId;
-    const input = document.getElementById('dyn_' + fieldId);
-    if (!input) return;
-    if (input.type === 'checkbox') {
-      attrs[fieldId] = input.checked;
-    } else {
-      let val = input.value;
-      if (val === 'Other') {
-        const other = document.getElementById('dyn_' + fieldId + '_other');
-        val = other?.value?.trim() || 'Other';
-      }
-      if (val) attrs[fieldId] = val;
-    }
-  });
-  // Also save subcategory
-  const subCat = document.getElementById('fSubCat')?.value;
-  if (subCat) attrs['_subcat'] = subCat;
-  return attrs;
-}
-
 // ── SHA1 helper for direct B2 uploads ───────────────────────
 async function computeFileSHA1(file) {
   const buffer = await file.arrayBuffer();
@@ -3157,17 +2664,12 @@ async function submitListing() {
   const area = document.getElementById('fArea')?.value.trim();
   const fullLocation = area ? `${area}, ${location}` : location;
 
-  const subCat = document.getElementById('fSubCat')?.value || null;
-  const dynAttrs = collectDynAttrs();
-
   let payload = {
     type: postType,
     title,
     category,
     category_id: CAT_META[category]?.id || 1,
     category_slug: category,
-    subcategory: subCat,
-    attributes: dynAttrs,
     description,
     location: fullLocation,
     whatsapp_number: phone ? '256' + phone.replace(/^0/, '') : null,
@@ -3689,7 +3191,7 @@ async function renderSeller(id) {
       <div onclick="history.back()" class="detail-back">← Back</div>
 
       <!-- Store Banner -->
-      <div class="store-banner" style="${bannerStyle}${seller.banner_image ? ';cursor:zoom-in' : ''}" ${seller.banner_image ? `onclick="openPhotoViewer(['${seller.banner_image}'],0)"` : ''}>
+      <div class="store-banner" style="${bannerStyle}" ${seller.banner_image ? `onclick="openPhotoViewer(['${seller.banner_image}'],0)" style="${bannerStyle};cursor:zoom-in"` : ''}>
         <div class="store-av" style="${(seller.profile_picture||seller.avatar_url) ? 'background:none;padding:0;overflow:hidden;' : ''}${seller.profile_picture ? 'cursor:zoom-in' : ''}"
           ${seller.profile_picture ? `onclick="event.stopPropagation();openPhotoViewer(['${seller.profile_picture}'],0)"` : ''}>
           ${(seller.profile_picture||seller.avatar_url) ? `<img src="${seller.profile_picture||seller.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--rm)">` : initial}
