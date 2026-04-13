@@ -126,7 +126,7 @@ input,select,textarea{font-family:var(--fb)}
 .nav-icon{font-size:20px;line-height:1}
 .nav-label{font-size:10px;font-weight:700;letter-spacing:.02em}
 .nav-post-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer}
-.nav-post-circle{width:46px;height:46px;background:var(--orange);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;box-shadow:var(--sho);transition:all .18s;margin-top:-16px;font-weight:300}
+.nav-post-circle{width:40px;height:40px;background:var(--orange);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;transition:all .18s;font-weight:300}
 .nav-post-wrap:hover .nav-post-circle{transform:scale(1.08) rotate(45deg);background:var(--orange-d)}
 .nav-post-lbl{font-size:10px;font-weight:700;color:var(--orange)}
 
@@ -194,25 +194,28 @@ input,select,textarea{font-family:var(--fb)}
 .tlbl{font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.08em;text-transform:uppercase}
 
 /* ═══════════════════════ LISTING CARDS ═══════════════════════ */
-.listings-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:0 16px}
-.lcard{background:var(--white);border-radius:var(--rm);overflow:hidden;box-shadow:var(--sh);border:1px solid var(--border2);transition:transform .2s,box-shadow .2s;cursor:pointer;position:relative}
-.lcard:hover{transform:translateY(-3px);box-shadow:var(--shm)}
-.lcard:active{transform:scale(.97)}
-.lcard-img{width:100%;aspect-ratio:1/1;background:var(--border2);display:flex;align-items:center;justify-content:center;font-size:36px;position:relative;overflow:hidden}
+.listings-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:2px;padding:0}
+.lcard{background:var(--white);overflow:hidden;border:1px solid var(--border2);transition:opacity .15s;cursor:pointer;position:relative}
+.lcard:hover{opacity:.92}
+.lcard:active{opacity:.8}
+.lcard-img{width:100%;aspect-ratio:3/4;background:var(--border2);display:flex;align-items:center;justify-content:center;font-size:32px;position:relative;overflow:hidden}
 .lcard-img img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
 .lbadge{position:absolute;top:8px;left:8px;font-size:10px;font-weight:700;padding:3px 8px;border-radius:100px;letter-spacing:.04em;text-transform:uppercase}
-.lbadge-boost{background:var(--orange);color:#fff}
+.lbadge-boost{background:#ff3d00;color:#fff}
 .lbadge-new{background:var(--green);color:#fff}
 .lbadge-resource{background:var(--purple);color:#fff}
 .lbadge-need{background:var(--teal);color:#fff}
 .lfav{position:absolute;top:6px;right:6px;width:28px;height:28px;background:rgba(255,255,255,.9);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:var(--sh);transition:transform .15s;backdrop-filter:blur(4px);cursor:pointer;border:none}
 .lfav:hover{transform:scale(1.15)}
-.lcard-body{padding:10px 12px 12px}
-.lcard-title{font-weight:700;font-size:13px;color:var(--ink);margin-bottom:4px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.lcard-price{font-family:var(--fd);font-weight:700;font-size:15px;color:var(--orange);margin-bottom:5px}
-.lcard-meta{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--muted)}
-.lcard-loc{display:flex;align-items:center;gap:3px;font-weight:500}
-.lcard-cond{background:var(--blue-light);color:var(--blue-mid);font-weight:700;font-size:10px;padding:2px 7px;border-radius:100px}
+.lcard-body{padding:7px 8px 9px}
+.lcard-title{font-weight:500;font-size:12px;color:var(--ink2);margin-bottom:3px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.lcard-price{font-weight:800;font-size:15px;color:var(--ink);margin-bottom:2px;letter-spacing:-.3px}
+.lcard-price-neg{font-weight:700;font-size:13px;color:var(--green)}
+.lcard-sold{font-size:10px;color:var(--muted);margin-bottom:3px}
+.lcard-sold strong{color:var(--orange)}
+.lcard-meta{display:flex;align-items:center;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:3px}
+.lcard-loc{display:flex;align-items:center;gap:2px;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:70%}
+.lcard-cond{background:var(--blue-light);color:var(--blue-mid);font-weight:700;font-size:9px;padding:2px 5px;border-radius:100px;flex-shrink:0}
 
 /* Resource card variant */
 .rcard{background:var(--white);border-radius:var(--rm);overflow:hidden;box-shadow:var(--sh);border:1px solid var(--border2);transition:transform .2s,box-shadow .2s;cursor:pointer;position:relative;border-top:3px solid var(--purple)}
@@ -1555,29 +1558,42 @@ function listingCard(l) {
   const meta = CAT_META[l.category] || { icon:'📦', bg:'#f0f0f0', color:'#888' };
   const isBoosted = l.boost_tier && l.boost_tier !== 'none';
   const isResource = l.type === 'resource';
-  const badge = isResource
-    ? `<span class="lbadge lbadge-resource">🏗️ Resource</span>`
+  const isNeed = l.type === 'need';
+  const route = isResource ? `/listing/${l.id}` : `/listing/${l.id}`;
+
+  // Badge
+  const badge = isResource ? `<span class="lbadge lbadge-resource">🏗️</span>`
+    : isNeed ? `<span class="lbadge lbadge-need">🔍</span>`
     : isBoosted ? `<span class="lbadge lbadge-boost">⭐ Featured</span>`
     : l.condition === 'new' ? `<span class="lbadge lbadge-new">New</span>` : '';
+
   const imgContent = l.images && l.images[0]
-    ? `<img src="${l.images[0]}" alt="${l.title}" loading="lazy">`
-    : `<span style="font-size:36px">${meta.icon}</span>`;
+    ? `<img src="${l.images[0]}" alt="${l.title||''}" loading="lazy">`
+    : `<span style="font-size:32px">${meta.icon}</span>`;
+
   const favKey = `fav_${l.id}`;
   const isFav = localStorage.getItem(favKey);
-  const route = isResource ? `/resource/${l.id}` : `/listing/${l.id}`;
-  const priceLabel = isResource && !l.price ? 'Open for partnership'
-    : l.price === null || l.price === 0 ? 'Negotiable'
-    : fmtPrice(l.price, l.currency||'UGX');
-  const isPriceNeg = !l.price || l.price === 0;
+
+  // Price — AliExpress style: big, prominent, at top of body
+  const hasPrice = l.price && l.price > 0;
+  const priceHtml = hasPrice
+    ? `<div class="lcard-price">UGX ${Number(l.price).toLocaleString()}</div>`
+    : `<div class="lcard-price-neg">Negotiable</div>`;
+
+  // Social proof
+  const soldHtml = l.orders_count > 0
+    ? `<div class="lcard-sold"><strong>${l.orders_count}</strong> sold</div>`
+    : l.views_count > 10 ? `<div class="lcard-sold">${l.views_count} views</div>` : '';
+
   return `
-    <article class="${isResource?'rcard lcard':'lcard'}" onclick="navigate('${route}')">
+    <article class="lcard" onclick="navigate('${route}')">
       <div class="lcard-img" style="background:${meta.bg}">
         ${imgContent}${badge}
         <button class="lfav" onclick="toggleFav(event,'${l.id}')" style="top:6px;right:6px">${isFav?'❤️':'🤍'}</button>
-        ${l.delivery_available ? `<div style="position:absolute;bottom:6px;left:6px;background:var(--green);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:100px">🚚 Delivery</div>` : ''}
       </div>
       <div class="lcard-body">
-        <div class="lcard-price" style="${isPriceNeg?'color:var(--green)':''}">${priceLabel}</div>
+        ${priceHtml}
+        ${soldHtml}
         <div class="lcard-title">${l.title||'Listing'}</div>
         <div class="lcard-meta">
           <span class="lcard-loc">📍 ${(l.location||'Uganda').split(',')[0]}</span>
@@ -1586,6 +1602,7 @@ function listingCard(l) {
       </div>
     </article>`;
 }
+
 
 function gigCard(g, i) {
   const colors = [['#eef3ff','#dbeafe'],['#fff5ee','#fed7aa'],['#f0fdf4','#bbf7d0'],['#fdf2f8','#fbcfe8'],['#fffbeb','#fef08a']];
