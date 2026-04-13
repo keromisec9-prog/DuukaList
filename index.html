@@ -455,6 +455,34 @@ input,select,textarea{font-family:var(--fb)}
 .status-expired{background:#fef2f2;color:var(--red)}
 .boost-badge{background:rgba(255,106,0,.1);color:var(--orange);font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px}
 
+/* ═══════════════════════ SECTOR FEATURES ═══════════════════ */
+.sector-section{margin-top:0;border-top:3px solid var(--orange);background:linear-gradient(135deg,rgba(255,106,0,.04),transparent);border-radius:0 0 var(--rm) var(--rm);padding:0}
+.sector-badge{display:inline-flex;align-items:center;gap:6px;background:var(--orange);color:#fff;font-size:11px;font-weight:800;padding:4px 10px;border-radius:100px;letter-spacing:.04em;margin-bottom:12px}
+/* Menu Builder */
+.menu-category{background:var(--white);border:1px solid var(--border);border-radius:var(--rm);margin-bottom:10px;overflow:hidden}
+.menu-cat-header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--bg);cursor:pointer;font-weight:700;font-size:14px;color:var(--ink)}
+.menu-items-list{padding:8px 12px 12px}
+.menu-item-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border2)}
+.menu-item-row:last-child{border-bottom:none}
+.menu-item-photo{width:48px;height:48px;border-radius:var(--r);object-fit:cover;background:var(--border2);flex-shrink:0;cursor:pointer}
+.menu-item-info{flex:1;min-width:0}
+.menu-item-name{font-weight:700;font-size:13px;color:var(--ink);margin-bottom:2px}
+.menu-item-price{font-size:12px;color:var(--orange);font-weight:700}
+.menu-item-avail{font-size:10px;color:var(--green);font-weight:600}
+.menu-item-unavail{font-size:10px;color:var(--muted);font-weight:600}
+.add-menu-item-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;background:rgba(255,106,0,.08);border:1.5px dashed var(--orange);border-radius:var(--r);color:var(--orange);font-weight:700;font-size:13px;cursor:pointer;width:100%;justify-content:center;margin-top:8px}
+/* Portfolio */
+.portfolio-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+.portfolio-item{aspect-ratio:1;border-radius:var(--r);overflow:hidden;background:var(--border2);position:relative;cursor:pointer}
+.portfolio-item img{width:100%;height:100%;object-fit:cover}
+.portfolio-add{display:flex;align-items:center;justify-content:center;border:2px dashed var(--border);font-size:24px;cursor:pointer;border-radius:var(--r);aspect-ratio:1;background:var(--bg)}
+/* Fleet / Transport */
+.fleet-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:100px;font-size:12px;font-weight:700;cursor:pointer;border:2px solid var(--border)}
+.fleet-badge.joined{background:var(--green);color:#fff;border-color:var(--green)}
+.fleet-badge.not-joined{background:var(--bg);color:var(--muted)}
+/* Service packages */
+.pkg-builder{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:8px}
+.pkg-builder-title{font-weight:700;font-size:13px;color:var(--ink);margin-bottom:8px;display:flex;align-items:center;gap:6px}
 /* ═══════════════════════ SPOTDUUKA ═══════════════════════ */
 .spot-container{position:fixed;inset:0;top:0;bottom:var(--bnav);background:#000;z-index:600;overflow:hidden}
 .spot-feed{width:100%;height:100%;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none}
@@ -3178,6 +3206,9 @@ async function renderSeller(id) {
         ${seller.social_website ? `<a href="${seller.social_website}" target="_blank" class="store-social-btn">🌐 Website</a>` : ''}
       </div>` : ''}
 
+      <!-- Sector-specific info -->
+      ${renderStorefrontSectorInfo(seller)}
+
       <!-- Business Hours -->
       ${seller.business_hours && Object.keys(seller.business_hours).length ? `
       <div class="store-hours-row">
@@ -3221,6 +3252,137 @@ async function renderSeller(id) {
   } catch {
     app.innerHTML = `<div class="empty-state"><div class="empty-icon">❌</div><div class="empty-title">Store not found</div><button class="btn btn-orange" onclick="navigate('/browse')">Browse Listings</button></div>`;
   }
+}
+
+// ── Storefront: Sector-specific display ──────────────────────
+function renderStorefrontSectorInfo(s) {
+  if (!s.business_type) return '';
+  const sec = s.business_type;
+  let parts = [];
+
+  // Food & Drinks
+  if (sec === 'food') {
+    if (s.food_cuisine) parts.push(`<div class="store-info-chip">🍽️ ${s.food_cuisine}</div>`);
+    if (s.food_order_types?.length) parts.push(`<div class="store-info-chip">📋 ${s.food_order_types.join(' · ')}</div>`);
+    if (s.food_table_reservation) parts.push(`<div class="store-info-chip">🪑 Table reservations</div>`);
+    if (s.menu_data?.length) {
+      const menuHtml = s.menu_data.map(cat => `
+        <div style="margin-bottom:16px">
+          <div style="font-weight:800;font-size:14px;color:var(--ink);border-bottom:2px solid var(--orange);padding-bottom:4px;margin-bottom:8px">${cat.name}</div>
+          ${(cat.items||[]).filter(item => item.available !== false).map(item => `
+            <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border2)">
+              ${item.photo ? `<img src="${item.photo}" style="width:52px;height:52px;border-radius:var(--r);object-fit:cover;flex-shrink:0">` : ''}
+              <div style="flex:1">
+                <div style="font-weight:700;font-size:13px">${item.name}</div>
+                ${item.description ? `<div style="font-size:11px;color:var(--muted);margin-top:1px">${item.description}</div>` : ''}
+              </div>
+              <div style="font-weight:700;color:var(--orange);font-size:13px;flex-shrink:0">UGX ${parseInt(item.price||0).toLocaleString()}</div>
+            </div>`).join('')}
+        </div>`).join('');
+      return `
+        ${parts.length ? `<div class="store-info-row">${parts.join('')}</div>` : ''}
+        <div style="padding:14px 16px;background:var(--white);border-bottom:1px solid var(--border)">
+          <div style="font-weight:800;font-size:15px;margin-bottom:12px;color:var(--ink)">📋 Our Menu</div>
+          ${menuHtml}
+        </div>`;
+    }
+  }
+
+  // Retail
+  if (sec === 'retail') {
+    if (s.retail_niche) parts.push(`<div class="store-info-chip">🛍 ${s.retail_niche}</div>`);
+    if (s.retail_return_policy) parts.push(`<div class="store-info-chip">↩️ ${s.retail_return_policy}</div>`);
+    if (s.retail_flash_sale) parts.push(`<div class="store-info-chip" style="background:var(--orange);color:#fff">🔥 ${s.retail_flash_sale}</div>`);
+    if (s.retail_payment_methods?.length) parts.push(`<div class="store-info-chip">💳 ${s.retail_payment_methods.join(', ')}</div>`);
+  }
+
+  // Services
+  if (sec === 'services') {
+    if (s.service_home_available) parts.push(`<div class="store-info-chip">🏠 Home service</div>`);
+    if (s.service_radius_km) parts.push(`<div class="store-info-chip">📍 Up to ${s.service_radius_km}km</div>`);
+    if (s.service_packages?.length) {
+      const pkgHtml = s.service_packages.filter(p => p.name).map((p, i) => `
+        <div style="flex:1;border:1px solid var(--border);border-radius:var(--rm);padding:12px;text-align:center;min-width:0">
+          <div style="font-size:20px;margin-bottom:4px">${['🥉','🥈','🏆'][i]||'📦'}</div>
+          <div style="font-weight:800;font-size:13px;margin-bottom:4px">${p.name}</div>
+          <div style="color:var(--orange);font-weight:700;font-size:13px;margin-bottom:6px">${p.price ? 'UGX ' + parseInt(p.price).toLocaleString() : 'Contact'}</div>
+          <div style="font-size:11px;color:var(--muted)">${p.desc||''}</div>
+        </div>`).join('');
+      return `
+        ${parts.length ? `<div class="store-info-row">${parts.join('')}</div>` : ''}
+        <div style="padding:14px 16px;background:var(--white);border-bottom:1px solid var(--border)">
+          <div style="font-weight:800;font-size:15px;margin-bottom:12px">📦 Service Packages</div>
+          <div style="display:flex;gap:8px;overflow-x:auto">${pkgHtml}</div>
+        </div>`;
+    }
+  }
+
+  // Property
+  if (sec === 'property') {
+    if (s.property_focus) parts.push(`<div class="store-info-chip">🏠 ${s.property_focus}</div>`);
+    if (s.property_agent_type) parts.push(`<div class="store-info-chip">👤 ${s.property_agent_type}</div>`);
+    if (s.property_types?.length) parts.push(`<div class="store-info-chip">🏗 ${s.property_types.join(', ')}</div>`);
+    if (s.property_virtual_tours) parts.push(`<div class="store-info-chip" style="background:var(--blue);color:#fff">🎬 Virtual tours on SpotDuuka</div>`);
+  }
+
+  // Transport
+  if (sec === 'transport') {
+    if (s.duukaexpress_registered) parts.push(`<div class="store-info-chip" style="background:var(--orange);color:#fff">🚀 DuukaExpress Fleet</div>`);
+    if (s.transport_vehicle) parts.push(`<div class="store-info-chip">🚗 ${s.transport_vehicle}</div>`);
+    if (s.transport_base_rate) parts.push(`<div class="store-info-chip">💰 From UGX ${parseInt(s.transport_base_rate).toLocaleString()}</div>`);
+    if (s.transport_services?.length) parts.push(`<div class="store-info-chip">📋 ${s.transport_services.join(' · ')}</div>`);
+  }
+
+  // Health
+  if (sec === 'health') {
+    if (s.health_type) parts.push(`<div class="store-info-chip">🏥 ${s.health_type}</div>`);
+    if (s.health_emergency) parts.push(`<div class="store-info-chip" style="background:#ef4444;color:#fff">🚨 24/7 Emergency</div>`);
+    if (s.health_accepts_appointments) parts.push(`<div class="store-info-chip">📅 Appointments accepted</div>`);
+    if (s.health_insurance) parts.push(`<div class="store-info-chip">🛡 Insurance: ${s.health_insurance}</div>`);
+  }
+
+  // Tech
+  if (sec === 'tech') {
+    if (s.tech_specializations?.length) parts.push(`<div class="store-info-chip">💻 ${s.tech_specializations.join(' · ')}</div>`);
+    if (s.tech_accepts_quotes) parts.push(`<div class="store-info-chip">💬 Free quotes</div>`);
+    if (s.tech_portfolio_url) parts.push(`<a href="${s.tech_portfolio_url}" target="_blank" class="store-social-btn">🔗 Portfolio</a>`);
+  }
+
+  // Education
+  if (sec === 'education') {
+    if (s.edu_type) parts.push(`<div class="store-info-chip">🎓 ${s.edu_type}</div>`);
+    if (s.edu_level) parts.push(`<div class="store-info-chip">📊 ${s.edu_level}</div>`);
+    if (s.edu_subjects) parts.push(`<div class="store-info-chip">📚 ${s.edu_subjects}</div>`);
+    if (s.edu_enrollment_open) parts.push(`<div class="store-info-chip" style="background:var(--green);color:#fff">✅ Enrollment open</div>`);
+  }
+
+  // Agriculture
+  if (sec === 'agriculture') {
+    if (s.agro_types?.length) parts.push(`<div class="store-info-chip">🌱 ${s.agro_types.join(' · ')}</div>`);
+    if (s.agro_bulk_orders) parts.push(`<div class="store-info-chip">📦 Bulk orders</div>`);
+    if (s.agro_min_order) parts.push(`<div class="store-info-chip">📏 Min: ${s.agro_min_order}</div>`);
+    if (s.agro_season) parts.push(`<div class="store-info-chip">📅 ${s.agro_season}</div>`);
+  }
+
+  // Creative
+  if (sec === 'creative') {
+    if (s.creative_specializations?.length) parts.push(`<div class="store-info-chip">🎨 ${s.creative_specializations.join(' · ')}</div>`);
+    if (s.creative_starting_rate) parts.push(`<div class="store-info-chip">💰 From UGX ${parseInt(s.creative_starting_rate).toLocaleString()}${s.creative_rate_desc?' '+s.creative_rate_desc:''}</div>`);
+    if (s.creative_available) parts.push(`<div class="store-info-chip" style="background:var(--green);color:#fff">✅ Available for hire</div>`);
+    if (s.creative_portfolio_url) parts.push(`<a href="${s.creative_portfolio_url}" target="_blank" class="store-social-btn">🎬 View Portfolio</a>`);
+  }
+
+  // Wholesale
+  if (sec === 'wholesale') {
+    if (s.wholesale_categories) parts.push(`<div class="store-info-chip">📦 ${s.wholesale_categories}</div>`);
+    if (s.wholesale_min_order_value) parts.push(`<div class="store-info-chip">💰 Min order: UGX ${parseInt(s.wholesale_min_order_value).toLocaleString()}</div>`);
+    if (s.wholesale_lead_time) parts.push(`<div class="store-info-chip">⏱ ${s.wholesale_lead_time}</div>`);
+    if (s.wholesale_credit_terms) parts.push(`<div class="store-info-chip">🏦 Credit terms</div>`);
+    if (s.wholesale_exports) parts.push(`<div class="store-info-chip">🌍 Exports</div>`);
+  }
+
+  if (!parts.length) return '';
+  return `<div class="store-info-row" style="flex-wrap:wrap;gap:6px">${parts.join('')}</div>`;
 }
 
 /* ═══════════════════════════════════════
@@ -3737,15 +3899,26 @@ async function renderSetupStore() {
         </div>
       </div>
 
+      <!-- SECTOR-SPECIFIC FEATURES — rendered dynamically based on business type -->
+      <div id="sectorFeaturesSection"></div>
+
       <button class="btn btn-orange btn-full btn-lg" id="ssSaveBtn" onclick="saveStore()" style="margin-bottom:12px">☁️ Save Cloud Business Profile</button>
       <button class="btn btn-outline btn-full" onclick="navigate('/seller/' + currentUser.id)">👁 Preview My Profile</button>
     </div>`;
 
   window._selectedBannerColor = profile.store_banner_color || null;
+  window._cbProfile = profile;
+  window._cbMenuData = JSON.parse(JSON.stringify(profile.menu_data || []));
+  window._cbFleetReg = profile.duukaexpress_registered || false;
 
   // Init map if location already set
   if (_cbLat && _cbLng) {
     setTimeout(() => initCbMap(_cbLat, _cbLng), 300);
+  }
+
+  // Render sector-specific features for current type
+  if (busType) {
+    setTimeout(() => renderSectorFeatures(busType), 100);
   }
 }
 
@@ -3753,6 +3926,502 @@ async function renderSetupStore() {
 window.selectBizType = (el, type) => {
   document.querySelectorAll('.cb-type-opt').forEach(e => e.classList.remove('selected'));
   el.classList.add('selected');
+  renderSectorFeatures(type);
+};
+
+// ── Sector-specific features renderer ────────────────────────
+function renderSectorFeatures(type) {
+  const container = document.getElementById('sectorFeaturesSection');
+  if (!container) return;
+  const profile = window._cbProfile || {};
+
+  const sectorMap = {
+    food: renderFoodFeatures,
+    retail: renderRetailFeatures,
+    services: renderServicesFeatures,
+    property: renderPropertyFeatures,
+    transport: renderTransportFeatures,
+    health: renderHealthFeatures,
+    tech: renderTechFeatures,
+    education: renderEducationFeatures,
+    agriculture: renderAgricultureFeatures,
+    creative: renderCreativeFeatures,
+    wholesale: renderWholesaleFeatures,
+  };
+
+  const fn = sectorMap[type];
+  if (fn) {
+    container.innerHTML = fn(profile);
+    initSectorFeatureBindings(type);
+  } else {
+    container.innerHTML = '';
+  }
+}
+
+// ─── FOOD & DRINKS ───────────────────────────────────────────
+function renderFoodFeatures(p) {
+  const menus = window._cbMenuData || (window._cbMenuData = JSON.parse(JSON.stringify(p.menu_data || [])));
+  return `
+  <div class="form-section sector-section">
+    <div class="form-section-title">🍔 Food & Drinks Features</div>
+    <div class="sector-badge">🍽️ MENU BUILDER</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Build your menu with categories and items. High-quality food photos increase orders by 300%.</div>
+
+    <!-- Menu type -->
+    <div class="field"><label>Cuisine / Food Type</label>
+      <input type="text" id="cbFoodCuisine" value="${p.food_cuisine||''}" placeholder="e.g. Ugandan, Chinese, Fast Food, Bakery">
+    </div>
+    <div class="field"><label>Order Types</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+        ${['Dine-in','Takeaway','Delivery','Preorder'].map(o =>
+          `<label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer">
+            <input type="checkbox" class="cb-order-type" value="${o}" ${(p.food_order_types||[]).includes(o)?'checked':''} style="accent-color:var(--orange)"> ${o}
+          </label>`).join('')}
+      </div>
+    </div>
+    <div class="field"><label>Table Reservation</label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+        <input type="checkbox" id="cbTableRes" ${p.food_table_reservation?'checked':''} style="accent-color:var(--orange)">
+        <span>We accept table reservations</span>
+      </label>
+    </div>
+
+    <!-- Menu Builder -->
+    <div class="sector-badge" style="margin-top:12px">📋 MENU ITEMS</div>
+    <div id="cbMenuList"></div>
+    <button class="add-menu-item-btn" onclick="addMenuCategory()">+ Add Menu Category</button>
+  </div>`;
+}
+
+// ─── RETAIL SHOP ─────────────────────────────────────────────
+function renderRetailFeatures(p) {
+  return `
+  <div class="form-section sector-section">
+    <div class="form-section-title">🛍 Retail Shop Features</div>
+    <div class="sector-badge">🏪 STORE SETTINGS</div>
+    <div class="field"><label>Store Category / Niche</label>
+      <input type="text" id="cbRetailNiche" value="${p.retail_niche||''}" placeholder="e.g. Fashion, Electronics, Groceries">
+    </div>
+    <div class="field"><label>Return Policy</label>
+      <select id="cbReturnPolicy">
+        <option value="">Select return policy</option>
+        ${['No returns','Exchange only','7-day return','14-day return','30-day return'].map(r =>
+          `<option value="${r}" ${p.retail_return_policy===r?'selected':''}>${r}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field"><label>Payment Methods Accepted</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+        ${['Cash','Mobile Money','Card','Bank Transfer','Crypto'].map(m =>
+          `<label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer">
+            <input type="checkbox" class="cb-payment-method" value="${m}" ${(p.retail_payment_methods||[]).includes(m)?'checked':''} style="accent-color:var(--orange)"> ${m}
+          </label>`).join('')}
+      </div>
+    </div>
+    <div class="field"><label>Flash Sale / Promotion Text (optional)</label>
+      <input type="text" id="cbFlashSale" value="${p.retail_flash_sale||''}" placeholder="e.g. 20% off all shoes this weekend!">
+    </div>
+  </div>`;
+}
+
+// ─── SERVICES ────────────────────────────────────────────────
+function renderServicesFeatures(p) {
+  const pkgs = p.service_packages || [{name:'Basic',price:'',desc:''},{name:'Standard',price:'',desc:''},{name:'Premium',price:'',desc:''}];
+  return `
+  <div class="form-section sector-section">
+    <div class="form-section-title">🔧 Services Features</div>
+    <div class="sector-badge">📦 SERVICE PACKAGES</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Define what you offer and at what price.</div>
+    ${pkgs.map((pkg, i) => `
+    <div class="pkg-builder">
+      <div class="pkg-builder-title">${['🥉','🥈','🏆'][i]||'📦'} ${pkg.name||'Package '+(i+1)}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <input type="text" class="cb-pkg-name" placeholder="Package name" value="${pkg.name||''}"
+          style="padding:8px;border:1.5px solid var(--border);border-radius:var(--r);font-size:13px">
+        <input type="number" class="cb-pkg-price" placeholder="Price (UGX)" value="${pkg.price||''}"
+          style="padding:8px;border:1.5px solid var(--border);border-radius:var(--r);font-size:13px">
+      </div>
+      <input type="text" class="cb-pkg-desc" placeholder="What's included…" value="${pkg.desc||''}"
+        style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:var(--r);font-size:13px;box-sizing:border-box">
+    </div>`).join('')}
+    <div class="field" style="margin-top:8px"><label>Home Service Available?</label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+        <input type="checkbox" id="cbHomeService" ${p.service_home_available?'checked':''} style="accent-color:var(--orange)">
+        <span>We come to your location</span>
+      </label>
+    </div>
+    <div class="field"><label>Service Radius (km)</label>
+      <input type="number" id="cbServiceRadius" value="${p.service_radius_km||''}" placeholder="e.g. 10">
+    </div>
+  </div>`;
+}
+
+// ─── PROPERTY ────────────────────────────────────────────────
+function renderPropertyFeatures(p) {
+  return `
+  <div class="form-section sector-section">
+    <div class="form-section-title">🏠 Property Features</div>
+    <div class="sector-badge">🏢 PROPERTY DETAILS</div>
+    <div class="field"><label>Property Types Listed</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+        ${['Apartments','Houses','Land','Commercial','Offices','Hostel Rooms'].map(t =>
+          `<label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer">
+            <input type="checkbox" class="cb-prop-type" value="${t}" ${(p.property_types||[]).includes(t)?'checked':''} style="accent-color:var(--orange)"> ${t}
+          </label>`).join('')}
+      </div>
+    </div>
+    <div class="field"><label>Listing Focus</label>
+      <select id="cbPropFocus">
+        ${['For Sale','For Rent','Both'].map(f =>
+          `<option value="${f}" ${p.property_focus===f?'selected':''}>${f}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field"><label>Agency / Individual?</label>
+      <select id="cbPropAgent">
+        ${['Individual Owner','Real Estate Agent','Agency/Company'].map(a =>
+          `<option value="${a}" ${p.property_agent_type===a?'selected':''}>${a}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field"><label>Virtual Tours via SpotDuuka?</label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+        <input type="checkbox" id="cbVirtualTour" ${p.property_virtual_tours?'checked':''} style="accent-color:var(--orange)">
+        <span>I post property video tours on SpotDuuka</span>
+      </label>
+    </div>
+  </div>`;
+}
+
+// ─── TRANSPORT ───────────────────────────────────────────────
+function renderTransportFeatures(p) {
+  return `
+  <div class="form-section sector-section">
+    <div class="form-section-title">🚗 Transport Features</div>
+    <div class="sector-badge">🚀 DUUKAEXPRESS FLEET</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Register with DuukaExpress to receive delivery orders and ride requests.</div>
+    <div style="text-align:center;margin-bottom:16px">
+      <div class="fleet-badge ${p.duukaexpress_registered?'joined':'not-joined'}" id="cbFleetBadge"
+        onclick="toggleFleetReg()">
+        ${p.duukaexpress_registered ? '✅ Registered with DuukaExpress' : '🚀 Join DuukaExpress Fleet'}
+      </div>
+    </div>
+    <div class="field"><label>Vehicle Type</label>
+      <select id="cbVehicleType">
+        <option value="">Select vehicle</option>
+        ${['Boda Boda (Motorcycle)','Taxi (Saloon Car)','Van','Truck','Pickup','Bicycle','Tuk Tuk'].map(v =>
+          `<option value="${v}" ${p.transport_vehicle===v?'selected':''}>${v}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field"><label>Services Offered</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+        ${['Passenger rides','Parcel delivery','Food delivery','Moving/Relocation','Airport transfers','Long distance'].map(s =>
+          `<label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer">
+            <input type="checkbox" class="cb-transport-service" value="${s}" ${(p.transport_services||[]).includes(s)?'checked':''} style="accent-color:var(--orange)"> ${s}
+          </label>`).join('')}
+      </div>
+    </div>
+    <div class="field"><label>Base Rate (UGX per km or per trip)</label>
+      <input type="number" id="cbTransportRate" value="${p.transport_base_rate||''}" placeholder="e.g. 3000">
+    </div>
+  </div>`;
+}
+
+// ─── HEALTH ──────────────────────────────────────────────────
+function renderHealthFeatures(p) {
+  return `
+  <div class="form-section sector-section">
+    <div class="form-section-title">💊 Health Features</div>
+    <div class="sector-badge">🏥 HEALTH SETTINGS</div>
+    <div class="field"><label>Health Business Type</label>
+      <select id="cbHealthType">
+        <option value="">Select type</option>
+        ${['Pharmacy','Clinic / Hospital','Dental','Laboratory','Optical','Fitness & Gym','Wellness / Spa','Mental Health','Nutrition & Diet','Physiotherapy'].map(h =>
+          `<option value="${h}" ${p.health_type===h?'selected':''}>${h}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field"><label>Appointment Booking</label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+        <input type="checkbox" id="cbAppointment" ${p.health_accepts_appointments?'checked':''} style="accent-color:var(--orange)">
+        <span>We accept appointment bookings</span>
+      </label>
+    </div>
+    <div class="field"><label>Emergency Services?</label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+        <input type="checkbox" id="cbEmergency" ${p.health_emergency?'checked':''} style="accent-color:var(--orange)">
+        <span>We provide emergency services (24/7)</span>
+      </label>
+    </div>
+    <div class="field"><label>Insurance Accepted</label>
+      <input type="text" id="cbInsurance" value="${p.health_insurance||''}" placeholder="e.g. UAP, Jubilee, AON, National">
+    </div>
+  </div>`;
+}
+
+// ─── TECH ────────────────────────────────────────────────────
+function renderTechFeatures(p) {
+  return `
+  <div class="form-section sector-section">
+    <div class="form-section-title">💻 Tech Features</div>
+    <div class="sector-badge">🖥️ TECH SERVICES</div>
+    <div class="field"><label>Tech Specialization</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+        ${['Software Dev','Web Design','Mobile Apps','IT Support','Phone Repairs','Computer Repairs','CCTV & Security','Networking','Graphic Design','Printing'].map(s =>
+          `<label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer">
+            <input type="checkbox" class="cb-tech-spec" value="${s}" ${(p.tech_specializations||[]).includes(s)?'checked':''} style="accent-color:var(--orange)"> ${s}
+          </label>`).join('')}
+      </div>
+    </div>
+    <div class="field"><label>Quote Request</label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+        <input type="checkbox" id="cbQuoteReq" ${p.tech_accepts_quotes?'checked':''} style="accent-color:var(--orange)">
+        <span>Customers can request quotes</span>
+      </label>
+    </div>
+    <div class="field"><label>Portfolio URL (GitHub, Behance, etc.)</label>
+      <input type="url" id="cbPortfolioUrl" value="${p.tech_portfolio_url||''}" placeholder="https://github.com/yourusername">
+    </div>
+  </div>`;
+}
+
+// ─── EDUCATION ───────────────────────────────────────────────
+function renderEducationFeatures(p) {
+  return `
+  <div class="form-section sector-section">
+    <div class="form-section-title">📚 Education Features</div>
+    <div class="sector-badge">🎓 EDUCATION SETTINGS</div>
+    <div class="field"><label>Education Type</label>
+      <select id="cbEduType">
+        <option value="">Select type</option>
+        ${['Primary School','Secondary School','University','Driving School','Music School','Tutoring','Professional Training','Online Courses','Vocational Training','Daycare / Nursery'].map(e =>
+          `<option value="${e}" ${p.edu_type===e?'selected':''}>${e}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field"><label>Subjects / Courses Offered</label>
+      <input type="text" id="cbEduSubjects" value="${p.edu_subjects||''}" placeholder="e.g. Math, English, Science, Driving">
+    </div>
+    <div class="field"><label>Age Group / Level</label>
+      <input type="text" id="cbEduLevel" value="${p.edu_level||''}" placeholder="e.g. Primary 1-7, O-Level, University">
+    </div>
+    <div class="field"><label>Enrollment Open?</label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+        <input type="checkbox" id="cbEnrollOpen" ${p.edu_enrollment_open?'checked':''} style="accent-color:var(--orange)">
+        <span>Currently accepting new students/enrollments</span>
+      </label>
+    </div>
+  </div>`;
+}
+
+// ─── AGRICULTURE ─────────────────────────────────────────────
+function renderAgricultureFeatures(p) {
+  return `
+  <div class="form-section sector-section">
+    <div class="form-section-title">🌾 Agriculture Features</div>
+    <div class="sector-badge">🌱 FARM SETTINGS</div>
+    <div class="field"><label>Farm / Agro Business Type</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+        ${['Fresh Produce','Livestock','Poultry','Dairy','Seeds & Fertilizer','Agro Equipment','Fish Farming','Organic Farming','Wholesale Produce'].map(a =>
+          `<label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer">
+            <input type="checkbox" class="cb-agro-type" value="${a}" ${(p.agro_types||[]).includes(a)?'checked':''} style="accent-color:var(--orange)"> ${a}
+          </label>`).join('')}
+      </div>
+    </div>
+    <div class="field"><label>Bulk Orders Available?</label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+        <input type="checkbox" id="cbAgroBulk" ${p.agro_bulk_orders?'checked':''} style="accent-color:var(--orange)">
+        <span>We accept bulk / wholesale orders</span>
+      </label>
+    </div>
+    <div class="field"><label>Minimum Order</label>
+      <input type="text" id="cbAgroMinOrder" value="${p.agro_min_order||''}" placeholder="e.g. 50kg, 1 crate, 10 trays">
+    </div>
+    <div class="field"><label>Harvest / Availability Season</label>
+      <input type="text" id="cbAgroSeason" value="${p.agro_season||''}" placeholder="e.g. All year, Jan-Mar, Dry season">
+    </div>
+  </div>`;
+}
+
+// ─── CREATIVE ────────────────────────────────────────────────
+function renderCreativeFeatures(p) {
+  return `
+  <div class="form-section sector-section">
+    <div class="form-section-title">🎨 Creative Features</div>
+    <div class="sector-badge">🎭 CREATIVE PROFILE</div>
+    <div class="field"><label>Creative Specialization</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+        ${['Photography','Videography','Graphic Design','Music','DJ / Events','Modeling','Fashion Design','Writing','Animation','Film Production'].map(c =>
+          `<label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer">
+            <input type="checkbox" class="cb-creative-spec" value="${c}" ${(p.creative_specializations||[]).includes(c)?'checked':''} style="accent-color:var(--orange)"> ${c}
+          </label>`).join('')}
+      </div>
+    </div>
+    <div class="field"><label>Starting Rate (UGX)</label>
+      <input type="number" id="cbCreativeRate" value="${p.creative_starting_rate||''}" placeholder="e.g. 50000 per event">
+    </div>
+    <div class="field"><label>Rate Description</label>
+      <input type="text" id="cbCreativeRateDesc" value="${p.creative_rate_desc||''}" placeholder="e.g. per hour, per event, per project">
+    </div>
+    <div class="field"><label>Available for Hire?</label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+        <input type="checkbox" id="cbCreativeHire" ${p.creative_available?'checked':''} style="accent-color:var(--orange)">
+        <span>Currently available for new projects</span>
+      </label>
+    </div>
+    <div class="field"><label>Portfolio / Showreel URL</label>
+      <input type="url" id="cbCreativePortfolio" value="${p.creative_portfolio_url||''}" placeholder="https://yourportfolio.com or YouTube link">
+    </div>
+  </div>`;
+}
+
+// ─── WHOLESALE / B2B ─────────────────────────────────────────
+function renderWholesaleFeatures(p) {
+  return `
+  <div class="form-section sector-section">
+    <div class="form-section-title">📦 Wholesale / B2B Features</div>
+    <div class="sector-badge">🏭 B2B SETTINGS</div>
+    <div class="field"><label>Product Categories</label>
+      <input type="text" id="cbWholesaleCats" value="${p.wholesale_categories||''}" placeholder="e.g. FMCG, Electronics, Textiles, Construction">
+    </div>
+    <div class="field"><label>Minimum Order Value (UGX)</label>
+      <input type="number" id="cbMinOrderVal" value="${p.wholesale_min_order_value||''}" placeholder="e.g. 500000">
+    </div>
+    <div class="field"><label>Lead Time</label>
+      <input type="text" id="cbLeadTime" value="${p.wholesale_lead_time||''}" placeholder="e.g. 24 hours, 3-5 days">
+    </div>
+    <div class="field"><label>Credit Terms Available?</label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+        <input type="checkbox" id="cbCreditTerms" ${p.wholesale_credit_terms?'checked':''} style="accent-color:var(--orange)">
+        <span>We offer credit/payment terms to verified buyers</span>
+      </label>
+    </div>
+    <div class="field"><label>Export Capable?</label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+        <input type="checkbox" id="cbExport" ${p.wholesale_exports?'checked':''} style="accent-color:var(--orange)">
+        <span>We can supply outside Uganda</span>
+      </label>
+    </div>
+  </div>`;
+}
+
+// ─── Menu Builder logic ───────────────────────────────────────
+function initSectorFeatureBindings(type) {
+  if (type === 'food') renderMenuList();
+}
+
+function renderMenuList() {
+  const list = document.getElementById('cbMenuList');
+  if (!list) return;
+  const menus = window._cbMenuData || [];
+  if (!menus.length) {
+    list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:16px;font-size:13px">No menu categories yet. Add your first one!</div>';
+    return;
+  }
+  list.innerHTML = menus.map((cat, ci) => `
+    <div class="menu-category">
+      <div class="menu-cat-header" onclick="toggleMenuCat(${ci})">
+        <span>${cat.name || 'Category ' + (ci+1)}</span>
+        <div style="display:flex;gap:8px">
+          <span style="font-size:12px;color:var(--muted)">${(cat.items||[]).length} items</span>
+          <span onclick="event.stopPropagation();deleteMenuCat(${ci})" style="color:var(--red);font-size:14px;cursor:pointer">🗑</span>
+        </div>
+      </div>
+      <div class="menu-items-list" id="menuCat_${ci}">
+        ${(cat.items||[]).map((item, ii) => `
+          <div class="menu-item-row" id="menuItem_${ci}_${ii}">
+            <div class="menu-item-photo" onclick="pickMenuItemPhoto(${ci},${ii})"
+              style="background:${item.photo?'none':'var(--border2)'}">
+              ${item.photo ? `<img src="${item.photo}" style="width:48px;height:48px;object-fit:cover;border-radius:var(--r)">` : '📷'}
+            </div>
+            <div class="menu-item-info">
+              <div class="menu-item-name">${item.name||'Item'}</div>
+              <div class="menu-item-price">${item.price ? 'UGX ' + parseInt(item.price).toLocaleString() : 'Price not set'}</div>
+              <div class="${item.available!==false?'menu-item-avail':'menu-item-unavail'}">${item.available!==false?'● Available':'○ Unavailable'}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <button onclick="editMenuItem(${ci},${ii})" style="padding:4px 8px;font-size:11px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg);cursor:pointer">Edit</button>
+              <button onclick="deleteMenuItem(${ci},${ii})" style="padding:4px 8px;font-size:11px;border:1px solid var(--red);border-radius:var(--r);color:var(--red);background:var(--white);cursor:pointer">Del</button>
+            </div>
+          </div>`).join('')}
+        <button class="add-menu-item-btn" onclick="addMenuItem(${ci})">+ Add Item to ${cat.name||'this category'}</button>
+      </div>
+    </div>`).join('');
+}
+
+window.toggleMenuCat = (ci) => {
+  const el = document.getElementById('menuCat_' + ci);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+};
+
+window.addMenuCategory = () => {
+  const name = prompt('Category name (e.g. Breakfast, Main Course, Drinks):');
+  if (!name?.trim()) return;
+  window._cbMenuData = window._cbMenuData || [];
+  window._cbMenuData.push({ name: name.trim(), items: [] });
+  renderMenuList();
+};
+
+window.deleteMenuCat = (ci) => {
+  if (!confirm('Delete this category and all its items?')) return;
+  window._cbMenuData.splice(ci, 1);
+  renderMenuList();
+};
+
+window.addMenuItem = (ci) => {
+  const name = prompt('Item name:');
+  if (!name?.trim()) return;
+  const price = prompt('Price in UGX (just the number):');
+  const desc = prompt('Short description (optional):') || '';
+  window._cbMenuData[ci].items = window._cbMenuData[ci].items || [];
+  window._cbMenuData[ci].items.push({ name: name.trim(), price: parseInt(price)||0, description: desc, available: true, photo: null });
+  renderMenuList();
+};
+
+window.editMenuItem = (ci, ii) => {
+  const item = window._cbMenuData[ci].items[ii];
+  const name = prompt('Item name:', item.name);
+  if (name !== null) item.name = name.trim() || item.name;
+  const price = prompt('Price (UGX):', item.price);
+  if (price !== null) item.price = parseInt(price)||0;
+  const desc = prompt('Description:', item.description||'');
+  if (desc !== null) item.description = desc;
+  const avail = confirm('Mark as Available? (Cancel = Unavailable)');
+  item.available = avail;
+  renderMenuList();
+};
+
+window.deleteMenuItem = (ci, ii) => {
+  window._cbMenuData[ci].items.splice(ii, 1);
+  renderMenuList();
+};
+
+window.pickMenuItemPhoto = async (ci, ii) => {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    showToast('Uploading photo…');
+    try {
+      const fd = new FormData();
+      fd.append('file', file, file.name || 'menu.jpg');
+      const r = await fetch(API + '/upload-proxy?folder=listings', {
+        method: 'POST', headers: { Authorization: 'Bearer ' + getToken() }, body: fd
+      });
+      const d = await r.json();
+      if (!r.ok || !d.url) throw new Error(d.error || 'Upload failed');
+      window._cbMenuData[ci].items[ii].photo = d.url;
+      renderMenuList();
+      showToast('Photo uploaded ✓');
+    } catch(e) { showToast('Error: ' + e.message, 3000); }
+  };
+  input.click();
+};
+
+window.toggleFleetReg = () => {
+  window._cbFleetReg = !window._cbFleetReg;
+  const badge = document.getElementById('cbFleetBadge');
+  if (badge) {
+    badge.textContent = window._cbFleetReg ? '✅ Registered with DuukaExpress' : '🚀 Join DuukaExpress Fleet';
+    badge.className = 'fleet-badge ' + (window._cbFleetReg ? 'joined' : 'not-joined');
+  }
 };
 
 // Banner color selector
@@ -3944,6 +4613,68 @@ async function saveStore() {
     banner_image: bannerImgUrl,
   };
   if (_cbLat) { payload.store_lat = _cbLat; payload.store_lng = _cbLng; }
+
+  // Collect sector-specific fields
+  const sectorType = document.querySelector('.cb-type-opt.selected')?.dataset.type;
+  if (sectorType === 'food') {
+    payload.food_cuisine = document.getElementById('cbFoodCuisine')?.value.trim() || null;
+    payload.food_order_types = [...document.querySelectorAll('.cb-order-type:checked')].map(e => e.value);
+    payload.food_table_reservation = document.getElementById('cbTableRes')?.checked || false;
+    payload.menu_data = window._cbMenuData || [];
+  } else if (sectorType === 'retail') {
+    payload.retail_niche = document.getElementById('cbRetailNiche')?.value.trim() || null;
+    payload.retail_return_policy = document.getElementById('cbReturnPolicy')?.value || null;
+    payload.retail_payment_methods = [...document.querySelectorAll('.cb-payment-method:checked')].map(e => e.value);
+    payload.retail_flash_sale = document.getElementById('cbFlashSale')?.value.trim() || null;
+  } else if (sectorType === 'services') {
+    const pkgNames = [...document.querySelectorAll('.cb-pkg-name')].map(e => e.value.trim());
+    const pkgPrices = [...document.querySelectorAll('.cb-pkg-price')].map(e => e.value);
+    const pkgDescs = [...document.querySelectorAll('.cb-pkg-desc')].map(e => e.value.trim());
+    payload.service_packages = pkgNames.map((n, i) => ({ name: n, price: parseInt(pkgPrices[i])||0, desc: pkgDescs[i] }));
+    payload.service_home_available = document.getElementById('cbHomeService')?.checked || false;
+    payload.service_radius_km = parseInt(document.getElementById('cbServiceRadius')?.value) || null;
+  } else if (sectorType === 'property') {
+    payload.property_types = [...document.querySelectorAll('.cb-prop-type:checked')].map(e => e.value);
+    payload.property_focus = document.getElementById('cbPropFocus')?.value || null;
+    payload.property_agent_type = document.getElementById('cbPropAgent')?.value || null;
+    payload.property_virtual_tours = document.getElementById('cbVirtualTour')?.checked || false;
+  } else if (sectorType === 'transport') {
+    payload.duukaexpress_registered = window._cbFleetReg || false;
+    payload.transport_vehicle = document.getElementById('cbVehicleType')?.value || null;
+    payload.transport_services = [...document.querySelectorAll('.cb-transport-service:checked')].map(e => e.value);
+    payload.transport_base_rate = parseInt(document.getElementById('cbTransportRate')?.value) || null;
+  } else if (sectorType === 'health') {
+    payload.health_type = document.getElementById('cbHealthType')?.value || null;
+    payload.health_accepts_appointments = document.getElementById('cbAppointment')?.checked || false;
+    payload.health_emergency = document.getElementById('cbEmergency')?.checked || false;
+    payload.health_insurance = document.getElementById('cbInsurance')?.value.trim() || null;
+  } else if (sectorType === 'tech') {
+    payload.tech_specializations = [...document.querySelectorAll('.cb-tech-spec:checked')].map(e => e.value);
+    payload.tech_accepts_quotes = document.getElementById('cbQuoteReq')?.checked || false;
+    payload.tech_portfolio_url = document.getElementById('cbPortfolioUrl')?.value.trim() || null;
+  } else if (sectorType === 'education') {
+    payload.edu_type = document.getElementById('cbEduType')?.value || null;
+    payload.edu_subjects = document.getElementById('cbEduSubjects')?.value.trim() || null;
+    payload.edu_level = document.getElementById('cbEduLevel')?.value.trim() || null;
+    payload.edu_enrollment_open = document.getElementById('cbEnrollOpen')?.checked || false;
+  } else if (sectorType === 'agriculture') {
+    payload.agro_types = [...document.querySelectorAll('.cb-agro-type:checked')].map(e => e.value);
+    payload.agro_bulk_orders = document.getElementById('cbAgroBulk')?.checked || false;
+    payload.agro_min_order = document.getElementById('cbAgroMinOrder')?.value.trim() || null;
+    payload.agro_season = document.getElementById('cbAgroSeason')?.value.trim() || null;
+  } else if (sectorType === 'creative') {
+    payload.creative_specializations = [...document.querySelectorAll('.cb-creative-spec:checked')].map(e => e.value);
+    payload.creative_starting_rate = parseInt(document.getElementById('cbCreativeRate')?.value) || null;
+    payload.creative_rate_desc = document.getElementById('cbCreativeRateDesc')?.value.trim() || null;
+    payload.creative_available = document.getElementById('cbCreativeHire')?.checked || false;
+    payload.creative_portfolio_url = document.getElementById('cbCreativePortfolio')?.value.trim() || null;
+  } else if (sectorType === 'wholesale') {
+    payload.wholesale_categories = document.getElementById('cbWholesaleCats')?.value.trim() || null;
+    payload.wholesale_min_order_value = parseInt(document.getElementById('cbMinOrderVal')?.value) || null;
+    payload.wholesale_lead_time = document.getElementById('cbLeadTime')?.value.trim() || null;
+    payload.wholesale_credit_terms = document.getElementById('cbCreditTerms')?.checked || false;
+    payload.wholesale_exports = document.getElementById('cbExport')?.checked || false;
+  }
 
   try {
     const res = await fetch(`${API}/me`, {
