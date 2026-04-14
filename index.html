@@ -603,6 +603,34 @@ input,select,textarea{font-family:var(--fb)}
 .chat-send-btn{width:42px;height:42px;background:var(--orange);border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;cursor:pointer;flex-shrink:0;box-shadow:var(--sho);transition:all .15s}
 .chat-send-btn:hover{background:var(--orange-d);transform:scale(1.05)}
 .chat-date-divider{text-align:center;font-size:11px;color:var(--muted2);padding:4px 0;font-weight:600}
+/* Read receipts */
+.tick-sent{color:#aaa;font-size:11px}
+.tick-delivered{color:#555;font-size:11px}
+.tick-read{color:#7c3aed;font-size:11px}
+/* Typing indicator */
+.typing-indicator{display:flex;align-items:center;gap:4px;padding:8px 12px}
+.typing-dot{width:7px;height:7px;background:var(--muted);border-radius:50%;animation:typingBounce 1.2s infinite ease-in-out}
+.typing-dot:nth-child(2){animation-delay:.2s}
+.typing-dot:nth-child(3){animation-delay:.4s}
+@keyframes typingBounce{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
+/* Online badge */
+.online-dot{width:9px;height:9px;background:var(--green);border-radius:50%;border:2px solid var(--white);display:inline-block;margin-left:4px}
+/* Media messages */
+.chat-img{max-width:220px;border-radius:12px;cursor:pointer;display:block;margin-bottom:2px}
+.chat-voice{display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(0,0,0,.06);border-radius:12px;min-width:160px}
+.chat-voice-btn{width:32px;height:32px;border-radius:50%;background:var(--orange);border:none;color:#fff;font-size:14px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+/* Deleted message */
+.chat-deleted{font-style:italic;color:var(--muted);font-size:13px}
+/* Message long-press menu */
+.msg-ctx-menu{position:fixed;background:var(--white);border-radius:var(--rm);box-shadow:var(--shl);z-index:3000;overflow:hidden;min-width:160px}
+.msg-ctx-item{padding:12px 16px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:10px;color:var(--ink)}
+.msg-ctx-item:hover{background:var(--bg)}
+.msg-ctx-item.danger{color:var(--red)}
+/* Media attach button */
+.chat-attach-btn{width:38px;height:38px;background:var(--bg);border:1.5px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0}
+/* Thread avatar with online indicator */
+.thread-av-wrap{position:relative;flex-shrink:0}
+.thread-online-dot{position:absolute;bottom:0;right:0;width:11px;height:11px;background:var(--green);border-radius:50%;border:2px solid var(--white)}
 
 /* ═══════════════════════ ORDERS ═══════════════════════ */
 .order-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);padding:0 16px;background:var(--white)}
@@ -1025,6 +1053,7 @@ async function handleCredentialResponse(response) {
       showToast('Signed in ✓');
       if (pendingAuthCallback) { pendingAuthCallback(); pendingAuthCallback = null; }
       loadUnreadCount();
+      setTimeout(registerFCMToken, 3000);
     } else throw new Error('No token in response');
   } catch (err) {
     console.error('Auth error:', err);
@@ -4002,14 +4031,21 @@ async function renderMessages(_, params = {}) {
     el.innerHTML = threads.map(t => {
       const initial = (t.other_user_name||'U')[0].toUpperCase();
       const timeStr = t.last_message_at ? timeAgo(t.last_message_at) : '';
+      const typeIcon = t.last_message_type === 'image' ? '📷 ' : t.last_message_type === 'voice' ? '🎤 ' : '';
       return `<div class="thread-item" onclick="navigate('/messages?with=${t.other_user_id}${t.listing_id?'&listing='+t.listing_id:''}${t.listing_title?'&title='+encodeURIComponent(t.listing_title):''}')">
-        <div class="thread-av">${initial}${t.unread > 0 ? `<div class="thread-unread-dot">${t.unread > 9 ? '9+' : t.unread}</div>` : ''}</div>
+        <div class="thread-av-wrap">
+          <div class="thread-av">${initial}${t.unread > 0 ? `<div class="thread-unread-dot">${t.unread > 9 ? '9+' : t.unread}</div>` : ''}</div>
+        </div>
         <div class="thread-info">
           <div class="thread-name">${t.other_user_name}</div>
           ${t.listing_title ? `<div class="thread-listing">Re: ${t.listing_title}</div>` : ''}
-          <div class="thread-preview">${t.last_message||'Start a conversation'}</div>
+          <div class="thread-preview">${typeIcon}${t.last_message||'Start a conversation'}</div>
         </div>
-        <div class="thread-meta">${timeStr}</div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          <div class="thread-meta">${timeStr}</div>
+          <div onclick="event.stopPropagation();confirmDeleteThread('${t.other_user_id}','${t.other_user_name}')"
+            style="font-size:11px;color:var(--muted);cursor:pointer;padding:2px 6px;border-radius:100px;border:1px solid var(--border)">🗑</div>
+        </div>
       </div>`;
     }).join('');
   } catch(e) {
@@ -4017,36 +4053,74 @@ async function renderMessages(_, params = {}) {
   }
 }
 
+let _chatOtherUserId = null;
+let _chatPollingInterval = null;
+let _chatLastTs = 0;
+let _chatTypingTimeout = null;
+let _chatOtherName = 'User';
+
 async function renderChat(otherUserId, listingId, listingTitle) {
+  _chatOtherUserId = otherUserId;
+  _chatLastTs = 0;
+  if (_chatPollingInterval) clearInterval(_chatPollingInterval);
+
   const app = document.getElementById('app');
   app.innerHTML = `<div style="padding:20px"><div class="spinner"></div></div>`;
 
-  // Get other user info
-  let otherName = 'Seller';
+  // Update presence
+  fetch(`${API}/presence`, { method:'POST', headers:{Authorization:`Bearer ${getToken()}`} }).catch(()=>{});
+
+  // Get other user info + presence
+  let otherAvatar = null;
   try {
     const r = await fetch(`${API}/storefront/${otherUserId}`);
     if (r.ok) {
       const d = await r.json();
-      otherName = d.seller?.store_name || d.seller?.name || 'Seller';
+      _chatOtherName = d.seller?.store_name || d.seller?.name || 'User';
+      otherAvatar = d.seller?.profile_picture || d.seller?.avatar_url || null;
     }
   } catch {}
+
+  let isOnline = false;
+  try {
+    const pr = await fetch(`${API}/presence?user_id=${otherUserId}`);
+    if (pr.ok) { const pd = await pr.json(); isOnline = pd.online; }
+  } catch {}
+
+  const initial = _chatOtherName[0].toUpperCase();
+  const avatarHtml = otherAvatar
+    ? `<img src="${otherAvatar}" style="width:38px;height:38px;border-radius:50%;object-fit:cover">`
+    : `<div class="chat-header-av">${initial}</div>`;
 
   app.innerHTML = `
     <div class="chat-container">
       <div class="chat-header">
-        <div onclick="navigate('/messages')" style="cursor:pointer;color:var(--blue);font-size:20px;padding-right:4px">←</div>
-        <div class="chat-header-av">${otherName[0].toUpperCase()}</div>
+        <div onclick="stopChatPolling();navigate('/messages')" style="cursor:pointer;color:var(--blue);font-size:20px;padding-right:4px">←</div>
+        <div style="position:relative;flex-shrink:0">
+          ${avatarHtml}
+          ${isOnline ? '<div style="position:absolute;bottom:0;right:0;width:10px;height:10px;background:var(--green);border-radius:50%;border:2px solid var(--white)"></div>' : ''}
+        </div>
         <div class="chat-header-info">
-          <div class="chat-header-name">${otherName}</div>
-          ${listingTitle ? `<div class="chat-header-listing">Re: ${listingTitle}</div>` : ''}
+          <div class="chat-header-name">${_chatOtherName}</div>
+          <div id="chatSubtitle" style="font-size:11px;color:${isOnline?'var(--green)':'var(--muted)'}">
+            ${isOnline ? '🟢 Online' : (listingTitle ? 'Re: ' + listingTitle : '')}
+          </div>
         </div>
         <div onclick="navigate('/seller/${otherUserId}')" style="font-size:20px;cursor:pointer;color:var(--muted)">🏪</div>
       </div>
-      <div class="chat-messages" id="chatMessages"><div class="spinner"></div></div>
+      <div class="chat-messages" id="chatMessages"><div class="spinner" style="margin:40px auto"></div></div>
+      <!-- Typing indicator (hidden by default) -->
+      <div id="typingIndicator" style="display:none;padding:4px 16px">
+        <div class="typing-indicator">
+          <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+          <span style="font-size:12px;color:var(--muted);margin-left:4px">${_chatOtherName} is typing…</span>
+        </div>
+      </div>
       <div class="chat-input-bar">
+        <div class="chat-attach-btn" onclick="openMediaPicker('${otherUserId}','${listingId||''}','${(listingTitle||'').replace(/'/g,'')}')">📎</div>
         <textarea class="chat-input" id="chatInput" placeholder="Type a message…" rows="1"
           onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage('${otherUserId}','${listingId||''}','${(listingTitle||'').replace(/'/g,'')}')}"
-          oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+          oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';onChatInputChange('${otherUserId}')"></textarea>
         <button class="chat-send-btn" onclick="sendChatMessage('${otherUserId}','${listingId||''}','${(listingTitle||'').replace(/'/g,'')}')">➤</button>
       </div>
     </div>`;
@@ -4060,6 +4134,216 @@ async function renderChat(otherUserId, listingId, listingTitle) {
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
     body: JSON.stringify({ other_user_id: otherUserId }),
   }).catch(() => {});
+
+  // Start polling for new messages + typing
+  _chatPollingInterval = setInterval(() => pollChat(otherUserId), 3000);
+  // Update own presence every 30s
+  setInterval(() => {
+    if (_chatOtherUserId === otherUserId)
+      fetch(`${API}/presence`, { method:'POST', headers:{Authorization:`Bearer ${getToken()}`} }).catch(()=>{});
+  }, 30000);
+}
+
+function stopChatPolling() {
+  if (_chatPollingInterval) { clearInterval(_chatPollingInterval); _chatPollingInterval = null; }
+  _chatOtherUserId = null;
+}
+
+async function pollChat(otherUserId) {
+  if (!_chatOtherUserId) return;
+  try {
+    // Poll for new messages
+    const res = await fetch(`${API}/messages?with=${otherUserId}&since=${_chatLastTs}`, {
+      headers: { Authorization: `Bearer ${getToken()}` }
+    });
+    if (res.ok) {
+      const d = await res.json();
+      const newMsgs = d.messages || [];
+      if (newMsgs.length) {
+        appendNewMessages(newMsgs, otherUserId);
+        _chatLastTs = Math.max(...newMsgs.map(m => m.created_at));
+        // Mark read
+        fetch(`${API}/messages/read`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+          body: JSON.stringify({ other_user_id: otherUserId }),
+        }).catch(() => {});
+      }
+    }
+    // Poll typing indicator
+    const tr = await fetch(`${API}/messages/typing?with=${otherUserId}`, {
+      headers: { Authorization: `Bearer ${getToken()}` }
+    });
+    if (tr.ok) {
+      const td = await tr.json();
+      const indicator = document.getElementById('typingIndicator');
+      if (indicator) indicator.style.display = td.typing ? 'block' : 'none';
+    }
+  } catch {}
+}
+
+function onChatInputChange(otherUserId) {
+  // Send typing indicator
+  fetch(`${API}/messages/typing`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+    body: JSON.stringify({ other_user_id: otherUserId, typing: true }),
+  }).catch(() => {});
+  // Stop typing after 5s of no input
+  clearTimeout(_chatTypingTimeout);
+  _chatTypingTimeout = setTimeout(() => {
+    fetch(`${API}/messages/typing`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify({ other_user_id: otherUserId, typing: false }),
+    }).catch(() => {});
+  }, 5000);
+}
+
+function appendNewMessages(msgs, otherUserId) {
+  const el = document.getElementById('chatMessages');
+  if (!el) return;
+  msgs.forEach(m => {
+    if (document.getElementById('msg_' + m.id)) return; // already shown
+    const mine = m.from_user_id === currentUser.id;
+    const timeStr = new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    const div = document.createElement('div');
+    div.className = `chat-msg ${mine?'mine':'theirs'}`;
+    div.id = 'msg_' + m.id;
+    div.innerHTML = buildMessageBubble(m, mine, timeStr);
+    div.addEventListener('contextmenu', (e) => { e.preventDefault(); showMsgMenu(e, m, mine, otherUserId); });
+    div.addEventListener('touchstart', () => {
+      window._longPressTimer = setTimeout(() => showMsgMenu(null, m, mine, otherUserId), 600);
+    }, {passive:true});
+    div.addEventListener('touchend', () => clearTimeout(window._longPressTimer));
+    el.appendChild(div);
+  });
+  el.scrollTop = el.scrollHeight;
+}
+
+function buildMessageBubble(m, mine, timeStr) {
+  if (m.deleted) return `<div class="chat-bubble chat-deleted">🚫 Message deleted</div><div class="chat-time">${timeStr}</div>`;
+
+  let content = '';
+  if (m.msg_type === 'image' && m.media_url) {
+    content = `<img src="${m.media_url}" class="chat-img" onclick="window.open('${m.media_url}','_blank')"><div style="font-size:12px;color:rgba(255,255,255,.7)">${m.content||''}</div>`;
+  } else if (m.msg_type === 'voice' && m.media_url) {
+    content = `<div class="chat-voice">
+      <button class="chat-voice-btn" onclick="playVoice('${m.media_url}',this)">▶</button>
+      <div style="flex:1"><div style="font-size:12px;font-weight:600">Voice note</div><div style="font-size:10px;color:var(--muted)">Tap to play</div></div>
+    </div>`;
+  } else {
+    content = `<div class="chat-bubble">${escapeHtml(m.content||'')}</div>`;
+  }
+
+  const tick = mine ? buildTick(m.status) : '';
+  return `${content}<div class="chat-time">${timeStr}${tick}</div>`;
+}
+
+function buildTick(status) {
+  if (!status || status === 'sent') return ' <span class="tick-sent">✓</span>';
+  if (status === 'delivered') return ' <span class="tick-delivered">✓✓</span>';
+  if (status === 'read') return ' <span class="tick-read">✓✓</span>'; // purple double tick
+  return ' <span class="tick-sent">✓</span>';
+}
+
+function showMsgMenu(e, msg, mine, otherUserId) {
+  document.querySelector('.msg-ctx-menu')?.remove();
+  const menu = document.createElement('div');
+  menu.className = 'msg-ctx-menu';
+  const items = [
+    { icon: '📋', label: 'Copy', action: () => navigator.clipboard?.writeText(msg.content||'') },
+  ];
+  if (mine) {
+    items.push({ icon: '🗑', label: 'Delete for me', action: () => deleteMsgForMe(msg.id, otherUserId), danger: true });
+    items.push({ icon: '⛔', label: 'Delete for everyone', action: () => deleteMsgEveryone(msg.id, otherUserId), danger: true });
+  }
+  menu.innerHTML = items.map(item =>
+    `<div class="msg-ctx-item${item.danger?' danger':''}" data-action="${item.label}">
+      <span>${item.icon}</span><span>${item.label}</span>
+    </div>`).join('');
+  items.forEach((item, i) => {
+    menu.children[i].addEventListener('click', () => { item.action(); menu.remove(); });
+  });
+  // Position near touch/click point
+  const x = e?.clientX || window.innerWidth/2;
+  const y = e?.clientY || window.innerHeight/2;
+  menu.style.cssText = `left:${Math.min(x, window.innerWidth-180)}px;top:${Math.min(y, window.innerHeight-200)}px`;
+  document.body.appendChild(menu);
+  setTimeout(() => document.addEventListener('click', () => menu.remove(), {once:true}), 100);
+}
+
+async function deleteMsgForMe(msgId, otherUserId) {
+  await fetch(`${API}/messages/delete`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+    body: JSON.stringify({ message_id: msgId, other_user_id: otherUserId, delete_for_everyone: false }),
+  }).catch(() => {});
+  document.getElementById('msg_' + msgId)?.remove();
+}
+
+async function deleteMsgEveryone(msgId, otherUserId) {
+  if (!confirm('Delete this message for everyone? This cannot be undone.')) return;
+  await fetch(`${API}/messages/delete`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+    body: JSON.stringify({ message_id: msgId, other_user_id: otherUserId, delete_for_everyone: true }),
+  }).catch(() => {});
+  const el = document.getElementById('msg_' + msgId);
+  if (el) el.innerHTML = '<div class="chat-bubble chat-deleted">🚫 Message deleted</div>';
+}
+
+function playVoice(url, btn) {
+  if (window._voiceAudio) { window._voiceAudio.pause(); window._voiceAudio = null; btn.textContent = '▶'; return; }
+  const audio = new Audio(url);
+  window._voiceAudio = audio;
+  btn.textContent = '⏸';
+  audio.play();
+  audio.onended = () => { btn.textContent = '▶'; window._voiceAudio = null; };
+}
+
+async function openMediaPicker(otherUserId, listingId, listingTitle) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*,audio/*';
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const isImage = file.type.startsWith('image/');
+    const isAudio = file.type.startsWith('audio/');
+    if (!isImage && !isAudio) { showToast('Only images and audio files are supported'); return; }
+    if (file.size > 15 * 1024 * 1024) { showToast('File too large (max 15MB)'); return; }
+
+    showToast('Uploading…');
+    try {
+      const fd = new FormData();
+      fd.append('file', file, file.name || 'media');
+      const r = await fetch(`${API}/upload-proxy?folder=messages`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${getToken()}` },
+        body: fd,
+      });
+      const d = await r.json();
+      if (!r.ok || !d.url) throw new Error(d.error || 'Upload failed');
+
+      // Send as media message
+      await fetch(`${API}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({
+          to_user_id: otherUserId,
+          content: '',
+          msg_type: isImage ? 'image' : 'voice',
+          media_url: d.url,
+          listing_id: listingId || null,
+          listing_title: listingTitle || null,
+        }),
+      });
+      showToast('Sent ✓');
+      await loadChatMessages(otherUserId);
+    } catch(e) { showToast('Error: ' + e.message, 3000); }
+  };
+  input.click();
 }
 
 async function loadChatMessages(otherUserId) {
@@ -4070,7 +4354,9 @@ async function loadChatMessages(otherUserId) {
       headers: { Authorization: `Bearer ${getToken()}` }
     });
     const d = await res.json();
-    const messages = (d.messages || []).reverse(); // oldest first
+    const messages = (d.messages || []).filter(m => !m.deleted_for?.includes(currentUser.id)).reverse();
+    if (messages.length) _chatLastTs = Math.max(...messages.map(m => m.created_at));
+
     if (!messages.length) {
       el.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--muted);font-size:13px">No messages yet. Say hello! 👋</div>`;
       return;
@@ -4082,13 +4368,15 @@ async function loadChatMessages(otherUserId) {
       const dateDivider = msgDate !== lastDate ? `<div class="chat-date-divider">${msgDate}</div>` : '';
       lastDate = msgDate;
       const timeStr = new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-      return `${dateDivider}<div class="chat-msg ${mine?'mine':'theirs'}">
-        <div class="chat-bubble">${escapeHtml(m.content)}</div>
-        <div class="chat-time">${timeStr}${mine ? ' ✓' : ''}</div>
+      return `${dateDivider}<div class="chat-msg ${mine?'mine':'theirs'}" id="msg_${m.id}"
+        oncontextmenu="event.preventDefault();showMsgMenu(event,${JSON.stringify(m).replace(/"/g,'&quot;')},${mine},'${otherUserId}')"
+        ontouchstart="window._longPressTimer=setTimeout(()=>showMsgMenu(null,${JSON.stringify(m).replace(/"/g,'&quot;')},${mine},'${otherUserId}'),600)"
+        ontouchend="clearTimeout(window._longPressTimer)">
+        ${buildMessageBubble(m, mine, timeStr)}
       </div>`;
     }).join('');
     el.scrollTop = el.scrollHeight;
-  } catch {
+  } catch(e) {
     el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">Could not load messages</div>`;
   }
 }
@@ -4101,31 +4389,116 @@ async function sendChatMessage(toUserId, listingId, listingTitle) {
   input.value = '';
   input.style.height = 'auto';
 
-  // Optimistic UI — show message immediately
+  // Stop typing indicator
+  clearTimeout(_chatTypingTimeout);
+  fetch(`${API}/messages/typing`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+    body: JSON.stringify({ other_user_id: toUserId, typing: false }),
+  }).catch(() => {});
+
+  const tempId = 'tmp_' + Date.now();
   const el = document.getElementById('chatMessages');
   if (el) {
     const timeStr = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-    el.innerHTML += `<div class="chat-msg mine">
-      <div class="chat-bubble">${escapeHtml(text)}</div>
-      <div class="chat-time">${timeStr} ✓</div>
-    </div>`;
+    const div = document.createElement('div');
+    div.className = 'chat-msg mine';
+    div.id = tempId;
+    div.innerHTML = `<div class="chat-bubble">${escapeHtml(text)}</div>
+      <div class="chat-time">${timeStr} <span class="tick-sent">✓</span></div>`;
+    el.appendChild(div);
     el.scrollTop = el.scrollHeight;
   }
 
   try {
-    await fetch(`${API}/messages`, {
+    const res = await fetch(`${API}/messages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({
         to_user_id: toUserId,
         content: text,
+        msg_type: 'text',
         listing_id: listingId || null,
         listing_title: listingTitle || null,
       }),
     });
+    const d = await res.json();
+    // Update temp message with real ID and status
+    const tmpEl = document.getElementById(tempId);
+    if (tmpEl && d.message) {
+      tmpEl.id = 'msg_' + d.message.id;
+      const timeEl = tmpEl.querySelector('.chat-time');
+      if (timeEl) {
+        const timeStr = new Date(d.message.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+        timeEl.innerHTML = timeStr + buildTick(d.message.status || 'sent');
+      }
+      if (_chatLastTs < d.message.created_at) _chatLastTs = d.message.created_at;
+    }
   } catch(e) {
     showToast('Message failed to send');
+    document.getElementById(tempId)?.remove();
   }
+}
+
+// ── Delete thread with confirmation ──────────────────────────
+function confirmDeleteThread(otherUserId, otherName) {
+  // First confirm with acknowledgement checkbox
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.innerHTML = `
+    <div style="background:var(--white);border-radius:var(--rxl);padding:24px;max-width:340px;width:100%">
+      <div style="font-weight:800;font-size:17px;margin-bottom:8px">🗑 Delete Conversation</div>
+      <div style="font-size:14px;color:var(--muted2);margin-bottom:16px">Delete your conversation with <strong>${otherName}</strong>?</div>
+      <label style="display:flex;align-items:flex-start;gap:10px;margin-bottom:16px;cursor:pointer">
+        <input type="checkbox" id="deleteAckCheck" style="margin-top:3px;accent-color:var(--orange);width:16px;height:16px">
+        <span style="font-size:13px;color:var(--ink2)">I understand this conversation cannot be recovered.</span>
+      </label>
+      <div style="display:flex;gap:8px">
+        <button onclick="this.closest('[style*=fixed]').remove()" class="btn btn-outline" style="flex:1">Cancel</button>
+        <button onclick="doDeleteThread('${otherUserId}',this)" class="btn" style="flex:1;background:var(--red);color:#fff;border:none">Delete</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+async function doDeleteThread(otherUserId, btn) {
+  const check = document.getElementById('deleteAckCheck');
+  if (!check?.checked) { showToast('Please check the acknowledgement first'); return; }
+  btn.textContent = 'Deleting…';
+  try {
+    await fetch(`${API}/messages/thread/delete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify({ other_user_id: otherUserId }),
+    });
+    btn.closest('[style*=fixed]').remove();
+    showToast('Conversation deleted');
+    navigate('/messages');
+  } catch { showToast('Failed to delete'); }
+}
+
+// ── FCM Device Token Registration ────────────────────────────
+async function registerFCMToken() {
+  if (!('Notification' in window) || !currentUser) return;
+  try {
+    const VAPID_KEY = 'BHCyUNM35vd2CKUZ9MLEBQf1xygHEgBZ-aLX4xqezaYD8W3tFF1XRz5KpTIgejguEUMVb9u7GmdXYoMOjkv4CG4';
+    if (!('serviceWorker' in navigator)) return;
+    const reg = await navigator.serviceWorker.register('/sw.js').catch(() => null);
+    if (!reg) return;
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') return;
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: VAPID_KEY,
+    }).catch(() => null);
+    if (!sub) return;
+    // For FCM, we need the FCM token from the subscription endpoint
+    await fetch(`${API}/device/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify({ token: JSON.stringify(sub), platform: 'web' }),
+    });
+  } catch {}
 }
 
 function startChat(sellerId, listingId, listingTitle, initialMessage) {
