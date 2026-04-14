@@ -588,6 +588,8 @@ input,select,textarea{font-family:var(--fb)}
 .chat-header-av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--orange),#ffaa00);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0}
 .chat-header-info{flex:1;min-width:0}
 .chat-header-name{font-weight:700;font-size:15px;color:var(--ink)}
+.chat-status{font-size:11px;color:var(--muted)}
+.chat-status.online{color:var(--green);font-weight:600}
 .chat-header-listing{font-size:11px;color:var(--blue);font-weight:600}
 .chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
 .chat-msg{display:flex;flex-direction:column;max-width:78%}
@@ -758,7 +760,6 @@ input,select,textarea{font-family:var(--fb)}
     <div class="hactions">
       <div class="icon-btn" id="msgIconBtn" onclick="requireAuth(()=>navigate('/messages'))" title="Messages">💬<span class="badge-dot" id="msgDot" style="display:none"></span></div>
       <div class="icon-btn" onclick="requireAuth(()=>openNotifications())" title="Notifications" style="position:relative">🔔<span id="notifDot" style="display:none;position:absolute;top:2px;right:2px;width:8px;height:8px;background:var(--orange);border-radius:50%;border:2px solid #fff"></span></div>
-      <div class="icon-btn" id="notifBtn" title="Notifications">🔔<span class="badge-dot" id="notifDot" style="display:none"></span></div>
       <button class="auth-desktop-btn" id="authDesktopBtn" onclick="openAuth()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
         <span class="signin-text">Sign In</span>
@@ -955,21 +956,25 @@ const clearToken = () => localStorage.removeItem('duuka_token');
 
 function updateAuthUI(user) {
   currentUser = user;
-  // Normalise — JWT uses sub, KV uses id, support both
   if (currentUser && !currentUser.id && currentUser.sub) currentUser.id = currentUser.sub;
   if (currentUser && !currentUser.sub && currentUser.id) currentUser.sub = currentUser.id;
   const btn = document.getElementById('authDesktopBtn');
   const wrap = document.getElementById('userAvatarWrap');
   const av = document.getElementById('userAvatar');
   if (user) {
+    // Persist user object so photo survives refresh
+    try { localStorage.setItem('duuka_user', JSON.stringify(user)); } catch {}
     btn.style.display = 'none';
     wrap.style.display = 'block';
-    if (user.profile_picture) {
-      av.innerHTML = `<img src="${user.profile_picture}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    // Support both field names — Google sets avatar_url, profile saves profile_picture
+    const photo = user.profile_picture || user.avatar_url;
+    if (photo) {
+      av.innerHTML = `<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.parentNode.textContent='${(user.name||user.email||'U')[0].toUpperCase()}'">`;
     } else {
       av.textContent = (user.name || user.email || 'U')[0].toUpperCase();
     }
   } else {
+    try { localStorage.removeItem('duuka_user'); } catch {}
     btn.style.display = 'flex';
     wrap.style.display = 'none';
   }
@@ -978,15 +983,20 @@ function updateAuthUI(user) {
 async function checkAuth() {
   const token = getToken();
   if (!token) return;
+  // Restore cached user instantly so avatar shows before API responds
+  try {
+    const cached = localStorage.getItem('duuka_user');
+    if (cached) updateAuthUI(JSON.parse(cached));
+  } catch {}
   try {
     const res = await fetch(`${API}/me`, { headers: { Authorization: `Bearer ${token}` } });
     if (res.ok) {
       const d = await res.json();
-      // Always use full user object from /me — includes store fields
       const user = d.user || d;
-      updateAuthUI(user);
+      updateAuthUI(user); // Overwrite with fresh data from server
     } else {
       clearToken();
+      try { localStorage.removeItem('duuka_user'); } catch {}
     }
   } catch {}
 }
@@ -1559,10 +1569,10 @@ async function registerFcmToken() {
     const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
     const { getMessaging, getToken } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js');
     const app = initializeApp({
-      apiKey: 'AIzaSyDuukaListFirebase',
+      apiKey: 'AIzaSyDDrs2htCLBBEWZ1h76hfopAKjw9KknFFg',
       projectId: 'duukalist-2f1f9',
       messagingSenderId: '783365102606',
-      appId: '1:783365102606:web:duukalist',
+      appId: '1:783365102606:web:b3058da8ec16326495b05f',
     });
     const messaging = getMessaging(app);
     const fcmToken = await getToken(messaging, {
@@ -4180,31 +4190,48 @@ async function renderChat(otherUserId, listingId, listingTitle) {
   app.innerHTML = `<div style="padding:20px"><div class="spinner"></div></div>`;
 
   // Get other user info
-  let otherName = 'Seller';
+  let otherName = 'Seller', otherData = null;
   try {
     const r = await fetch(`${API}/storefront/${otherUserId}`);
     if (r.ok) {
       const d = await r.json();
-      otherName = d.seller?.store_name || d.seller?.name || 'Seller';
+      otherData = d.seller || null;
+      otherName = otherData?.store_name || otherData?.name || 'Seller';
     }
   } catch {}
+
+  // Get online status
+  let isOnline = false, lastSeen = null;
+  try {
+    const pr = await fetch(`${API}/presence/${otherUserId}`, { headers: { Authorization: `Bearer ${getToken()}` } });
+    if (pr.ok) { const pd = await pr.json(); isOnline = pd.online; lastSeen = pd.last_seen; }
+  } catch {}
+
+  const statusHtml = isOnline
+    ? `<div class="chat-status online">🟢 Online</div>`
+    : lastSeen ? `<div class="chat-status">Last seen ${timeAgo(lastSeen)}</div>` : '';
+
+  const otherAvatar = otherData?.profile_picture || otherData?.avatar_url;
 
   app.innerHTML = `
     <div class="chat-container">
       <div class="chat-header">
         <div onclick="navigate('/messages')" style="cursor:pointer;color:var(--blue);font-size:20px;padding-right:4px">←</div>
-        <div class="chat-header-av">${otherName[0].toUpperCase()}</div>
+        <div class="chat-header-av" style="${otherAvatar ? 'padding:0;overflow:hidden' : ''}">
+          ${otherAvatar ? `<img src="${otherAvatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.parentNode.textContent='${otherName[0].toUpperCase()}'">` : otherName[0].toUpperCase()}
+        </div>
         <div class="chat-header-info">
           <div class="chat-header-name">${otherName}</div>
-          ${listingTitle ? `<div class="chat-header-listing">Re: ${listingTitle}</div>` : ''}
+          <div id="chatStatus">${statusHtml || (listingTitle ? `<div class="chat-header-listing">Re: ${listingTitle}</div>` : '')}</div>
         </div>
         <div onclick="navigate('/seller/${otherUserId}')" style="font-size:20px;cursor:pointer;color:var(--muted)">🏪</div>
       </div>
       <div class="chat-messages" id="chatMessages"><div class="spinner"></div></div>
+      <div id="typingIndicator" style="display:none;padding:4px 16px;font-size:12px;color:var(--muted);font-style:italic">${otherName} is typing…</div>
       <div class="chat-input-bar">
         <textarea class="chat-input" id="chatInput" placeholder="Type a message…" rows="1"
           onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage('${otherUserId}','${listingId||''}','${(listingTitle||'').replace(/'/g,'')}')}"
-          oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+          oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';sendTyping('${otherUserId}')"></textarea>
         <button class="chat-send-btn" onclick="sendChatMessage('${otherUserId}','${listingId||''}','${(listingTitle||'').replace(/'/g,'')}')">➤</button>
       </div>
     </div>`;
@@ -4212,22 +4239,40 @@ async function renderChat(otherUserId, listingId, listingTitle) {
   // Load messages
   await loadChatMessages(otherUserId);
 
-  // Mark as read (thread level)
+  // Mark as read
   fetch(`${API}/messages/read`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
     body: JSON.stringify({ other_user_id: otherUserId }),
   }).catch(() => {});
 
-  // Auto-poll for new messages every 3 seconds while chat is open
+  // Update own presence
+  fetch(`${API}/presence`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+    body: JSON.stringify({ online: true }),
+  }).catch(() => {});
+
+  // Poll for new messages + typing + presence every 3s
   if (window._chatPollInterval) clearInterval(window._chatPollInterval);
   window._chatOtherUser = otherUserId;
-  window._chatPollInterval = setInterval(() => {
-    if (document.getElementById('chatMessages')) {
-      loadChatMessages(otherUserId);
-    } else {
-      clearInterval(window._chatPollInterval);
-    }
+  window._chatPollInterval = setInterval(async () => {
+    if (!document.getElementById('chatMessages')) { clearInterval(window._chatPollInterval); return; }
+    loadChatMessages(otherUserId);
+    // Check typing
+    try {
+      const tr = await fetch(`${API}/presence/${otherUserId}`, { headers: { Authorization: `Bearer ${getToken()}` } });
+      if (tr.ok) {
+        const td = await tr.json();
+        const tip = document.getElementById('typingIndicator');
+        const statusEl = document.getElementById('chatStatus');
+        if (tip) tip.style.display = td.typing ? 'block' : 'none';
+        if (statusEl && td.online !== isOnline) {
+          isOnline = td.online;
+          statusEl.innerHTML = td.online ? '<div class="chat-status online">🟢 Online</div>' : '<div class="chat-status">Offline</div>';
+        }
+      }
+    } catch {}
   }, 3000);
 }
 
@@ -4314,6 +4359,38 @@ function startChat(sellerId, listingId, listingTitle, initialMessage) {
       }
     }, 600);
   }
+}
+
+// ── Typing indicator sender ─────────────────────────────────
+let _typingTimeout = null;
+function sendTyping(toUserId) {
+  if (!getToken()) return;
+  clearTimeout(_typingTimeout);
+  fetch(`${API}/presence`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+    body: JSON.stringify({ online: true, typing: true, typing_to: toUserId }),
+  }).catch(() => {});
+  // Auto-clear typing after 3s of no input
+  _typingTimeout = setTimeout(() => {
+    fetch(`${API}/presence`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify({ online: true, typing: false }),
+    }).catch(() => {});
+  }, 3000);
+}
+
+// ── Time ago helper ──────────────────────────────────────────
+function timeAgo(ts) {
+  const diff = Date.now() - new Date(ts).getTime();
+  const m = Math.floor(diff / 60000);
+  const h = Math.floor(diff / 3600000);
+  const d = Math.floor(diff / 86400000);
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m}m ago`;
+  if (h < 24) return `${h}h ago`;
+  return `${d}d ago`;
 }
 
 function startChatFromInput(sellerId, listingId, listingTitle) {
