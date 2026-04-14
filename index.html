@@ -1058,6 +1058,11 @@ async function handleCredentialResponse(response) {
       showToast('Signed in ✓');
       if (pendingAuthCallback) { pendingAuthCallback(); pendingAuthCallback = null; }
       loadUnreadCount();
+      // Fetch full profile so profile_picture/banner_image persist across sessions
+      fetch(`${API}/me`, { headers: { Authorization: `Bearer ${d.token}` } })
+        .then(r => r.json())
+        .then(md => { if (md.user) updateAuthUI(md.user); })
+        .catch(() => {});
     } else throw new Error('No token in response');
   } catch (err) {
     console.error('Auth error:', err);
@@ -1445,7 +1450,8 @@ async function uploadProfilePhoto(input) {
     if (!res.ok) throw new Error('Could not save photo');
     const ud = await res.json();
     if (ud.user) {
-      updateAuthUI(ud.user); // Saves all fields including profile_picture to localStorage
+      if (ud.user) Object.assign(currentUser, ud.user);
+      updateAuthUI(currentUser); // Saves all fields including profile_picture to localStorage
     }
     showToast('Profile photo updated! ✓', 3000);
 
@@ -5532,7 +5538,9 @@ async function saveStore() {
     if (!res.ok) throw new Error('Failed: ' + res.status);
     const d = await res.json();
     if (d.user) {
-      updateAuthUI(d.user); // Persists ALL fields to localStorage + updates header avatar
+      // Merge — keep any fields not returned by PUT /me (e.g. subscription_tier)
+      Object.assign(currentUser, d.user);
+      updateAuthUI(currentUser); // Persists ALL fields (incl. profile_picture) to localStorage
     }
     showToast('Cloud Business profile saved! ☁️✓', 3000);
     _cbProfileFile = null;
