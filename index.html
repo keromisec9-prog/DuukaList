@@ -492,7 +492,16 @@ input,select,textarea{font-family:var(--fb)}
 .spot-container{position:fixed;inset:0;top:0;bottom:var(--bnav);background:#000;z-index:600;overflow:hidden}
 .spot-feed{width:100%;height:100%;overflow:hidden;position:relative}
 
-.spot-slide{width:100%;height:100%;position:absolute;top:0;left:0;overflow:hidden;display:none}.spot-slide.active{display:block}
+.spot-slide{width:100%;height:100%;position:absolute;top:0;left:0;overflow:hidden;
+  transform:translateY(100%);   /* all slides start below */
+  transition:none;              /* no transition by default */
+  will-change:transform;        /* GPU layer hint */
+  backface-visibility:hidden;   /* smoother on Android */
+}
+.spot-slide.active{transform:translateY(0)}         /* current: in view */
+.spot-slide.prev{transform:translateY(-100%)}        /* prev: above */
+.spot-slide.animating{transition:transform .32s cubic-bezier(.4,0,.2,1)} /* smooth during swipe */
+.spot-slide.dragging{transition:none}               /* no easing while finger is down */
 .spot-video{width:100%;height:100%;object-fit:cover;display:block;cursor:pointer}
 /* Gradient overlay at bottom */
 .spot-overlay{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.75));padding:16px 16px 24px;color:#fff;pointer-events:none}
@@ -5823,91 +5832,164 @@ function setupSpotObserver() {
   if (window._spotObserver) window._spotObserver.disconnect();
   window._spotObserver = null;
 
-  // Show current slide (first on initial load)
-  spotGoTo(_spotCurrentIdx);
+  // Position all slides on init
+  _layoutSlides(_spotCurrentIdx);
 
-  // ── Touch-driven navigation engine ──────────────────────────
   const feed = document.getElementById('spotFeed');
   if (!feed) return;
 
-  let _touchStartY = 0;
-  let _touchStartX = 0;
+  // ── Touch state ──────────────────────────────────────────────
+  let _tsy = 0, _tsx = 0;        // touch start positions
+  let _dragY = 0;                 // how far dragged
+  let _dragging = false;
   let _isSwitching = false;
-  const THRESHOLD = 80; // px — must drag this far to switch
+  const SNAP_THRESHOLD = 0.25;   // 25% of screen height to snap
 
-  let _touchCurrentY = 0;
+  function _ignore(e) {
+    return e.target.closest('.spot-actions,.spot-overlay,.spot-seekbar-wrap,.spot-comments-panel,.spot-dl-bar');
+  }
 
   feed.addEventListener('touchstart', (e) => {
-    if (e.target.closest('.spot-actions,.spot-overlay,.spot-seekbar-wrap,.spot-comments-panel')) return;
-    _touchStartY = e.touches[0].clientY;
-    _touchStartX = e.touches[0].clientX;
-    _touchCurrentY = e.touches[0].clientY;
+    if (_ignore(e) || _isSwitching) return;
+    _tsy = e.touches[0].clientY;
+    _tsx = e.touches[0].clientX;
+    _dragY = 0;
+    _dragging = true;
+    // Add dragging class — removes CSS transition so movement follows finger directly
+    _applyDragTransform(0);
   }, { passive: true });
 
   feed.addEventListener('touchmove', (e) => {
-    if (e.target.closest('.spot-actions,.spot-overlay,.spot-seekbar-wrap,.spot-comments-panel')) return;
-    _touchCurrentY = e.touches[0].clientY;
+    if (!_dragging || _isSwitching) return;
+    const dy = e.touches[0].clientY - _tsy;
+    const dx = Math.abs(e.touches[0].clientX - _tsx);
+    if (dx > Math.abs(dy) && Math.abs(dy) < 10) { _dragging = false; return; } // horizontal swipe
+    _dragY = dy;
+    _applyDragTransform(dy);
   }, { passive: true });
 
   feed.addEventListener('touchend', (e) => {
-    if (e.target.closest('.spot-actions,.spot-overlay,.spot-seekbar-wrap,.spot-comments-panel')) return;
-    if (_isSwitching) return;
-    const endY = e.changedTouches[0].clientY;
-    const dy = _touchStartY - endY; // positive = swipe up = next
-    const dx = Math.abs(_touchStartX - e.changedTouches[0].clientX);
-    if (dx > Math.abs(dy)) return; // horizontal swipe, ignore
-    if (Math.abs(dy) < THRESHOLD) return; // not far enough
-    _isSwitching = true;
-    if (dy > 0) {
-      spotGoTo(_spotCurrentIdx + 1); // swipe up → next
+    if (!_dragging) return;
+    _dragging = false;
+    const screenH = window.innerHeight;
+    const ratio = Math.abs(_dragY) / screenH;
+    if (ratio >= SNAP_THRESHOLD) {
+      // Snap to next/prev
+      if (_dragY < 0) spotGoTo(_spotCurrentIdx + 1); // swipe up → next
+      else            spotGoTo(_spotCurrentIdx - 1); // swipe down → prev
     } else {
-      spotGoTo(_spotCurrentIdx - 1); // swipe down → prev
+      // Snap back to current
+      _snapBackToCurrent();
     }
-    setTimeout(() => { _isSwitching = false; }, 500);
   }, { passive: true });
 
-  // Also support mouse wheel on desktop
+  // Mouse wheel for desktop
   feed.addEventListener('wheel', (e) => {
     e.preventDefault();
     if (_isSwitching) return;
-    _isSwitching = true;
     if (e.deltaY > 0) spotGoTo(_spotCurrentIdx + 1);
     else spotGoTo(_spotCurrentIdx - 1);
-    setTimeout(() => { _isSwitching = false; }, 500);
   }, { passive: false });
+}
+
+// Position all visible slides relative to current index
+function _layoutSlides(currentIdx) {
+  _spotVideos.forEach((_, i) => {
+    const slide = document.getElementById('spot_slide_' + i);
+    if (!slide) return;
+    slide.classList.remove('active', 'prev', 'animating', 'dragging');
+    if (i === currentIdx) slide.classList.add('active');
+    else if (i < currentIdx) slide.classList.add('prev');
+    // slides > currentIdx stay at translateY(100%) via default CSS
+  });
+}
+
+// Apply live transform while finger is dragging (no animation, follows finger)
+function _applyDragTransform(dy) {
+  const screenH = window.innerHeight;
+  const curr = document.getElementById('spot_slide_' + _spotCurrentIdx);
+  const next = document.getElementById('spot_slide_' + (_spotCurrentIdx + 1));
+  const prev = document.getElementById('spot_slide_' + (_spotCurrentIdx - 1));
+
+  if (curr) { curr.classList.add('dragging'); curr.style.transform = `translateY(${dy}px)`; }
+  if (dy < 0 && next) { // pulling next video up from bottom
+    next.classList.add('dragging');
+    next.style.transform = `translateY(calc(100% + ${dy}px))`;
+  }
+  if (dy > 0 && prev) { // pulling prev video down from top
+    prev.classList.add('dragging');
+    prev.style.transform = `translateY(calc(-100% + ${dy}px))`;
+  }
+}
+
+// Snap back to current when drag wasn't far enough
+function _snapBackToCurrent() {
+  const slides = document.querySelectorAll('.spot-slide');
+  slides.forEach(s => {
+    s.classList.remove('dragging');
+    s.classList.add('animating');
+    s.style.transform = ''; // Let CSS classes take over
+  });
+  // Re-apply layout
+  _layoutSlides(_spotCurrentIdx);
+  setTimeout(() => {
+    document.querySelectorAll('.spot-slide').forEach(s => s.classList.remove('animating'));
+  }, 350);
 }
 
 function spotGoTo(idx) {
   if (idx < 0 || idx >= _spotVideos.length) return;
+  if (idx === _spotCurrentIdx) { _snapBackToCurrent(); return; }
 
-  // Pause previous
-  const prevVid = document.getElementById('spot_vid_' + _spotCurrentIdx);
-  const prevSlide = document.getElementById('spot_slide_' + _spotCurrentIdx);
-  if (prevVid && !prevVid.paused) {
-    // Log watch time
-    if (_spotWatchStart[_spotCurrentIdx]) {
-      const secs = (Date.now() - _spotWatchStart[_spotCurrentIdx]) / 1000;
-      if (secs > 1) sendEngagement(_spotVideos[_spotCurrentIdx]?.id, 'watch_time', secs);
-      delete _spotWatchStart[_spotCurrentIdx];
-    }
-    prevVid.pause();
+  const prevIdx = _spotCurrentIdx;
+  const goingForward = idx > prevIdx;
+
+  // Log watch time for current
+  if (_spotWatchStart[prevIdx]) {
+    const secs = (Date.now() - _spotWatchStart[prevIdx]) / 1000;
+    if (secs > 1) sendEngagement(_spotVideos[prevIdx]?.id, 'watch_time', secs);
+    delete _spotWatchStart[prevIdx];
   }
-  if (prevSlide) prevSlide.classList.remove('active');
 
-  // Show & play new
+  // Pause current video
+  const prevVid = document.getElementById('spot_vid_' + prevIdx);
+  if (prevVid && !prevVid.paused) prevVid.pause();
+
+  // ── Animate transition ────────────────────────────────────────
+  // Remove dragging, add animating so CSS transition kicks in
+  document.querySelectorAll('.spot-slide').forEach(s => {
+    s.classList.remove('dragging');
+    s.classList.add('animating');
+    s.style.transform = ''; // Clear any inline drag transforms
+  });
+
+  // Update current index
   _spotCurrentIdx = idx;
-  const slide = document.getElementById('spot_slide_' + idx);
-  const vid = document.getElementById('spot_vid_' + idx);
-  const videoId = _spotVideos[idx]?.id;
+  _layoutSlides(idx);
 
-  if (slide) slide.classList.add('active');
+  // Remove animating class after transition completes
+  setTimeout(() => {
+    document.querySelectorAll('.spot-slide').forEach(s => s.classList.remove('animating'));
+  }, 350);
+
+  // Play new video
+  const vid = document.getElementById('spot_vid_' + idx);
   if (vid) {
+    vid.currentTime = 0;
     vid.play().catch(() => {});
     _spotWatchStart[idx] = Date.now();
   }
 
   // Track view
+  const videoId = _spotVideos[idx]?.id;
   if (videoId) sendEngagement(videoId, 'view');
+
+  // Preload adjacent videos
+  [idx - 1, idx + 1].forEach(pi => {
+    if (pi < 0 || pi >= _spotVideos.length) return;
+    const pv = document.getElementById('spot_vid_' + pi);
+    if (pv && pv.preload !== 'auto') pv.preload = 'auto';
+  });
 
   // Load more when near end
   if (idx >= _spotVideos.length - 3 && _spotCursor > 0) loadMoreSpotVideos();
