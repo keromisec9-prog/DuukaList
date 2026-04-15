@@ -312,8 +312,8 @@ input,select,textarea{font-family:var(--fb)}
 .detail-ctas{display:flex;flex-direction:column;gap:0;position:sticky;bottom:var(--bnav);background:var(--white);padding:12px 16px;border-top:1px solid var(--border);margin:0 -16px -16px;z-index:10}
 .contact-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px}
 .contact-row-single{margin-bottom:8px}
-.call-btn{display:flex;align-items:center;justify-content:center;gap:7px;background:#7c3aed;color:#fff;font-weight:700;font-size:14px;padding:13px;border-radius:var(--rm);transition:all .18s;cursor:pointer;border:none;font-family:var(--fb)}
-.call-btn:hover{background:#0a9550;transform:translateY(-1px)}
+.call-btn{display:flex;align-items:center;justify-content:center;gap:7px;background:#0dab5b;color:#fff;font-weight:700;font-size:14px;padding:13px;border-radius:var(--rm);transition:all .18s;cursor:pointer;border:none;font-family:var(--fb)}
+.call-btn:hover{background:#089948;transform:translateY(-1px)}
 .callback-btn{display:flex;align-items:center;justify-content:center;gap:7px;background:var(--white);color:var(--green);font-weight:700;font-size:14px;padding:12px;border-radius:var(--rm);transition:all .18s;cursor:pointer;border:2px solid var(--green);font-family:var(--fb)}
 .callback-btn:hover{background:var(--green-light)}
 .offer-chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;margin-bottom:8px}
@@ -490,9 +490,9 @@ input,select,textarea{font-family:var(--fb)}
 .pkg-builder-title{font-weight:700;font-size:13px;color:var(--ink);margin-bottom:8px;display:flex;align-items:center;gap:6px}
 /* ═══════════════════════ SPOTDUUKA ═══════════════════════ */
 .spot-container{position:fixed;inset:0;top:0;bottom:var(--bnav);background:#000;z-index:600;overflow:hidden}
-.spot-feed{width:100%;height:100%;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none}
-.spot-feed::-webkit-scrollbar{display:none}
-.spot-slide{width:100%;height:100%;scroll-snap-align:start;position:relative;overflow:hidden;flex-shrink:0;display:block}
+.spot-feed{width:100%;height:100%;overflow:hidden;position:relative}
+
+.spot-slide{width:100%;height:100%;position:absolute;top:0;left:0;overflow:hidden;display:none}.spot-slide.active{display:block}
 .spot-video{width:100%;height:100%;object-fit:cover;display:block;cursor:pointer}
 /* Gradient overlay at bottom */
 .spot-overlay{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.75));padding:16px 16px 24px;color:#fff;pointer-events:none}
@@ -520,7 +520,7 @@ input,select,textarea{font-family:var(--fb)}
 .spot-header{position:absolute;top:0;left:0;right:0;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;z-index:10;pointer-events:all}
 .spot-logo{font-family:var(--fd);font-weight:900;font-size:18px;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.5)}
 .spot-logo span{color:var(--orange)}
-.spot-upload-trigger{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:100px;padding:6px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;backdrop-filter:blur(6px);font-family:var(--fb)}
+.spot-upload-trigger{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:300;cursor:pointer;backdrop-filter:blur(6px);font-family:var(--fb);line-height:1;flex-shrink:0}
 /* Seek bar */
 .spot-seekbar-wrap{position:absolute;bottom:72px;left:12px;right:12px;z-index:20;opacity:0;transition:opacity .3s;pointer-events:all}
 .spot-seekbar-wrap.visible{opacity:1}
@@ -5579,7 +5579,7 @@ async function renderSpotDuuka() {
         <div class="spot-tab${_spotTab==='foryou'?' active':''}" onclick="switchSpotTab('foryou')">For You</div>
       </div>
       <div style="position:absolute;top:10px;right:14px;z-index:12;pointer-events:all">
-        <button class="spot-upload-trigger" onclick="openSpotUpload()">+ Post Video</button>
+        <button class="spot-upload-trigger" onclick="openSpotUpload()" title="Post Video">+</button>
       </div>
       <div class="spot-feed" id="spotFeed">
         <div class="spot-skeleton"><div class="spinner" style="border-color:rgba(255,255,255,.2);border-top-color:var(--orange)"></div></div>
@@ -5640,7 +5640,7 @@ function renderSpotFeed() {
     const isOwner = v.seller_id === (currentUser?.id||'');
     return `<div class="spot-slide" id="spot_slide_${i}" data-video-id="${v.id}" data-idx="${i}"
       onmousedown="startSpotLongPress(${i})" onmouseup="endSpotLongPress(${i})" onmouseleave="endSpotLongPress(${i})"
-      ontouchstart="startSpotLongPress(${i})" ontouchend="endSpotLongPress(${i})" ontouchcancel="endSpotLongPress(${i})">
+      ontouchstart="startSpotLongPress(${i})" ontouchcancel="endSpotLongPress(${i})">
       <div class="spot-skeleton" id="spot_skel_${i}"><div class="spinner" style="border-color:rgba(255,255,255,.2);border-top-color:var(--orange)"></div></div>
       <video class="spot-video" id="spot_vid_${i}" src="${v.video_url}"
         playsinline webkit-playsinline loop preload="none"
@@ -5716,54 +5716,97 @@ function renderSpotFeed() {
     </div>`;
   }).join('');
 
-  // Set up intersection observer for auto-play
+  // Set up touch navigation engine
   setupSpotObserver();
+  // Restore active slide after re-render
+  const _activeSlide = document.getElementById('spot_slide_' + _spotCurrentIdx);
+  if (_activeSlide) _activeSlide.classList.add('active');
 }
 
 function setupSpotObserver() {
   if (window._spotObserver) window._spotObserver.disconnect();
-  window._spotObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      const idx = parseInt(entry.target.dataset.idx);
-      const vid = document.getElementById('spot_vid_' + idx);
-      const videoId = entry.target.dataset.videoId;
-      if (!vid) return;
-      if (entry.isIntersecting && entry.intersectionRatio > 0.7) {
-        // Pause all others
-        _spotVideos.forEach((_, i) => {
-          if (i !== idx) {
-            const v = document.getElementById('spot_vid_' + i);
-            if (v && !v.paused) { v.pause(); }
-            // Log watch time for previous video
-            if (_spotWatchStart[i]) {
-              const secs = (Date.now() - _spotWatchStart[i]) / 1000;
-              if (secs > 1) sendEngagement(_spotVideos[i]?.id, 'watch_time', secs);
-              delete _spotWatchStart[i];
-            }
-          }
-        });
-        // Play current
-        vid.play().catch(() => {});
-        _spotWatchStart[idx] = Date.now();
-        _spotCurrentIdx = idx;
-        // Track view
-        sendEngagement(videoId, 'view');
-        // Load more when near end
-        if (idx >= _spotVideos.length - 3 && _spotCursor > 0) loadMoreSpotVideos();
-      } else {
-        if (!vid.paused) vid.pause();
-        if (_spotWatchStart[idx]) {
-          const secs = (Date.now() - _spotWatchStart[idx]) / 1000;
-          if (secs > 1) sendEngagement(videoId, 'watch_time', secs);
-          delete _spotWatchStart[idx];
-        }
-      }
-    });
-  }, { threshold: 0.7 });
+  window._spotObserver = null;
 
-  document.querySelectorAll('.spot-slide').forEach(slide => {
-    window._spotObserver.observe(slide);
-  });
+  // Show current slide (first on initial load)
+  spotGoTo(_spotCurrentIdx);
+
+  // ── Touch-driven navigation engine ──────────────────────────
+  const feed = document.getElementById('spotFeed');
+  if (!feed) return;
+
+  let _touchStartY = 0;
+  let _touchStartX = 0;
+  let _isSwitching = false;
+  const THRESHOLD = 80; // px — must drag this far to switch
+
+  feed.addEventListener('touchstart', (e) => {
+    _touchStartY = e.touches[0].clientY;
+    _touchStartX = e.touches[0].clientX;
+  }, { passive: true });
+
+  feed.addEventListener('touchend', (e) => {
+    if (_isSwitching) return;
+    const dy = _touchStartY - e.changedTouches[0].clientY;
+    const dx = Math.abs(_touchStartX - e.changedTouches[0].clientX);
+    // Ignore horizontal swipes (e.g. swiping comment sheet)
+    if (dx > Math.abs(dy)) return;
+    if (Math.abs(dy) < THRESHOLD) return; // Not far enough
+    _isSwitching = true;
+    if (dy > 0) {
+      // Swipe up → next video
+      spotGoTo(_spotCurrentIdx + 1);
+    } else {
+      // Swipe down → previous video
+      spotGoTo(_spotCurrentIdx - 1);
+    }
+    setTimeout(() => { _isSwitching = false; }, 400);
+  }, { passive: true });
+
+  // Also support mouse wheel on desktop
+  feed.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    if (_isSwitching) return;
+    _isSwitching = true;
+    if (e.deltaY > 0) spotGoTo(_spotCurrentIdx + 1);
+    else spotGoTo(_spotCurrentIdx - 1);
+    setTimeout(() => { _isSwitching = false; }, 500);
+  }, { passive: false });
+}
+
+function spotGoTo(idx) {
+  if (idx < 0 || idx >= _spotVideos.length) return;
+
+  // Pause previous
+  const prevVid = document.getElementById('spot_vid_' + _spotCurrentIdx);
+  const prevSlide = document.getElementById('spot_slide_' + _spotCurrentIdx);
+  if (prevVid && !prevVid.paused) {
+    // Log watch time
+    if (_spotWatchStart[_spotCurrentIdx]) {
+      const secs = (Date.now() - _spotWatchStart[_spotCurrentIdx]) / 1000;
+      if (secs > 1) sendEngagement(_spotVideos[_spotCurrentIdx]?.id, 'watch_time', secs);
+      delete _spotWatchStart[_spotCurrentIdx];
+    }
+    prevVid.pause();
+  }
+  if (prevSlide) prevSlide.classList.remove('active');
+
+  // Show & play new
+  _spotCurrentIdx = idx;
+  const slide = document.getElementById('spot_slide_' + idx);
+  const vid = document.getElementById('spot_vid_' + idx);
+  const videoId = _spotVideos[idx]?.id;
+
+  if (slide) slide.classList.add('active');
+  if (vid) {
+    vid.play().catch(() => {});
+    _spotWatchStart[idx] = Date.now();
+  }
+
+  // Track view
+  if (videoId) sendEngagement(videoId, 'view');
+
+  // Load more when near end
+  if (idx >= _spotVideos.length - 3 && _spotCursor > 0) loadMoreSpotVideos();
 }
 
 function onSpotVideoReady(idx) {
