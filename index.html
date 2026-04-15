@@ -545,6 +545,7 @@ input,select,textarea{font-family:var(--fb)}
 /* Video loading skeleton */
 .spot-skeleton{position:absolute;inset:0;background:linear-gradient(180deg,#111 0%,#1a1a1a 100%);display:flex;align-items:center;justify-content:center}
 
+@keyframes heartPop{0%{transform:translate(-50%,-50%) scale(0);opacity:1}50%{transform:translate(-50%,-50%) scale(1.3);opacity:1}100%{transform:translate(-50%,-50%) scale(1);opacity:0}}
 /* SpotDuuka TikTok-style nav tabs */
 .spot-tabs{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:28px;padding:14px 0 10px;z-index:11;pointer-events:all;background:linear-gradient(rgba(0,0,0,.35),transparent)}
 .spot-tab{font-size:15px;font-weight:700;color:rgba(255,255,255,.6);cursor:pointer;padding:4px 0;position:relative;transition:color .15s}
@@ -1704,6 +1705,7 @@ const CAT_META = {
   'commercial':         { id:11, icon:'⚙️', bg:'#f1f5f9', color:'#64748b' },
   'gigs-services':      { id:12, icon:'🎯', bg:'#eef3ff', color:'#1445A8' },
   'resources':          { id:13, icon:'🏗️', bg:'#f5f3ff', color:'#7c3aed' },
+  'rentals':            { id:14, icon:'🔑', bg:'#fef9c3', color:'#ca8a04' },
 };
 
 const RESOURCE_TYPES = ['Land & Space', 'Tools & Equipment', 'Capital / Investment', 'Transport / Vehicles', 'Raw Materials', 'Workshop / Studio', 'Storage Space', 'Other'];
@@ -1758,8 +1760,9 @@ function listingCard(l) {
 
   // Price — AliExpress style: big, prominent, at top of body
   const hasPrice = l.price && l.price > 0;
+  const rentalSuffix = l.type === 'rental' && l.rental_per ? ' / ' + l.rental_per : '';
   const priceHtml = hasPrice
-    ? `<div class="lcard-price">UGX ${Number(l.price).toLocaleString()}</div>`
+    ? `<div class="lcard-price">UGX ${Number(l.price).toLocaleString()}${rentalSuffix}</div>`
     : `<div class="lcard-price-neg">Negotiable</div>`;
 
   // Social proof
@@ -2124,7 +2127,7 @@ function renderBrowse(_, params = {}) {
     </div>`;
 
   const filters = document.getElementById('browseFilters');
-  const chips = [['','All'], ...Object.entries(CAT_META).map(([s,m])=>[s, m.icon+' '+s.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase())])];
+  const chips = [['','All'],['rentals','🔑 Rentals'], ...Object.entries(CAT_META).filter(([s])=>s!=='rentals').map(([s,m])=>[s, m.icon+' '+s.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase())])];
   filters.innerHTML = chips.map(([s,l]) => `<div class="filter-chip${cat===s?' active':''}" onclick="navigate('/browse?category=${s}&sort=${sort}')">${l}</div>`).join('');
 
   document.getElementById('browseQ').addEventListener('input', () => {
@@ -2223,7 +2226,16 @@ async function renderListing(id) {
           ${listing.status === 'sold' ? '<span class="lbadge" style="background:#fef2f2;color:var(--red)">SOLD</span>' : ''}
         </div>
         <div class="detail-title">${listing.title}</div>
-        <div class="detail-price">${fmtPrice(listing.price, listing.currency||'UGX')}</div>
+        <div class="detail-price">${listing.type === 'rental' && listing.rental_per
+          ? fmtPrice(listing.price, listing.currency||'UGX') + ' / ' + listing.rental_per
+          : fmtPrice(listing.price, listing.currency||'UGX')}</div>
+        ${listing.type === 'rental' ? `
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+          ${listing.rental_deposit ? `<span style="background:var(--orange-light);color:var(--orange);font-size:12px;font-weight:700;padding:3px 10px;border-radius:100px">Deposit: UGX ${Number(listing.rental_deposit).toLocaleString()}</span>` : ''}
+          ${listing.rental_min_period ? `<span style="background:var(--bg);color:var(--muted);font-size:12px;font-weight:600;padding:3px 10px;border-radius:100px">Min: ${listing.rental_min_period}</span>` : ''}
+          ${listing.rental_delivery ? `<span style="background:var(--green-light);color:var(--green);font-size:12px;font-weight:700;padding:3px 10px;border-radius:100px">🚚 Delivery available</span>` : ''}
+          <span style="background:var(--blue-light);color:var(--blue-mid);font-size:12px;font-weight:700;padding:3px 10px;border-radius:100px">🔑 For Rent</span>
+        </div>` : ''}
         <div class="detail-meta-grid">
           <div class="dmeta-item"><div class="dmeta-lbl">Category</div><div class="dmeta-val">${listing.subcategory ? listing.subcategory : (listing.category||'—')}</div></div>
           <div class="dmeta-item"><div class="dmeta-lbl">Condition</div><div class="dmeta-val">${listing.condition||'—'}</div></div>
@@ -2914,6 +2926,11 @@ function renderPost(_, params = {}) {
             <div class="type-opt-name">I Need</div>
             <div class="type-opt-desc">Post what you need</div>
           </div>
+          <div class="type-opt${postType==='rental'?' selected':''}" id="typeRental" onclick="setPostType('rental')" style="border-color:${postType==='rental'?'var(--orange)':'var(--border)'}">
+            <div class="type-opt-icon">🔑</div>
+            <div class="type-opt-name">Rental</div>
+            <div class="type-opt-desc">Item available to rent</div>
+          </div>
         </div>
       </div>
 
@@ -2975,6 +2992,54 @@ function renderPost(_, params = {}) {
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
             <div class="field"><label>Starting Price (UGX) <span>*</span></label><input type="number" id="fGigPrice" placeholder="50000"></div>
             <div class="field"><label>Delivery Days</label><input type="number" id="fGigDays" placeholder="7" value="7"></div>
+          </div>
+        </div>
+
+        <!-- Rental specific -->
+        <div id="rentalFields" style="display:none">
+          <div style="background:var(--orange-light);border:1.5px solid var(--orange);border-radius:var(--rm);padding:14px;margin-bottom:4px">
+            <div style="font-weight:800;font-size:13px;color:var(--orange);margin-bottom:10px">🔑 Rental Details</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div class="field">
+                <label>Rental Price (UGX) <span>*</span></label>
+                <input type="number" id="fRentalPrice" placeholder="e.g. 50000">
+              </div>
+              <div class="field">
+                <label>Per</label>
+                <select id="fRentalPer">
+                  <option value="hour">Hour</option>
+                  <option value="day" selected>Day</option>
+                  <option value="week">Week</option>
+                  <option value="month">Month</option>
+                  <option value="event">Event</option>
+                  <option value="trip">Trip</option>
+                </select>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div class="field">
+                <label>Min. Rental Period</label>
+                <input type="text" id="fRentalMin" placeholder="e.g. 1 day, 2 hours">
+              </div>
+              <div class="field">
+                <label>Deposit Required (UGX)</label>
+                <input type="number" id="fRentalDeposit" placeholder="0 = No deposit">
+              </div>
+            </div>
+            <div class="field">
+              <label>Item Condition</label>
+              <select id="fRentalCondition">
+                <option value="excellent">Excellent</option>
+                <option value="good" selected>Good</option>
+                <option value="fair">Fair</option>
+              </select>
+            </div>
+            <div class="field">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="checkbox" id="fRentalDelivery" style="accent-color:var(--orange);width:16px;height:16px">
+                <span>Delivery/Pickup available</span>
+              </label>
+            </div>
           </div>
         </div>
       </div>
@@ -3095,6 +3160,20 @@ window.setPostType = (type) => {
   if (resourceFields) resourceFields.style.display = type==='resource' ? 'block' : 'none';
   if (gigFields) gigFields.style.display = type==='gig' ? 'block' : 'none';
   if (boostSection) boostSection.style.display = type==='need' ? 'none' : 'block';
+
+  // Show rental-specific fields
+  const rentalFields = document.getElementById('rentalFields');
+  if (rentalFields) rentalFields.style.display = type === 'rental' ? 'block' : 'none';
+  // For rentals, override category label + hide condition
+  const condField = document.getElementById('condField');
+  if (condField) condField.style.display = (type === 'rental') ? 'none' : '';
+  // Update category dropdown to show only rental-relevant categories when rental
+  const fCat = document.getElementById('fCat');
+  if (fCat) {
+    if (type === 'rental') {
+      fCat.value = fCat.value || 'rentals';
+    }
+  }
 };
 
 window.selectBoost = (tier) => {
@@ -3426,6 +3505,21 @@ async function submitListing() {
     payload.packages = [{ tier: 'Basic', price: parseInt(price)||50000, duration_days: parseInt(days)||7, features: [] }];
     payload.starting_price = parseInt(price)||50000;
     payload.currency = 'UGX';
+  }
+
+  if (postType === 'rental') {
+    const rentalPrice = document.getElementById('fRentalPrice')?.value;
+    const rentalPer = document.getElementById('fRentalPer')?.value;
+    payload.price = rentalPrice ? parseInt(rentalPrice) : null;
+    payload.rental_per = rentalPer || 'day';
+    payload.rental_min_period = document.getElementById('fRentalMin')?.value.trim() || null;
+    payload.rental_deposit = parseInt(document.getElementById('fRentalDeposit')?.value) || 0;
+    payload.rental_delivery = document.getElementById('fRentalDelivery')?.checked || false;
+    payload.condition = document.getElementById('fRentalCondition')?.value || 'good';
+    payload.currency = 'UGX';
+    payload.category = payload.category || 'rentals';
+    payload.category_id = CAT_META['rentals']?.id || 14;
+    payload.category_slug = 'rentals';
   }
 
   // ── If paid boost required, redirect to PesaPal first ──────
@@ -5586,9 +5680,11 @@ async function renderSpotDuuka() {
       </div>
     </div>`;
 
-  // Load liked/saved from localStorage
-  _spotLiked = JSON.parse(localStorage.getItem('spot_liked') || '{}');
-  _spotSaved = JSON.parse(localStorage.getItem('spot_saved') || '{}');
+  // Load liked/saved from localStorage — keyed by user to prevent cross-account pollution
+  const _likedKey = 'spot_liked_' + (currentUser?.id || 'guest');
+  const _savedKey = 'spot_saved_' + (currentUser?.id || 'guest');
+  _spotLiked = JSON.parse(localStorage.getItem(_likedKey) || '{}');
+  _spotSaved = JSON.parse(localStorage.getItem(_savedKey) || '{}');
   _spotVideos = [];
   _spotCursor = 0;
   _spotCurrentIdx = 0;
@@ -5639,8 +5735,8 @@ function renderSpotFeed() {
     const isSaved = !!_spotSaved[v.id];
     const isOwner = v.seller_id === (currentUser?.id||'');
     return `<div class="spot-slide" id="spot_slide_${i}" data-video-id="${v.id}" data-idx="${i}"
-      onmousedown="startSpotLongPress(${i})" onmouseup="endSpotLongPress(${i})" onmouseleave="endSpotLongPress(${i})"
-      ontouchstart="startSpotLongPress(${i})" ontouchcancel="endSpotLongPress(${i})">
+      onmousedown="startSpotLongPress(${i},event)" onmouseup="endSpotLongPress(${i})" onmouseleave="endSpotLongPress(${i})"
+      ontouchstart="startSpotLongPress(${i},event)" ontouchend="endSpotLongPress(${i})" ontouchcancel="endSpotLongPress(${i})">
       <div class="spot-skeleton" id="spot_skel_${i}"><div class="spinner" style="border-color:rgba(255,255,255,.2);border-top-color:var(--orange)"></div></div>
       <video class="spot-video" id="spot_vid_${i}" src="${v.video_url}"
         playsinline webkit-playsinline loop preload="none"
@@ -5739,27 +5835,35 @@ function setupSpotObserver() {
   let _isSwitching = false;
   const THRESHOLD = 80; // px — must drag this far to switch
 
+  let _touchCurrentY = 0;
+
   feed.addEventListener('touchstart', (e) => {
+    if (e.target.closest('.spot-actions,.spot-overlay,.spot-seekbar-wrap,.spot-comments-panel')) return;
     _touchStartY = e.touches[0].clientY;
     _touchStartX = e.touches[0].clientX;
+    _touchCurrentY = e.touches[0].clientY;
+  }, { passive: true });
+
+  feed.addEventListener('touchmove', (e) => {
+    if (e.target.closest('.spot-actions,.spot-overlay,.spot-seekbar-wrap,.spot-comments-panel')) return;
+    _touchCurrentY = e.touches[0].clientY;
   }, { passive: true });
 
   feed.addEventListener('touchend', (e) => {
+    if (e.target.closest('.spot-actions,.spot-overlay,.spot-seekbar-wrap,.spot-comments-panel')) return;
     if (_isSwitching) return;
-    const dy = _touchStartY - e.changedTouches[0].clientY;
+    const endY = e.changedTouches[0].clientY;
+    const dy = _touchStartY - endY; // positive = swipe up = next
     const dx = Math.abs(_touchStartX - e.changedTouches[0].clientX);
-    // Ignore horizontal swipes (e.g. swiping comment sheet)
-    if (dx > Math.abs(dy)) return;
-    if (Math.abs(dy) < THRESHOLD) return; // Not far enough
+    if (dx > Math.abs(dy)) return; // horizontal swipe, ignore
+    if (Math.abs(dy) < THRESHOLD) return; // not far enough
     _isSwitching = true;
     if (dy > 0) {
-      // Swipe up → next video
-      spotGoTo(_spotCurrentIdx + 1);
+      spotGoTo(_spotCurrentIdx + 1); // swipe up → next
     } else {
-      // Swipe down → previous video
-      spotGoTo(_spotCurrentIdx - 1);
+      spotGoTo(_spotCurrentIdx - 1); // swipe down → prev
     }
-    setTimeout(() => { _isSwitching = false; }, 400);
+    setTimeout(() => { _isSwitching = false; }, 500);
   }, { passive: true });
 
   // Also support mouse wheel on desktop
@@ -5814,16 +5918,50 @@ function onSpotVideoReady(idx) {
   if (skel) skel.style.display = 'none';
 }
 
+let _tapTimer = {};
+let _tapCount = {};
 function toggleSpotPlay(idx) {
-  const vid = document.getElementById('spot_vid_' + idx);
-  const indicator = document.getElementById('spot_pause_' + idx);
-  if (!vid) return;
-  if (vid.paused) {
-    vid.play().catch(() => {});
-    if (indicator) { indicator.innerHTML = '▶'; indicator.classList.add('show'); setTimeout(() => indicator.classList.remove('show'), 600); }
-  } else {
-    vid.pause();
-    if (indicator) { indicator.innerHTML = '⏸'; indicator.classList.add('show'); setTimeout(() => indicator.classList.remove('show'), 800); }
+  // Double-tap detection
+  _tapCount[idx] = (_tapCount[idx] || 0) + 1;
+  clearTimeout(_tapTimer[idx]);
+  if (_tapCount[idx] >= 2) {
+    _tapCount[idx] = 0;
+    // Double tap → like with heart animation
+    doSpotDoubleTapLike(idx);
+    return;
+  }
+  _tapTimer[idx] = setTimeout(() => {
+    _tapCount[idx] = 0;
+    // Single tap → play/pause
+    const vid = document.getElementById('spot_vid_' + idx);
+    const indicator = document.getElementById('spot_pause_' + idx);
+    if (!vid) return;
+    if (vid.paused) {
+      vid.play().catch(() => {});
+      if (indicator) { indicator.innerHTML = '▶'; indicator.classList.add('show'); setTimeout(() => indicator.classList.remove('show'), 600); }
+    } else {
+      vid.pause();
+      if (indicator) { indicator.innerHTML = '⏸'; indicator.classList.add('show'); setTimeout(() => indicator.classList.remove('show'), 800); }
+    }
+  }, 250);
+}
+
+function doSpotDoubleTapLike(idx) {
+  const v = _spotVideos[idx];
+  if (!v) return;
+  if (!currentUser) { openAuth(); return; }
+  // Only like if not already liked
+  if (!_spotLiked[v.id]) {
+    spotAction('like', idx, v.id);
+  }
+  // Animate big heart
+  const slide = document.getElementById('spot_slide_' + idx);
+  if (slide) {
+    const heart = document.createElement('div');
+    heart.textContent = '❤️';
+    heart.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);font-size:80px;pointer-events:none;z-index:100;animation:heartPop .6s ease forwards';
+    slide.appendChild(heart);
+    setTimeout(() => heart.remove(), 700);
   }
 }
 
@@ -5859,7 +5997,7 @@ function spotAction(type, idx, videoId) {
       sendEngagement(videoId, 'like');
     }
     if (countEl && _spotVideos[idx]) countEl.textContent = fmtCount(_spotVideos[idx].likes);
-    localStorage.setItem('spot_liked', JSON.stringify(_spotLiked));
+    localStorage.setItem('spot_liked_' + (currentUser?.id||'guest'), JSON.stringify(_spotLiked));
   } else if (type === 'save') {
     const isSaved = !!_spotSaved[videoId];
     const btn = document.getElementById('spot_save_' + idx);
@@ -5876,7 +6014,7 @@ function spotAction(type, idx, videoId) {
       sendEngagement(videoId, 'save');
       showToast('Video saved ✓');
     }
-    localStorage.setItem('spot_saved', JSON.stringify(_spotSaved));
+    localStorage.setItem('spot_saved_' + (currentUser?.id||'guest'), JSON.stringify(_spotSaved));
   }
 }
 
@@ -6173,23 +6311,40 @@ function seekSpotVideo(idx, pct) {
   vid.currentTime = (pct / 100) * vid.duration;
 }
 
-// ── Long press → 2× speed ─────────────────────────────────────
-let _longPressTimer = {};
-function startSpotLongPress(idx) {
-  _longPressTimer[idx] = setTimeout(() => {
+// ── Long press → 2× speed (reliable, no persist bug) ─────────
+let _longPressTimer = null;
+let _longPressActive = false;
+let _longPressIdx = -1;
+
+function startSpotLongPress(idx, e) {
+  // Only left/right half of screen triggers 2x (not actions sidebar)
+  if (e && e.target && e.target.closest('.spot-actions,.spot-overlay,.spot-seekbar-wrap')) return;
+  clearTimeout(_longPressTimer);
+  _longPressTimer = setTimeout(() => {
+    _longPressActive = true;
+    _longPressIdx = idx;
     const vid = document.getElementById('spot_vid_' + idx);
     const badge = document.getElementById('spot_speed_' + idx);
-    if (vid) { vid.playbackRate = 2; }
+    if (vid) vid.playbackRate = 2;
     if (badge) badge.classList.add('show');
-  }, 300);
+  }, 400);
 }
+
 function endSpotLongPress(idx) {
-  clearTimeout(_longPressTimer[idx]);
-  const vid = document.getElementById('spot_vid_' + idx);
-  const badge = document.getElementById('spot_speed_' + idx);
-  if (vid && vid.playbackRate === 2) { vid.playbackRate = 1; }
+  clearTimeout(_longPressTimer);
+  _longPressTimer = null;
+  if (!_longPressActive) return;
+  _longPressActive = false;
+  const vid = document.getElementById('spot_vid_' + (_longPressIdx >= 0 ? _longPressIdx : idx));
+  const badge = document.getElementById('spot_speed_' + (_longPressIdx >= 0 ? _longPressIdx : idx));
+  if (vid && vid.playbackRate !== 1) vid.playbackRate = 1;
   if (badge) badge.classList.remove('show');
+  _longPressIdx = -1;
 }
+
+// Safety net: reset speed on any touchend/mouseup anywhere
+document.addEventListener('touchend', () => { if (_longPressActive) endSpotLongPress(-1); }, true);
+document.addEventListener('mouseup', () => { if (_longPressActive) endSpotLongPress(-1); }, true);
 
 // ── Download video ─────────────────────────────────────────────
 let _activeDownload = null;
