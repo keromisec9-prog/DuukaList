@@ -1718,9 +1718,9 @@ const routes = {
   '/spot': renderSpotDuuka,
   '/spot/manage': renderMyVideos,
   '/edit': renderEditListing,
-  '/express': renderDuukaExpress,
-  '/express/apply': renderDuukaExpress,
-  '/express/fleet': renderFleetDashboard,
+  '/express': (...a) => renderDuukaExpress(...a),
+  '/express/apply': (...a) => renderDuukaExpress(...a),
+  '/express/fleet': (...a) => renderFleetDashboard(...a),
   '/setup-store': renderSetupStore,
 };
 
@@ -6812,8 +6812,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }, 1500);
 });
 </script>
-</body>
-</html>
 <script>
 /* ═══════════════════════════════════════
    DUUKAEXPRESS FRONTEND
@@ -7601,3 +7599,5 @@ async function submitAddDriver() {
   } catch(e) { showToast('Error: ' + e.message, 4000); }
 }
 </script>
+</body>
+</html>
