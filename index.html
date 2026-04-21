@@ -854,22 +854,31 @@ input,select,textarea{font-family:var(--fb)}
     <div class="nav-post-circle">+</div>
     <span class="nav-post-lbl">Post</span>
   </div>
-  <div class="nav-item" id="nav-express" onclick="navigate('/express')" style="position:relative"><span class="nav-icon" style="display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block">
-  <!-- Delivery truck body -->
-  <rect x="1" y="9" width="13" height="9" rx="1.5" fill="currentColor" opacity="0.9"/>
-  <!-- Cab -->
-  <path d="M14 11h4l2.5 3.5V18h-6.5V11z" fill="currentColor" opacity="0.9"/>
-  <!-- Windshield -->
-  <path d="M15 12.5h3l1.5 2h-4.5v-2z" fill="white" opacity="0.5"/>
-  <!-- Rear wheel -->
-  <circle cx="5" cy="18.5" r="2" fill="currentColor"/>
-  <circle cx="5" cy="18.5" r="0.9" fill="white"/>
-  <!-- Front wheel -->
-  <circle cx="17.5" cy="18.5" r="2" fill="currentColor"/>
-  <circle cx="17.5" cy="18.5" r="0.9" fill="white"/>
+  <div class="nav-item" id="nav-express" onclick="navigate('/express')" style="position:relative"><span class="nav-icon" style="display:flex;align-items:center;justify-content:center"><svg width="26" height="20" viewBox="0 0 32 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block">
   <!-- Speed lines -->
-  <line x1="1" y1="6.5" x2="5.5" y2="6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
-  <line x1="1" y1="4" x2="4" y2="4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
+  <line x1="0" y1="10" x2="7" y2="10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity="0.5"/>
+  <line x1="0" y1="13" x2="5" y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.35"/>
+  <!-- Scooter body -->
+  <path d="M10 13 Q12 8 16 8 L22 8 Q24 8 25 10 L26 13 Q22 14 18 14 L10 14 Z" fill="currentColor" opacity="0.9"/>
+  <!-- Seat/rear -->
+  <path d="M14 8 L18 8 L18 6 Q14 5 13 7 Z" fill="currentColor" opacity="0.75"/>
+  <!-- Handlebars -->
+  <path d="M24 8 L26 6 M24 8 L26 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
+  <!-- Front fork -->
+  <path d="M25 13 L27 17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity="0.85"/>
+  <!-- Rider body -->
+  <ellipse cx="17" cy="7" rx="2.5" ry="3" fill="currentColor" opacity="0.85"/>
+  <!-- Rider head/helmet -->
+  <circle cx="17" cy="3.5" r="2.5" fill="currentColor" opacity="0.9"/>
+  <path d="M15 3 Q17 1 19 3" fill="currentColor" opacity="0.5"/>
+  <!-- Rear wheel -->
+  <circle cx="12" cy="17" r="3.2" fill="currentColor" opacity="0.9"/>
+  <circle cx="12" cy="17" r="1.4" fill="white" opacity="0.9"/>
+  <!-- Front wheel -->
+  <circle cx="27" cy="17" r="3.2" fill="currentColor" opacity="0.9"/>
+  <circle cx="27" cy="17" r="1.4" fill="white" opacity="0.9"/>
+  <!-- Exhaust -->
+  <path d="M10 13 L8 15 L6 14" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.4"/>
 </svg></span><span class="nav-label">Express</span></div>
   <div class="nav-item" id="nav-account" onclick="currentUser?navigate('/dashboard'):openAuth()"><span class="nav-icon">👤</span><span class="nav-label">Account</span></div>
 </nav>
@@ -1720,6 +1729,13 @@ const routes = {
   '/edit': renderEditListing,
   '/express': (...a) => renderDuukaExpress(...a),
   '/express/apply': (...a) => renderDuukaExpress(...a),
+  '/express/ride': (...a) => renderExpressRide(...a),
+  '/express/food': (...a) => renderExpressFood(...a),
+  '/express/stores': (...a) => renderExpressStores(...a),
+  '/express/offers': (...a) => renderExpressOffers(...a),
+  '/express/track': (...a) => renderExpressTrack(...a),
+  '/express/jobs': (...a) => renderExpressMyJobs(...a),
+  '/express/notifications': (...a) => renderExpressNotifications(...a),
   '/express/fleet': (...a) => renderFleetDashboard(...a),
   '/setup-store': renderSetupStore,
 };
@@ -5334,7 +5350,7 @@ function initSectorFeatureBindings(type) {
   if (type === 'food') renderMenuList();
 }
 
-function renderMenuList() {
+async function renderMenuList() {
   const list = document.getElementById('cbMenuList');
   if (!list) return;
   const menus = window._cbMenuData || [];
@@ -6850,40 +6866,198 @@ async function renderDuukaExpress() {
 // ── Landing — not yet a rider ─────────────────────────────────
 function renderExpressHome() {
   const app = document.getElementById('app');
+
+  // Load featured businesses + nearby stores from DuukaList
   app.innerHTML = `
     <div class="express-topbar">
       <div class="express-topbar-logo">
-        <svg width="24" height="20" viewBox="0 0 24 20" fill="none"><rect x="0" y="7" width="14" height="9" rx="1.5" fill="white" opacity=".9"/><path d="M14 9h4l2.5 3.5V16h-6.5V9z" fill="white" opacity=".9"/><circle cx="4.5" cy="17" r="2.2" fill="white"/><circle cx="4.5" cy="17" r="1" fill="#FF6A00"/><circle cx="17.5" cy="17" r="2.2" fill="white"/><circle cx="17.5" cy="17" r="1" fill="#FF6A00"/></svg>
+        <svg width="32" height="22" viewBox="0 0 38 26" fill="none">
+          <line x1="0" y1="12" x2="8" y2="12" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+          <line x1="0" y1="15.5" x2="6" y2="15.5" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
+          <path d="M12 15 Q14 9 19 9 L26 9 Q28 9 29 11.5 L30 15 Q26 16.5 21 16.5 L12 16.5 Z" fill="white" opacity="0.95"/>
+          <path d="M17 9 L21 9 L21 7 Q17 6 16 8 Z" fill="white" opacity="0.8"/>
+          <path d="M28 9.5 L31 7 M28 9.5 L31 11.5" stroke="white" stroke-width="1.8" stroke-linecap="round" opacity="0.9"/>
+          <path d="M29 15.5 L31.5 20" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.9"/>
+          <ellipse cx="20" cy="8" rx="3" ry="3.5" fill="white" opacity="0.9"/>
+          <circle cx="20" cy="4" r="3" fill="white" opacity="0.95"/>
+          <circle cx="14.5" cy="20" r="3.8" fill="white" opacity="0.95"/>
+          <circle cx="14.5" cy="20" r="1.6" fill="#FF6A00"/>
+          <circle cx="31.5" cy="20" r="3.8" fill="white" opacity="0.95"/>
+          <circle cx="31.5" cy="20" r="1.6" fill="#FF6A00"/>
+        </svg>
         Duuka<span>Express</span>
       </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="background:rgba(255,255,255,.2);border-radius:100px;padding:4px 10px;font-size:11px;font-weight:700;color:#fff;display:flex;align-items:center;gap:5px">
+          💳 ${currentUser ? 'UGX 0' : 'Sign In'}
+        </div>
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer" onclick="requireAuth(()=>navigate('/express/notifications'))">🔔</div>
+      </div>
     </div>
-    <div style="padding:24px 16px 0">
-      <div style="text-align:center;padding:20px 0 24px">
-        <div style="font-size:52px;margin-bottom:8px">🛵</div>
-        <div style="font-family:var(--fd);font-size:24px;font-weight:900;margin-bottom:6px">Earn with your vehicle</div>
-        <div style="color:var(--muted);font-size:14px;line-height:1.6">Deliver. Ride. Earn.<br>Set your own hours. Be your own boss.</div>
+
+    <!-- Location bar -->
+    <div style="background:#fff;padding:10px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);cursor:pointer" onclick="showToast('Location feature coming soon')">
+      <span style="color:var(--orange);font-size:16px">📍</span>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:700;color:var(--ink)">Kampala, Uganda</div>
+        <div style="font-size:10px;color:var(--muted)">Tap to change delivery location</div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px">
-        ${[['🚴','Bicycle','From UGX 2,000/trip'],['🛵','Boda Boda','From UGX 3,000/trip'],['🚗','Car / Taxi','From UGX 5,000/trip'],['🚐','Van','From UGX 8,000/trip'],['🚚','Truck','From UGX 15,000/trip'],['🚤','Boat','Coming soon']].map(([icon,label,sub])=>`
-          <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--rm);padding:14px 10px;text-align:center">
-            <div style="font-size:26px;margin-bottom:4px">${icon}</div>
-            <div style="font-weight:700;font-size:13px;margin-bottom:2px">${label}</div>
-            <div style="font-size:10px;color:var(--muted)">${sub}</div>
-          </div>`).join('')}
-      </div>
-      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--rm);padding:16px;margin-bottom:16px">
-        <div style="font-weight:800;margin-bottom:10px">💰 How commissions work</div>
-        <div style="font-size:13px;line-height:1.8;color:var(--ink2)">
-          Customer pays <strong>UGX 10,000</strong> for a delivery<br>
-          Platform fee (10%) = <strong style="color:var(--orange)">UGX 1,000</strong><br>
-          <strong style="color:var(--green)">You keep UGX 9,000</strong><br>
-          <span style="color:var(--muted);font-size:12px">Pay commission weekly — no upfront fees</span>
+      <span style="font-size:12px;font-weight:700;color:var(--blue-mid)">Change</span>
+    </div>
+
+    <!-- 4 main service tiles -->
+    <div style="background:var(--bg);padding:14px 12px 0">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
+        <div onclick="requireAuth(()=>navigate('/express/ride'))" style="background:var(--orange);border-radius:14px;padding:12px 6px;text-align:center;cursor:pointer;transition:transform .15s" ontouchstart="this.style.transform='scale(.95)'" ontouchend="this.style.transform=''">
+          <div style="font-size:26px;margin-bottom:5px">🚗</div>
+          <div style="font-size:10px;font-weight:700;color:#fff;line-height:1.2">Order a Ride</div>
+        </div>
+        <div onclick="requireAuth(()=>navigate('/express/food'))" style="background:#1a6e34;border-radius:14px;padding:12px 6px;text-align:center;cursor:pointer;transition:transform .15s" ontouchstart="this.style.transform='scale(.95)'" ontouchend="this.style.transform=''">
+          <div style="font-size:26px;margin-bottom:5px">🍔</div>
+          <div style="font-size:10px;font-weight:700;color:#fff;line-height:1.2">Order Food & Goods</div>
+        </div>
+        <div onclick="requireAuth(()=>navigate('/express/track'))" style="background:var(--blue);border-radius:14px;padding:12px 6px;text-align:center;cursor:pointer;transition:transform .15s" ontouchstart="this.style.transform='scale(.95)'" ontouchend="this.style.transform=''">
+          <div style="font-size:26px;margin-bottom:5px">📦</div>
+          <div style="font-size:10px;font-weight:700;color:#fff;line-height:1.2">Track Delivery</div>
+        </div>
+        <div onclick="requireAuth(()=>navigate('/express/jobs'))" style="background:#d97706;border-radius:14px;padding:12px 6px;text-align:center;cursor:pointer;transition:transform .15s" ontouchstart="this.style.transform='scale(.95)'" ontouchend="this.style.transform=''">
+          <div style="font-size:26px;margin-bottom:5px">🕐</div>
+          <div style="font-size:10px;font-weight:700;color:#fff;line-height:1.2">History</div>
         </div>
       </div>
-      <button class="btn btn-orange btn-full btn-lg" onclick="startRiderOnboarding()" style="margin-bottom:12px">🚀 Join DuukaExpress Now</button>
-      <button class="btn btn-outline btn-full" onclick="renderFleetDashboard()" style="margin-bottom:24px">🏢 I Have a Fleet</button>
+
+      <!-- Nearby riders map strip -->
+      <div style="background:var(--white);border-radius:var(--rm);padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;border:1px solid var(--border)">
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:2px">🛵 Cars & motorcycles near you</div>
+          <div style="font-size:11px;color:var(--muted)">ETA: 2–5 min · Several riders available</div>
+        </div>
+        <button class="btn btn-orange" style="padding:8px 14px;font-size:12px;white-space:nowrap;border-radius:100px" onclick="requireAuth(()=>navigate('/express/ride'))">Order a Ride →</button>
+      </div>
+    </div>
+
+    <!-- Popular stores nearby -->
+    <div style="padding:0 12px 14px;background:var(--bg)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-weight:800;font-size:16px;color:var(--ink)">Popular Stores Nearby</div>
+        <span style="font-size:13px;font-weight:700;color:var(--blue-mid);cursor:pointer" onclick="navigate('/express/stores')">More ›</span>
+      </div>
+      <div id="exStores" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        ${[1,2].map(()=>`<div style="height:160px;border-radius:var(--rm);background:var(--border2);animation:shimmer 1.4s infinite;background-size:400px 100%"></div>`).join('')}
+      </div>
+    </div>
+
+    <!-- Offers & Promotions -->
+    <div style="padding:0 12px 14px;background:var(--bg)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-weight:800;font-size:16px;color:var(--ink)">Offers & Promotions</div>
+        <span style="font-size:13px;font-weight:700;color:var(--blue-mid);cursor:pointer" onclick="navigate('/express/offers')">View All ›</span>
+      </div>
+      <div id="exOffers">
+        ${[1,2].map(()=>`<div style="height:80px;border-radius:var(--rm);background:var(--border2);margin-bottom:8px;animation:shimmer 1.4s infinite"></div>`).join('')}
+      </div>
+    </div>
+
+    <!-- Earn section (bottom CTA, not the landing) -->
+    <div style="padding:0 12px 20px;background:var(--bg)">
+      <div style="background:var(--blue);border-radius:var(--rl);padding:20px;position:relative;overflow:hidden">
+        <div style="position:absolute;right:-10px;top:-10px;font-size:72px;opacity:.07">🛵</div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:.1em;color:rgba(255,255,255,.55);text-transform:uppercase;margin-bottom:4px">For Riders & Fleets</div>
+        <div style="font-family:var(--fd);font-size:18px;font-weight:700;color:#fff;margin-bottom:5px">Earn with DuukaExpress</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.65);margin-bottom:14px">Use your boda, car, van or truck. Set your own hours. Earn on every delivery.</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-orange" style="flex:1;font-size:12px;padding:10px" onclick="startRiderOnboarding()">🛵 Join as Rider</button>
+          <button class="btn" style="flex:1;background:rgba(255,255,255,.12);color:#fff;font-size:12px;padding:10px;border:1px solid rgba(255,255,255,.2)" onclick="renderFleetDashboard()">🏢 Register Fleet</button>
+        </div>
+      </div>
     </div>`;
+
+  // Load real stores from DuukaList (businesses with delivery_available)
+  loadExpressStores();
+  loadExpressOffers();
 }
+
+async function loadExpressStores() {
+  const el = document.getElementById('exStores');
+  if (!el) return;
+  try {
+    // Fetch sellers with cloud business profiles who offer delivery
+    const res = await fetch(`${API}/listings?limit=10&sort=boost`);
+    const d = await res.json();
+    const listings = d.listings || [];
+    // Group by seller to get unique stores
+    const stores = {};
+    listings.forEach(l => {
+      if (l.seller_id && !stores[l.seller_id]) {
+        stores[l.seller_id] = l;
+      }
+    });
+    const storeList = Object.values(stores).slice(0, 6);
+    if (!storeList.length) {
+      el.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--muted);font-size:13px">No stores available yet. Check back soon!</div>`;
+      return;
+    }
+    el.innerHTML = storeList.map(s => `
+      <div onclick="navigate('/seller/${s.seller_id}')" style="background:var(--white);border:1px solid var(--border);border-radius:var(--rm);overflow:hidden;cursor:pointer;transition:transform .15s" ontouchstart="this.style.transform='scale(.97)'" ontouchend="this.style.transform=''">
+        <div style="height:100px;background:${s.images?.[0]?`url(${s.images[0]}) center/cover`:'linear-gradient(135deg,var(--orange),#ffaa00)'};position:relative">
+          ${s.boost_tier && s.boost_tier!=='none'?'<span style="position:absolute;top:6px;left:6px;background:var(--orange);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:100px">Featured</span>':''}
+        </div>
+        <div style="padding:8px 10px 10px">
+          <div style="font-weight:700;font-size:12px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.seller_name||'Store'}</div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:4px">${(s.location||'Kampala').split(',')[0]}</div>
+          <div style="display:flex;align-items:center;gap:4px">
+            <span style="font-size:11px;color:#f59e0b">★★★★</span>
+            <span style="font-size:10px;color:var(--muted)">4.5</span>
+            <span style="margin-left:auto;font-size:9px;font-weight:700;color:var(--green)">✓ Free Delivery</span>
+          </div>
+        </div>
+      </div>`).join('');
+  } catch {
+    el.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--muted);font-size:12px">Could not load stores</div>`;
+  }
+}
+
+async function loadExpressOffers() {
+  const el = document.getElementById('exOffers');
+  if (!el) return;
+  try {
+    const res = await fetch(`${API}/listings?limit=10&sort=newest`);
+    const d = await res.json();
+    const listings = (d.listings || []).filter(l => l.original_price && l.price < l.original_price);
+    if (!listings.length) {
+      // Show placeholder offers
+      el.innerHTML = `
+        <div style="background:linear-gradient(135deg,#f59e0b,#ef4444);border-radius:var(--rm);padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;margin-bottom:8px" onclick="navigate('/browse')">
+          <div style="background:rgba(255,255,255,.25);border-radius:var(--r);padding:6px 10px;font-weight:800;font-size:14px;color:#fff;flex-shrink:0">15% OFF</div>
+          <div style="flex:1"><div style="font-weight:700;font-size:13px;color:#fff">Browse Today's Deals</div><div style="font-size:11px;color:rgba(255,255,255,.8)">Fresh offers from local sellers</div></div>
+          <div style="font-size:20px">›</div>
+        </div>
+        <div style="background:linear-gradient(135deg,var(--blue),#1445A8);border-radius:var(--rm);padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer" onclick="navigate('/browse?sort=newest')">
+          <div style="background:rgba(255,255,255,.2);border-radius:var(--r);padding:6px 10px;font-weight:800;font-size:12px;color:#fff;flex-shrink:0">NEW IN</div>
+          <div style="flex:1"><div style="font-weight:700;font-size:13px;color:#fff">Latest Listings</div><div style="font-size:11px;color:rgba(255,255,255,.7)">Added today across Uganda</div></div>
+          <div style="font-size:20px;color:rgba(255,255,255,.7)">›</div>
+        </div>`;
+      return;
+    }
+    el.innerHTML = listings.slice(0, 3).map(l => {
+      const pct = Math.round((1 - l.price/l.original_price) * 100);
+      return `
+        <div onclick="navigate('/listing/${l.id}')" style="background:var(--white);border:1px solid var(--border);border-radius:var(--rm);padding:12px;display:flex;align-items:center;gap:10px;margin-bottom:8px;cursor:pointer">
+          <div style="background:linear-gradient(135deg,#f59e0b,#ef4444);border-radius:var(--r);padding:6px 10px;font-weight:800;font-size:13px;color:#fff;flex-shrink:0">${pct}% OFF</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.title}</div>
+            <div style="font-size:11px;color:var(--muted)">
+              <span style="text-decoration:line-through">UGX ${Number(l.original_price).toLocaleString()}</span>
+              <span style="color:var(--orange);font-weight:700;margin-left:6px">UGX ${Number(l.price).toLocaleString()}</span>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  } catch {
+    el.innerHTML = '';
+  }
+}
+
 
 // ── ONBOARDING (4 steps) ──────────────────────────────────────
 const OB_STEPS = ['Vehicle','Personal','Safety','Agree'];
@@ -7036,7 +7210,7 @@ function obStep3() {
     </div>`;
 }
 
-function obStep4() {
+async function obStep4() {
   return `
     <div class="form-section">
       <div class="form-section-title">📋 Legal Agreement</div>
@@ -7391,6 +7565,361 @@ window.submitPay = async () => {
 };
 
 // ── FLEET DASHBOARD ───────────────────────────────────────────
+// ── Express: Order a Ride ──────────────────────────────────────
+async function renderExpressRide() {
+  if (!currentUser) { openAuth(); return; }
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div onclick="navigate('/express')" class="detail-back">← Back</div>
+    <div style="background:var(--orange);padding:20px 16px 28px">
+      <div style="font-family:var(--fd);font-size:22px;font-weight:900;color:#fff;margin-bottom:4px">🚗 Order a Ride</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.75)">Bolt/Uber style — boda, car, van or truck</div>
+    </div>
+    <div style="padding:16px">
+      <div class="post-form">
+        <div class="form-section">
+          <div class="form-section-title">📍 Pickup</div>
+          <div class="field"><label>Pickup location *</label><input id="rd_pickup" placeholder="e.g. Ntinda, Kampala"></div>
+          <button class="btn btn-outline" style="width:100%;margin-top:6px;font-size:12px" onclick="getExpressLocation('rd_plat','rd_plng','rd_pickup')">📍 Use Current Location</button>
+          <input type="hidden" id="rd_plat"><input type="hidden" id="rd_plng">
+        </div>
+        <div class="form-section">
+          <div class="form-section-title">🏁 Drop-off</div>
+          <div class="field"><label>Destination *</label><input id="rd_dropoff" placeholder="e.g. Oasis Mall, Kampala"></div>
+        </div>
+        <div class="form-section">
+          <div class="form-section-title">🚗 Vehicle Type</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+            ${[['boda','🛵','Boda','3,000'],['car','🚗','Car','5,000'],['van','🚐','Van','8,000']].map(([id,icon,lbl,price])=>`
+              <div id="vt_${id}" onclick="selectRideVehicle('${id}')" style="border:2px solid var(--border);border-radius:var(--rm);padding:10px;text-align:center;cursor:pointer;transition:all .15s">
+                <div style="font-size:24px;margin-bottom:4px">${icon}</div>
+                <div style="font-weight:700;font-size:12px">${lbl}</div>
+                <div style="font-size:10px;color:var(--muted)">From UGX ${price}</div>
+              </div>`).join('')}
+          </div>
+        </div>
+        <div id="rd_estimate" style="display:none;background:var(--orange-light);border:1px solid var(--orange);border-radius:var(--r);padding:14px;margin-bottom:16px">
+          <div style="font-weight:700;color:var(--orange);margin-bottom:4px">Estimated Fare</div>
+          <div id="rd_fare" style="font-family:var(--fd);font-size:26px;font-weight:900;color:var(--ink)"></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:3px">ETA: 3–8 min · Fare may vary with traffic</div>
+        </div>
+        <button class="btn btn-orange btn-full btn-lg" onclick="submitExpressRide()" id="rd_submit">Request Ride →</button>
+      </div>
+    </div>`;
+  window._rideVehicle = 'boda';
+  selectRideVehicle('boda');
+}
+
+window.selectRideVehicle = function(id) {
+  window._rideVehicle = id;
+  ['boda','car','van'].forEach(v => {
+    const el = document.getElementById('vt_'+v);
+    if (el) { el.style.borderColor = v===id?'var(--orange)':'var(--border)'; el.style.background = v===id?'var(--orange-light)':''; }
+  });
+};
+
+window.getExpressLocation = function(latId, lngId, addrId) {
+  if (!navigator.geolocation) { showToast('Location not supported'); return; }
+  showToast('Getting location…');
+  navigator.geolocation.getCurrentPosition(pos => {
+    document.getElementById(latId).value = pos.coords.latitude.toFixed(6);
+    document.getElementById(lngId).value = pos.coords.longitude.toFixed(6);
+    if (addrId) document.getElementById(addrId).value = 'My Current Location';
+    showToast('Location set ✓');
+  }, () => showToast('Could not get location'));
+};
+
+window.submitExpressRide = async function() {
+  const pickup = document.getElementById('rd_pickup').value.trim();
+  const dropoff = document.getElementById('rd_dropoff').value.trim();
+  if (!pickup || !dropoff) { showToast('Enter pickup and destination'); return; }
+  const btn = document.getElementById('rd_submit');
+  btn.textContent = 'Finding riders…'; btn.disabled = true;
+  try {
+    const res = await fetch(`${EXPRESS_API}/jobs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify({
+        job_type: 'ride',
+        pickup_address: pickup,
+        pickup_lat: parseFloat(document.getElementById('rd_plat').value) || 0.3476,
+        pickup_lng: parseFloat(document.getElementById('rd_plng').value) || 32.5825,
+        dropoff_address: dropoff,
+        vehicle_preference: window._rideVehicle || 'boda',
+      }),
+    });
+    const d = await res.json();
+    if (d.success) {
+      showToast('Ride requested! Finding a rider near you 🛵');
+      navigate('/express/jobs');
+    } else {
+      showToast(d.error || 'Request failed');
+      btn.textContent = 'Request Ride →'; btn.disabled = false;
+    }
+  } catch { showToast('Network error'); btn.textContent = 'Request Ride →'; btn.disabled = false; }
+};
+
+// ── Express: Order Food & Goods ────────────────────────────────
+async function renderExpressFood() {
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div onclick="navigate('/express')" class="detail-back">← Back</div>
+    <div style="background:#1a6e34;padding:20px 16px 28px">
+      <div style="font-family:var(--fd);font-size:22px;font-weight:900;color:#fff;margin-bottom:4px">🍔 Food & Goods</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.75)">Order from restaurants & stores near you</div>
+    </div>
+    <!-- Search -->
+    <div style="padding:12px 14px;background:var(--white);border-bottom:1px solid var(--border)">
+      <div style="background:var(--bg);border:1.5px solid var(--border);border-radius:100px;display:flex;align-items:center;padding:0 14px;height:40px;gap:8px">
+        <span style="color:var(--muted)">🔍</span>
+        <input type="search" placeholder="Search restaurants, cuisine…" style="flex:1;border:none;outline:none;background:transparent;font-size:14px;font-family:var(--fb)" oninput="filterFoodStores(this.value)">
+      </div>
+    </div>
+    <!-- Category chips -->
+    <div style="padding:10px 12px;background:var(--white);border-bottom:1px solid var(--border);display:flex;gap:8px;overflow-x:auto;scrollbar-width:none">
+      ${['🍽️ All','🍗 Chicken','🍕 Pizza','🥗 Healthy','🍜 Local','🥤 Drinks','🥐 Bakery','🌯 Fast Food'].map((c,i)=>`
+        <div onclick="filterFoodCategory(this,'${c}')" style="flex-shrink:0;padding:5px 14px;border-radius:100px;font-size:12px;font-weight:700;cursor:pointer;background:${i===0?'var(--orange)':'var(--border2)'};color:${i===0?'#fff':'var(--ink2)'};">${c}</div>`).join('')}
+    </div>
+    <div style="padding:14px 12px" id="foodStoresList">
+      <div class="spinner"></div>
+    </div>`;
+
+  // Load food businesses from DuukaList
+  try {
+    const res = await fetch(`${API}/listings?category=food-agriculture&limit=20&sort=boost`);
+    const d = await res.json();
+    const listings = d.listings || [];
+    const stores = {};
+    listings.forEach(l => { if (l.seller_id && !stores[l.seller_id]) stores[l.seller_id] = l; });
+    const storeList = Object.values(stores);
+    window._foodStores = storeList;
+    renderFoodStoreCards(storeList);
+  } catch {
+    document.getElementById('foodStoresList').innerHTML = `<div class="empty-state"><div class="empty-icon">🍔</div><div class="empty-title">No restaurants yet</div><div class="empty-sub">Food businesses will appear here once they join DuukaExpress</div></div>`;
+  }
+}
+
+window.renderFoodStoreCards = function(stores) {
+  const el = document.getElementById('foodStoresList');
+  if (!el) return;
+  if (!stores.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">🍽️</div><div class="empty-title">No stores found</div></div>`;
+    return;
+  }
+  el.innerHTML = stores.map(s => `
+    <div onclick="navigate('/seller/${s.seller_id}')" style="background:var(--white);border:1px solid var(--border);border-radius:var(--rm);overflow:hidden;margin-bottom:12px;cursor:pointer;transition:transform .15s" ontouchstart="this.style.transform='scale(.98)'" ontouchend="this.style.transform=''">
+      <div style="height:130px;background:${s.images?.[0]?`url(${s.images[0]}) center/cover`:'linear-gradient(135deg,#f59e0b,#ef4444)'};position:relative">
+        ${s.boost_tier&&s.boost_tier!=='none'?'<span style="position:absolute;top:8px;left:8px;background:var(--orange);color:#fff;font-size:9px;font-weight:700;padding:3px 8px;border-radius:100px">★ Featured</span>':''}
+        <div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:100px;backdrop-filter:blur(4px)">✓ Free Delivery</div>
+      </div>
+      <div style="padding:12px 14px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+          <div style="font-weight:800;font-size:15px">${s.seller_name||'Restaurant'}</div>
+          <div style="display:flex;align-items:center;gap:3px;font-size:12px;color:#f59e0b;font-weight:700">★ 4.5</div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:6px">📍 ${(s.location||'Kampala').split(',')[0]} · 1.2 km</div>
+        <div style="display:flex;gap:8px;font-size:11px;color:var(--muted)">
+          <span>🕐 25–40 min</span>
+          <span>·</span>
+          <span style="color:var(--green);font-weight:700">Open Now</span>
+        </div>
+      </div>
+    </div>`).join('');
+};
+
+window.filterFoodStores = function(q) {
+  const filtered = (window._foodStores||[]).filter(s =>
+    !q || (s.seller_name||'').toLowerCase().includes(q.toLowerCase()) ||
+    (s.title||'').toLowerCase().includes(q.toLowerCase())
+  );
+  renderFoodStoreCards(filtered);
+};
+
+window.filterFoodCategory = function(el, cat) {
+  document.querySelectorAll('[onclick*="filterFoodCategory"]').forEach(e => {
+    e.style.background = 'var(--border2)'; e.style.color = 'var(--ink2)';
+  });
+  el.style.background = 'var(--orange)'; el.style.color = '#fff';
+  renderFoodStoreCards(window._foodStores || []);
+};
+
+// ── Express: All Stores ────────────────────────────────────────
+async function renderExpressStores() {
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div onclick="navigate('/express')" class="detail-back">← Back</div>
+    <div style="background:var(--white);padding:14px 16px 10px;border-bottom:1px solid var(--border)">
+      <div style="font-weight:800;font-size:18px;margin-bottom:10px">All Nearby Stores</div>
+      <div style="background:var(--bg);border:1.5px solid var(--border);border-radius:100px;display:flex;align-items:center;padding:0 14px;height:40px;gap:8px">
+        <span>🔍</span>
+        <input type="search" placeholder="Search stores…" style="flex:1;border:none;outline:none;background:transparent;font-size:14px;font-family:var(--fb)">
+      </div>
+    </div>
+    <div style="padding:14px 12px" id="allStoresList"><div class="spinner"></div></div>`;
+
+  try {
+    const res = await fetch(`${API}/listings?limit=50&sort=boost`);
+    const d = await res.json();
+    const listings = d.listings || [];
+    const stores = {};
+    listings.forEach(l => { if (l.seller_id && !stores[l.seller_id]) stores[l.seller_id] = l; });
+    const storeList = Object.values(stores);
+    document.getElementById('allStoresList').innerHTML = storeList.length ? storeList.map(s => `
+      <div onclick="navigate('/seller/${s.seller_id}')" style="background:var(--white);border:1px solid var(--border);border-radius:var(--rm);padding:12px;display:flex;gap:12px;align-items:center;margin-bottom:10px;cursor:pointer">
+        <div style="width:60px;height:60px;border-radius:var(--r);background:${s.images?.[0]?`url(${s.images[0]}) center/cover`:'var(--orange-light)'};flex-shrink:0"></div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.seller_name||'Store'}</div>
+          <div style="font-size:11px;color:var(--muted)">${(s.location||'').split(',')[0]}</div>
+          <div style="font-size:11px;color:var(--green);font-weight:700;margin-top:3px">✓ Delivers</div>
+        </div>
+        <div style="font-size:18px;color:var(--muted)">›</div>
+      </div>`).join('') :
+      `<div class="empty-state"><div class="empty-icon">🏪</div><div class="empty-title">No stores yet</div></div>`;
+  } catch {
+    document.getElementById('allStoresList').innerHTML = `<div class="empty-state"><div class="empty-title">Could not load stores</div></div>`;
+  }
+}
+
+// ── Express: Offers & Promotions ───────────────────────────────
+async function renderExpressOffers() {
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div onclick="navigate('/express')" class="detail-back">← Back</div>
+    <div style="background:linear-gradient(135deg,#f59e0b,#ef4444);padding:20px 16px 28px">
+      <div style="font-family:var(--fd);font-size:22px;font-weight:900;color:#fff;margin-bottom:4px">🔥 Offers & Promotions</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.8)">Best deals from sellers near you</div>
+    </div>
+    <div style="padding:14px 12px" id="offersList"><div class="spinner"></div></div>`;
+
+  try {
+    const res = await fetch(`${API}/listings?limit=40&sort=newest`);
+    const d = await res.json();
+    const all = d.listings || [];
+    // Show all listings as potential offers (with or without discount)
+    const offers = all.filter(l => l.price && l.price > 0);
+    document.getElementById('offersList').innerHTML = offers.length ? offers.map(l => {
+      const hasOffer = l.original_price && l.price < l.original_price;
+      const pct = hasOffer ? Math.round((1 - l.price/l.original_price)*100) : 0;
+      return `
+        <div onclick="navigate('/listing/${l.id}')" style="background:var(--white);border:1px solid var(--border);border-radius:var(--rm);padding:12px;display:flex;gap:12px;align-items:center;margin-bottom:10px;cursor:pointer">
+          <div style="width:64px;height:64px;border-radius:var(--r);background:${l.images?.[0]?`url(${l.images[0]}) center/cover`:'var(--bg2)'};flex-shrink:0;position:relative">
+            ${hasOffer?`<div style="position:absolute;top:-4px;left:-4px;background:#ef4444;color:#fff;font-size:9px;font-weight:800;padding:2px 5px;border-radius:4px">${pct}%</div>`:''}
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.title}</div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">${l.seller_name||''} · ${(l.location||'').split(',')[0]}</div>
+            <div style="display:flex;align-items:center;gap:6px">
+              ${hasOffer?`<span style="font-size:11px;color:var(--muted);text-decoration:line-through">UGX ${Number(l.original_price).toLocaleString()}</span>`:''}
+              <span style="font-weight:800;font-size:14px;color:var(--orange)">UGX ${Number(l.price).toLocaleString()}</span>
+            </div>
+          </div>
+        </div>`;
+    }).join('') :
+      `<div class="empty-state"><div class="empty-icon">🏷️</div><div class="empty-title">No offers right now</div><div class="empty-sub">Check back later for deals from local sellers</div></div>`;
+  } catch {
+    document.getElementById('offersList').innerHTML = `<div class="empty-state"><div class="empty-title">Could not load offers</div></div>`;
+  }
+}
+
+// ── Express: Track Delivery ────────────────────────────────────
+async function renderExpressTrack() {
+  if (!currentUser) { openAuth(); return; }
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div onclick="navigate('/express')" class="detail-back">← Back</div>
+    <div style="background:var(--blue);padding:20px 16px 28px">
+      <div style="font-family:var(--fd);font-size:22px;font-weight:900;color:#fff;margin-bottom:4px">📦 Track Delivery</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.75)">Follow your active deliveries in real time</div>
+    </div>
+    <div style="padding:14px 12px" id="trackList"><div class="spinner"></div></div>`;
+
+  try {
+    const res = await fetch(`${EXPRESS_API}/jobs/my`, { headers: { Authorization: `Bearer ${getToken()}` } });
+    const d = await res.json();
+    const active = (d.jobs||[]).filter(j => !['delivered','cancelled'].includes(j.status));
+    const el = document.getElementById('trackList');
+    if (!active.length) {
+      el.innerHTML = `<div class="empty-state"><div class="empty-icon">📦</div><div class="empty-title">No active deliveries</div><div class="empty-sub">Your active orders will appear here with live rider location</div><button class="btn btn-orange" onclick="navigate('/express')">Order Now</button></div>`;
+      return;
+    }
+    const statusSteps = ['searching','assigned','picked_up','in_transit','delivered'];
+    const statusLabel = {searching:'Finding rider…',assigned:'Rider assigned',picked_up:'Package picked up',in_transit:'On the way',delivered:'Delivered ✓'};
+    el.innerHTML = active.map(j => {
+      const stepIdx = statusSteps.indexOf(j.status);
+      return `
+        <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--rm);padding:16px;margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:12px">
+            <div style="font-weight:700;font-size:14px">${j.job_type==='ride'?'🚗 Ride':'📦 Delivery'}</div>
+            <span style="font-size:11px;color:var(--orange);font-weight:700">#${j.id.slice(-6).toUpperCase()}</span>
+          </div>
+          <!-- Progress bar -->
+          <div style="display:flex;align-items:center;margin-bottom:14px">
+            ${statusSteps.slice(0,4).map((s,i) => `
+              <div style="width:20px;height:20px;border-radius:50%;background:${i<=stepIdx?'var(--orange)':'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:700;flex-shrink:0">${i<stepIdx?'✓':i+1}</div>
+              ${i<3?`<div style="flex:1;height:3px;background:${i<stepIdx?'var(--orange)':'var(--border)'}"></div>`:''}`).join('')}
+          </div>
+          <div style="font-weight:700;font-size:14px;color:var(--orange);margin-bottom:8px">${statusLabel[j.status]||j.status}</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:4px">📍 ${j.pickup_address}</div>
+          <div style="font-size:12px;color:var(--muted)">🏁 ${j.dropoff_address}</div>
+          ${j.rider_name?`<div style="margin-top:10px;background:var(--bg);border-radius:var(--r);padding:10px;display:flex;align-items:center;gap:8px"><div style="width:32px;height:32px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff">${j.rider_name[0]}</div><div><div style="font-weight:700;font-size:13px">${j.rider_name}</div><div style="font-size:11px;color:var(--muted)">Your rider</div></div></div>`:''}
+        </div>`;
+    }).join('');
+  } catch(e) {
+    document.getElementById('trackList').innerHTML = `<div class="empty-state"><div class="empty-title">${e.message}</div></div>`;
+  }
+}
+
+// ── Express: My Jobs (customer history) ───────────────────────
+async function renderExpressMyJobs() {
+  if (!currentUser) { openAuth(); return; }
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div onclick="navigate('/express')" class="detail-back">← Back</div>
+    <div class="page-hero"><h1>My Orders</h1><p>All your DuukaExpress deliveries</p></div>
+    <div style="padding:14px 12px" id="myJobsList"><div class="spinner"></div></div>`;
+  try {
+    const res = await fetch(`${EXPRESS_API}/jobs/my`, { headers: { Authorization: `Bearer ${getToken()}` } });
+    const d = await res.json();
+    const jobs = d.jobs || [];
+    const statusColor = {searching:'var(--orange)',assigned:'var(--blue-mid)',picked_up:'var(--blue)',in_transit:'var(--purple)',delivered:'var(--green)',cancelled:'var(--red)'};
+    document.getElementById('myJobsList').innerHTML = jobs.length ? jobs.map(j => `
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--rm);padding:14px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:11px;font-weight:700;color:var(--muted)">#${j.id.slice(-6).toUpperCase()}</span>
+          <span style="font-size:11px;font-weight:700;color:${statusColor[j.status]||'var(--muted)'}">${j.status.toUpperCase()}</span>
+        </div>
+        <div style="font-weight:700;font-size:13px">📍 ${j.pickup_address}</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px">🏁 ${j.dropoff_address}</div>
+        <div style="display:flex;justify-content:space-between;font-size:12px">
+          <span style="color:var(--muted)">${j.distance_km}km · ${j.vehicle_preference}</span>
+          <span style="font-weight:700;color:var(--orange)">${fmtPrice(j.estimated_fare,'UGX')}</span>
+        </div>
+        ${j.status==='delivered'&&!j.rated?`<button class="btn btn-outline" style="width:100%;margin-top:10px;font-size:12px" onclick="rateExpressJobById('${j.id}')">⭐ Rate Rider</button>`:''}
+        ${j.status==='searching'?`<button class="btn" style="width:100%;margin-top:10px;font-size:12px;color:var(--red);border:1px solid var(--red)" onclick="cancelExpressJobById('${j.id}')">Cancel</button>`:''}
+      </div>`).join('') :
+      `<div class="empty-state"><div class="empty-icon">🛵</div><div class="empty-title">No orders yet</div><button class="btn btn-orange" onclick="navigate('/express')">Order Now</button></div>`;
+  } catch(e) {
+    document.getElementById('myJobsList').innerHTML = `<div class="empty-state"><div class="empty-title">${e.message}</div></div>`;
+  }
+}
+
+window.cancelExpressJobById = async function(id) {
+  if (!confirm('Cancel this order?')) return;
+  const res = await fetch(`${EXPRESS_API}/jobs/${id}/cancel`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${getToken()}`},body:JSON.stringify({reason:'Cancelled by customer'})});
+  if((await res.json()).success){showToast('Order cancelled');renderExpressMyJobs();}
+};
+window.rateExpressJobById = function(id) {
+  const r = prompt('Rate your rider 1–5 stars:');
+  if (!r||isNaN(r)) return;
+  fetch(`${EXPRESS_API}/jobs/${id}/rate`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${getToken()}`},body:JSON.stringify({rating:parseInt(r)})})
+    .then(()=>{showToast('Thanks! ⭐');renderExpressMyJobs();});
+};
+
+async function renderExpressNotifications() {
+  const app = document.getElementById('app');
+  app.innerHTML = `<div onclick="navigate('/express')" class="detail-back">← Back</div><div class="page-hero"><h1>Notifications</h1></div><div class="empty-state"><div class="empty-icon">🔔</div><div class="empty-title">No notifications yet</div></div>`;
+}
+
 async function renderFleetDashboard() {
   if (!currentUser) { openAuth(); return; }
   const app = document.getElementById('app');
