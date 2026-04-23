@@ -491,10 +491,9 @@ input,select,textarea{font-family:var(--fb)}
 /* ═══════════════════════ DUUKAEXPRESS ══════════════════════ */
 .express-container{min-height:100%;background:var(--bg)}
 .express-topbar{background:linear-gradient(135deg,#FF6A00 0%,#dd4400 100%);padding:14px 16px 12px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
-.express-topbar-logo{font-family:var(--fd);font-size:19px;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px}
+.express-topbar-logo{font-family:var(--fd);font-size:22px;font-weight:900;color:#fff;display:flex;align-items:center;gap:6px;letter-spacing:-0.5px}
 .express-topbar-logo span{color:#ffe066}
-.express-wallet-pill{background:rgba(0,0,0,.25);backdrop-filter:blur(6px);border-radius:100px;padding:5px 12px;display:flex;align-items:center;gap:6px;cursor:pointer}
-.express-wallet-amt{color:#fff;font-weight:800;font-size:13px}
+.express-topbar-logo .ex-rocket{font-size:24px;line-height:1}
 /* Online toggle */
 .express-online-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--white);border-bottom:1px solid var(--border);margin-bottom:0}
 .express-online-bar.online{background:#f0fdf4;border-bottom-color:#bbf7d0}
@@ -854,32 +853,7 @@ input,select,textarea{font-family:var(--fb)}
     <div class="nav-post-circle">+</div>
     <span class="nav-post-lbl">Post</span>
   </div>
-  <div class="nav-item" id="nav-express" onclick="navigate('/express')" style="position:relative"><span class="nav-icon" style="display:flex;align-items:center;justify-content:center"><svg width="26" height="20" viewBox="0 0 32 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block">
-  <!-- Speed lines -->
-  <line x1="0" y1="10" x2="7" y2="10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity="0.5"/>
-  <line x1="0" y1="13" x2="5" y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.35"/>
-  <!-- Scooter body -->
-  <path d="M10 13 Q12 8 16 8 L22 8 Q24 8 25 10 L26 13 Q22 14 18 14 L10 14 Z" fill="currentColor" opacity="0.9"/>
-  <!-- Seat/rear -->
-  <path d="M14 8 L18 8 L18 6 Q14 5 13 7 Z" fill="currentColor" opacity="0.75"/>
-  <!-- Handlebars -->
-  <path d="M24 8 L26 6 M24 8 L26 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
-  <!-- Front fork -->
-  <path d="M25 13 L27 17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity="0.85"/>
-  <!-- Rider body -->
-  <ellipse cx="17" cy="7" rx="2.5" ry="3" fill="currentColor" opacity="0.85"/>
-  <!-- Rider head/helmet -->
-  <circle cx="17" cy="3.5" r="2.5" fill="currentColor" opacity="0.9"/>
-  <path d="M15 3 Q17 1 19 3" fill="currentColor" opacity="0.5"/>
-  <!-- Rear wheel -->
-  <circle cx="12" cy="17" r="3.2" fill="currentColor" opacity="0.9"/>
-  <circle cx="12" cy="17" r="1.4" fill="white" opacity="0.9"/>
-  <!-- Front wheel -->
-  <circle cx="27" cy="17" r="3.2" fill="currentColor" opacity="0.9"/>
-  <circle cx="27" cy="17" r="1.4" fill="white" opacity="0.9"/>
-  <!-- Exhaust -->
-  <path d="M10 13 L8 15 L6 14" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.4"/>
-</svg></span><span class="nav-label">Express</span></div>
+  <div class="nav-item" id="nav-express" onclick="navigate('/express')" style="position:relative"><span class="nav-icon" style="display:flex;align-items:center;justify-content:center;font-size:22px;line-height:1">🚀</span><span class="nav-label">Express</span></div>
   <div class="nav-item" id="nav-account" onclick="currentUser?navigate('/dashboard'):openAuth()"><span class="nav-icon">👤</span><span class="nav-label">Account</span></div>
 </nav>
 
@@ -6871,35 +6845,18 @@ function renderExpressHome() {
   app.innerHTML = `
     <div class="express-topbar">
       <div class="express-topbar-logo">
-        <svg width="32" height="22" viewBox="0 0 38 26" fill="none">
-          <line x1="0" y1="12" x2="8" y2="12" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
-          <line x1="0" y1="15.5" x2="6" y2="15.5" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
-          <path d="M12 15 Q14 9 19 9 L26 9 Q28 9 29 11.5 L30 15 Q26 16.5 21 16.5 L12 16.5 Z" fill="white" opacity="0.95"/>
-          <path d="M17 9 L21 9 L21 7 Q17 6 16 8 Z" fill="white" opacity="0.8"/>
-          <path d="M28 9.5 L31 7 M28 9.5 L31 11.5" stroke="white" stroke-width="1.8" stroke-linecap="round" opacity="0.9"/>
-          <path d="M29 15.5 L31.5 20" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.9"/>
-          <ellipse cx="20" cy="8" rx="3" ry="3.5" fill="white" opacity="0.9"/>
-          <circle cx="20" cy="4" r="3" fill="white" opacity="0.95"/>
-          <circle cx="14.5" cy="20" r="3.8" fill="white" opacity="0.95"/>
-          <circle cx="14.5" cy="20" r="1.6" fill="#FF6A00"/>
-          <circle cx="31.5" cy="20" r="3.8" fill="white" opacity="0.95"/>
-          <circle cx="31.5" cy="20" r="1.6" fill="#FF6A00"/>
-        </svg>
-        Duuka<span>Express</span>
+        <span class="ex-rocket">🚀</span>Duuka<span>Express</span>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
-        <div style="background:rgba(255,255,255,.2);border-radius:100px;padding:4px 10px;font-size:11px;font-weight:700;color:#fff;display:flex;align-items:center;gap:5px">
-          💳 ${currentUser ? 'UGX 0' : 'Sign In'}
-        </div>
-        <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer" onclick="requireAuth(()=>navigate('/express/notifications'))">🔔</div>
+        <div style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer" onclick="requireAuth(()=>navigate('/express/notifications'))">🔔</div>
       </div>
     </div>
 
     <!-- Location bar -->
-    <div style="background:#fff;padding:10px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);cursor:pointer" onclick="showToast('Location feature coming soon')">
+    <div style="background:#fff;padding:10px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);cursor:pointer" onclick="openExpressLocationPicker()">
       <span style="color:var(--orange);font-size:16px">📍</span>
       <div style="flex:1">
-        <div style="font-size:12px;font-weight:700;color:var(--ink)">Kampala, Uganda</div>
+        <div style="font-size:12px;font-weight:700;color:var(--ink)" id="exLocationLabel">${window._exLocationName || 'Kampala, Uganda'}</div>
         <div style="font-size:10px;color:var(--muted)">Tap to change delivery location</div>
       </div>
       <span style="font-size:12px;font-weight:700;color:var(--blue-mid)">Change</span>
@@ -7098,6 +7055,11 @@ function renderObStep() {
 
 function obStep1() {
   const vtypes = [['bicycle','🚴','Bicycle'],['boda','🛵','Boda Boda'],['car','🚗','Car'],['van','🚐','Van'],['truck','🚚','Truck']];
+  const prevPhotos = (_exData.vehicle_photos||[]).map((src,i)=>`
+    <div class="photo-preview" style="width:80px;height:80px">
+      <img src="${src}">
+      <div class="photo-remove" onclick="exRemoveVehiclePhoto(${i})">✕</div>
+    </div>`).join('');
   return `
     <div class="form-section">
       <div class="form-section-title">🚗 Select Your Vehicle</div>
@@ -7128,6 +7090,17 @@ function obStep1() {
           ${Array.from({length:20},(_,i)=>2025-i).map(y=>`<option value="${y}"${_exData.vehicle_year==y?' selected':''}>${y}</option>`).join('')}
         </select>
       </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">📸 Vehicle Photos <span style="font-size:12px;font-weight:400;color:var(--muted)">(Required — front, side, rear)</span></div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Upload clear photos of your vehicle. Minimum 1, maximum 4 photos.</div>
+      <label class="photo-upload" style="margin-bottom:10px">
+        <input type="file" id="exVehiclePhotoInput" accept="image/*" multiple onchange="exHandleVehiclePhotos(this)">
+        <div class="photo-upload-icon">📷</div>
+        <p>Tap to add vehicle photos</p>
+        <small>JPG, PNG — max 5MB each</small>
+      </label>
+      <div class="photo-previews" id="exVehiclePhotoPreviews">${prevPhotos}</div>
     </div>
     <button class="btn btn-orange btn-full btn-lg" onclick="submitOb1()">Continue →</button>`;
 }
@@ -7241,8 +7214,46 @@ window.selectVtype = (id, el) => {
   el.classList.add('active');
 };
 
+window.exHandleVehiclePhotos = async (input) => {
+  const files = Array.from(input.files);
+  if (!files.length) return;
+  const existing = _exData.vehicle_photos || [];
+  if (existing.length + files.length > 4) { showToast('Maximum 4 photos allowed'); return; }
+  showToast('Processing photos…');
+  for (const file of files) {
+    if (file.size > 5 * 1024 * 1024) { showToast(`${file.name} exceeds 5MB`); continue; }
+    const base64 = await new Promise(res => {
+      const reader = new FileReader();
+      reader.onload = e => res(e.target.result);
+      reader.readAsDataURL(file);
+    });
+    existing.push(base64);
+  }
+  _exData.vehicle_photos = existing;
+  // Re-render previews
+  const wrap = document.getElementById('exVehiclePhotoPreviews');
+  if (wrap) wrap.innerHTML = existing.map((src,i)=>`
+    <div class="photo-preview" style="width:80px;height:80px">
+      <img src="${src}">
+      <div class="photo-remove" onclick="exRemoveVehiclePhoto(${i})">✕</div>
+    </div>`).join('');
+  input.value = '';
+  showToast(`${existing.length} photo${existing.length>1?'s':''} added ✓`, 2000);
+};
+
+window.exRemoveVehiclePhoto = (idx) => {
+  _exData.vehicle_photos = (_exData.vehicle_photos||[]).filter((_,i)=>i!==idx);
+  const wrap = document.getElementById('exVehiclePhotoPreviews');
+  if (wrap) wrap.innerHTML = (_exData.vehicle_photos).map((src,i)=>`
+    <div class="photo-preview" style="width:80px;height:80px">
+      <img src="${src}">
+      <div class="photo-remove" onclick="exRemoveVehiclePhoto(${i})">✕</div>
+    </div>`).join('');
+};
+
 window.submitOb1 = () => {
   if (!_exData.vehicle_type) { showToast('Please select your vehicle type'); return; }
+  if (!(_exData.vehicle_photos||[]).length) { showToast('Please add at least one vehicle photo'); return; }
   _exData.plate_number = document.getElementById('ex_plate')?.value.trim().toUpperCase() || '';
   _exData.vehicle_model = document.getElementById('ex_model')?.value.trim() || '';
   _exData.vehicle_color = document.getElementById('ex_color')?.value.trim() || '';
@@ -7565,6 +7576,112 @@ window.submitPay = async () => {
 };
 
 // ── FLEET DASHBOARD ───────────────────────────────────────────
+// ── Express Location Picker ────────────────────────────────────
+let _exLat = null, _exLng = null, _exMap = null, _exMapMarker = null;
+
+window.openExpressLocationPicker = function() {
+  // Create fullscreen modal
+  const existing = document.getElementById('exLocModal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'exLocModal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:2000;background:#fff;display:flex;flex-direction:column';
+  modal.innerHTML = `
+    <div style="background:var(--orange);padding:14px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0">
+      <div onclick="document.getElementById('exLocModal').remove()" style="color:#fff;font-size:22px;cursor:pointer;line-height:1">←</div>
+      <div style="font-family:var(--fd);font-weight:800;font-size:16px;color:#fff">Set Delivery Location</div>
+    </div>
+    <div style="padding:10px 14px;background:#fff;border-bottom:1px solid var(--border);flex-shrink:0">
+      <button class="btn btn-orange btn-full" style="margin-bottom:8px" onclick="exUseMyLocation()">📍 Use My Current Location</button>
+      <div id="exMapWrap" style="border-radius:var(--rm);overflow:hidden;border:1px solid var(--border);height:320px;display:${_exLat?'block':'none'}">
+        <div id="exMap" style="height:100%"></div>
+      </div>
+      <div id="exLocLabel" style="font-size:12px;color:var(--green);margin-top:8px;font-weight:600;min-height:18px">${_exLat?'📍 Location set':''}</div>
+    </div>
+    <div style="padding:14px 16px;margin-top:auto;flex-shrink:0">
+      <button class="btn btn-orange btn-full btn-lg" onclick="confirmExpressLocation()">Confirm Location →</button>
+    </div>`;
+  document.body.appendChild(modal);
+
+  // If we already have coords, init map
+  if (_exLat) _startExMap(_exLat, _exLng);
+};
+
+window.exUseMyLocation = function() {
+  if (!navigator.geolocation) { showToast('Geolocation not supported'); return; }
+  showToast('Getting your location…');
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      _exLat = pos.coords.latitude;
+      _exLng = pos.coords.longitude;
+      _exLoadMap(_exLat, _exLng);
+      _exReverseGeocode(_exLat, _exLng);
+    },
+    () => showToast('Could not get location. Please allow location access.')
+  );
+};
+
+function _exLoadMap(lat, lng) {
+  if (window._exMapLoaded) { _startExMap(lat, lng); return; }
+  // Load Leaflet
+  if (!document.getElementById('leafletCss')) {
+    const link = document.createElement('link');
+    link.id = 'leafletCss'; link.rel = 'stylesheet';
+    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(link);
+  }
+  const script = document.createElement('script');
+  script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+  script.onload = () => { window._exMapLoaded = true; _startExMap(lat, lng); };
+  document.head.appendChild(script);
+}
+
+function _startExMap(lat, lng) {
+  const wrap = document.getElementById('exMapWrap');
+  const mapEl = document.getElementById('exMap');
+  if (!wrap || !mapEl) return;
+  wrap.style.display = 'block';
+  if (_exMap) { _exMap.remove(); _exMap = null; }
+  _exMap = L.map('exMap').setView([lat, lng], 15);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19, attribution: '© OpenStreetMap'
+  }).addTo(_exMap);
+  _exMapMarker = L.marker([lat, lng], { draggable: true }).addTo(_exMap);
+  _exMapMarker.on('dragend', e => {
+    _exLat = e.target.getLatLng().lat;
+    _exLng = e.target.getLatLng().lng;
+    _exReverseGeocode(_exLat, _exLng);
+  });
+  _exMap.on('click', e => {
+    _exLat = e.latlng.lat; _exLng = e.latlng.lng;
+    _exMapMarker.setLatLng([_exLat, _exLng]);
+    _exReverseGeocode(_exLat, _exLng);
+  });
+}
+
+async function _exReverseGeocode(lat, lng) {
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+    const d = await res.json();
+    const label = d.display_name?.split(',').slice(0, 3).join(', ') || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    window._exLocationName = label;
+    const el = document.getElementById('exLocLabel');
+    if (el) el.textContent = '📍 ' + label;
+  } catch { window._exLocationName = `${lat.toFixed(4)}, ${lng.toFixed(4)}`; }
+}
+
+window.confirmExpressLocation = function() {
+  if (!_exLat) { showToast('Please select a location first'); return; }
+  const label = document.getElementById('exLocLabel')?.textContent?.replace('📍 ', '') || 'Location set';
+  window._exLocationName = label;
+  // Update the label on the home screen
+  const homeLabel = document.getElementById('exLocationLabel');
+  if (homeLabel) homeLabel.textContent = label;
+  document.getElementById('exLocModal')?.remove();
+  showToast('Location updated ✓', 2000);
+};
+
 // ── Express: Order a Ride ──────────────────────────────────────
 async function renderExpressRide() {
   if (!currentUser) { openAuth(); return; }
