@@ -7343,15 +7343,31 @@ window.submitApplication = async () => {
       photoUrls.push(url);
     }
 
-    // ── Step 2: Submit application with photo URLs (with retry) ──
+    // ── Step 2: Submit application ───────────────────────────
     btn.textContent = 'Submitting…';
-    const res = await fetchWithRetry(`${EX_API}/rider/apply`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-      body: JSON.stringify({ ..._exData, vehicle_photos: photoUrls, agreed_to_terms: true }),
-    });
-    const d = await res.json();
-    if (!res.ok) throw new Error(d.error || 'Submission failed');
+    const payload = { ..._exData, vehicle_photos: photoUrls, agreed_to_terms: true };
+    console.log('[Express] POST /rider/apply payload:', JSON.stringify(payload));
+
+    let res;
+    try {
+      res = await fetch(`${EX_API}/rider/apply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify(payload),
+      });
+    } catch (networkErr) {
+      console.error('[Express] Network error on /rider/apply:', networkErr);
+      throw new Error('Network error — worker unreachable: ' + networkErr.message);
+    }
+
+    console.log('[Express] /rider/apply status:', res.status);
+    const raw = await res.text();
+    console.log('[Express] /rider/apply response:', raw);
+
+    let d;
+    try { d = JSON.parse(raw); } catch { throw new Error(`Non-JSON response (${res.status}): ${raw.slice(0, 300)}`); }
+
+    if (!res.ok) throw new Error(`[${res.status}] ${d.error || d.message || JSON.stringify(d)}`);
 
     _exRider = d.rider;
     window._exVehicleFiles = [];
@@ -7359,7 +7375,8 @@ window.submitApplication = async () => {
     showToast('Application submitted! We\'ll review within 24–48h 🎉', 4000);
     exStartStatusPolling();
   } catch(e) {
-    showToast('Error: ' + e.message, 4000);
+    console.error('[Express] submitApplication failed:', e);
+    showToast('Error: ' + e.message, 6000);
     btn.textContent = '🚀 Submit Application'; btn.disabled = false;
   }
 };
