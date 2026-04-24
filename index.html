@@ -6826,15 +6826,26 @@ async function renderDuukaExpress() {
     _exRider = d.rider || null;
   } catch { _exRider = null; }
 
-  if (!_exRider) {
-    renderExpressHome();
-  } else if (_exRider.status === 'pending') {
-    renderExpressPending();
-  } else if (_exRider.status === 'rejected') {
-    renderExpressRejected();
-  } else {
-    renderRiderDashboard();
+  // Everyone sees the customer Express page first — riders get a floating button
+  renderExpressHome();
+  if (_exRider) {
+    if (_exRider.status === 'pending') renderExpressPendingOverlay();
+    else if (_exRider.status === 'rejected') renderExpressRejectedOverlay();
+    else if (_exRider.status === 'approved') renderRiderModeFAB();
   }
+}
+
+// Floating Rider Mode button — approved riders can tap to switch to dashboard
+function renderRiderModeFAB() {
+  document.getElementById('ex-rider-fab')?.remove();
+  const fab = document.createElement('div');
+  fab.id = 'ex-rider-fab';
+  fab.style.cssText = 'position:fixed;bottom:80px;right:16px;z-index:1500';
+  const isOnline = _exRider?.is_online || _exRider?.online;
+  const bg = isOnline ? '#16a34a' : '#FF6A00';
+  const label = isOnline ? '🟢 Rider Dashboard' : '🚀 Rider Dashboard';
+  fab.innerHTML = '<div onclick="renderRiderDashboard()" style="background:' + bg + ';color:#fff;border-radius:100px;padding:10px 18px;font-weight:700;font-size:13px;box-shadow:0 4px 16px rgba(0,0,0,.25);display:flex;align-items:center;gap:8px;cursor:pointer">' + label + '</div>';
+  document.body.appendChild(fab);
 }
 
 // ── Landing — not yet a rider ─────────────────────────────────
@@ -7419,34 +7430,14 @@ function exStartStatusPolling() {
 }
 
 // ── Status screens ────────────────────────────────────────────
-function renderExpressPending() {
-  const appEl = document.getElementById('app');
-  if (appEl) appEl.innerHTML = `
-    <div style="padding:40px 20px;text-align:center">
-      <div style="font-size:60px;margin-bottom:16px">⏳</div>
-      <div style="font-family:var(--fd);font-size:22px;font-weight:900;margin-bottom:8px">Under Review</div>
-      <div style="color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:24px">Your application is being reviewed by our team.<br>We'll notify you within 24–48 hours.</div>
-      <span class="xbadge pending" style="font-size:13px;padding:6px 18px">⏳ Pending Review</span>
-      <div class="card" style="text-align:left;margin-top:24px">
-        <div style="font-weight:700;margin-bottom:12px">What happens next?</div>
-        ${['Admin reviews your documents & details','You receive an approval notification','Go online and start earning!'].map((s,i)=>`<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border2)"><span style="width:22px;height:22px;background:var(--orange);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0">${i+1}</span><span style="font-size:13px">${s}</span></div>`).join('')}
-      </div>
-    </div>`;
-}
-
-function renderExpressRejected() {
-  const appEl = document.getElementById('app');
-  if (appEl) appEl.innerHTML = `
-    <div style="padding:40px 20px;text-align:center">
-      <div style="font-size:60px;margin-bottom:16px">❌</div>
-      <div style="font-family:var(--fd);font-size:22px;font-weight:900;margin-bottom:8px">Not Approved</div>
-      <div style="color:var(--muted);font-size:14px;margin-bottom:8px">${_exRider?.rejection_reason || 'Your application did not meet our current requirements.'}</div>
-      <button class="btn btn-orange" style="margin-top:16px" onclick="startRiderOnboarding()">Re-apply →</button>
-    </div>`;
-}
+// Delegate to overlay versions so polling callbacks work correctly
+function renderExpressPending() { renderExpressPendingOverlay(); }
+function renderExpressRejected() { renderExpressRejectedOverlay(); }
 
 // ── RIDER DASHBOARD ───────────────────────────────────────────
 async function renderRiderDashboard() {
+  document.getElementById('ex-rider-fab')?.remove();
+  document.getElementById('ex-status-overlay')?.remove();
   const r = _exRider;
   const isOnline = r.is_online || false;
   const owed = r.commission_balance || 0;
@@ -7461,6 +7452,7 @@ async function renderRiderDashboard() {
       <div style="display:flex;align-items:center;gap:8px">
         <span class="xbadge ${r.account_state||'active'}" style="font-size:10px">${(r.account_state||'active').toUpperCase()}</span>
         <span style="font-size:18px">${vtIcon}</span>
+        <span onclick="navigate('/express')" style="font-size:11px;color:rgba(255,255,255,.8);cursor:pointer;border:1px solid rgba(255,255,255,.4);border-radius:100px;padding:3px 10px">← Exit</span>
       </div>
     </div>
 
