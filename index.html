@@ -7432,8 +7432,6 @@ function renderExpressPending() {
         ${['Admin reviews your documents & details','You receive an approval notification','Go online and start earning!'].map((s,i)=>`<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border2)"><span style="width:22px;height:22px;background:var(--orange);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0">${i+1}</span><span style="font-size:13px">${s}</span></div>`).join('')}
       </div>
     </div>`;
-  // Keep polling — user can navigate away using bottom nav
-  exStartStatusPolling();
 }
 
 function renderExpressRejected() {
@@ -7570,8 +7568,6 @@ window.toggleOnlineStatus = async () => {
   const btn = document.getElementById('exOnlineBtn');
   const isNowOnline = btn?.classList.contains('on');
   const goingOnline = !isNowOnline;
-
-  // Going online requires location permission first
   if (goingOnline) {
     if (!navigator.geolocation) { showToast('Location not supported on this device'); return; }
     showToast('Getting your location…');
@@ -7579,20 +7575,15 @@ window.toggleOnlineStatus = async () => {
       const pos = await new Promise((resolve, reject) =>
         navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000, maximumAge: 0 })
       );
-      // Store location so it can be sent to worker
       window._exLastLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-    } catch (geoErr) {
+    } catch {
       showToast('Please enable location to go online — customers need to find you');
-      return; // Block going online without location
+      return;
     }
   }
-
   try {
     const body = { online: goingOnline };
-    if (goingOnline && window._exLastLocation) {
-      body.lat = window._exLastLocation.lat;
-      body.lng = window._exLastLocation.lng;
-    }
+    if (goingOnline && window._exLastLocation) { body.lat = window._exLastLocation.lat; body.lng = window._exLastLocation.lng; }
     const res = await fetch(`${EX_API}/rider/online`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
@@ -7603,13 +7594,10 @@ window.toggleOnlineStatus = async () => {
     if (_exRider) { _exRider.is_online = d.is_online; _exRider.online = d.is_online; }
     renderRiderDashboard();
     showToast(d.is_online ? '🟢 You are now Online!' : '⚫ You are Offline');
-    // Start background location updates while online
-    if (d.is_online) exStartLocationUpdates();
-    else exStopLocationUpdates();
+    if (d.is_online) exStartLocationUpdates(); else exStopLocationUpdates();
   } catch { showToast('Connection error'); }
 };
 
-// Background location ping every 2 minutes while online
 let _exLocTimer = null;
 function exStartLocationUpdates() {
   exStopLocationUpdates();
@@ -7623,7 +7611,7 @@ function exStartLocationUpdates() {
         body: JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
       }).catch(() => {});
     }, () => {}, { maximumAge: 30000 });
-  }, 120000); // every 2 min
+  }, 120000);
 }
 function exStopLocationUpdates() {
   if (_exLocTimer) { clearInterval(_exLocTimer); _exLocTimer = null; }
