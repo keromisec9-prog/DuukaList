@@ -381,7 +381,7 @@ input,select,textarea{font-family:var(--fb)}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--orange);box-shadow:0 0 0 3px var(--orange-glow)}
 .field textarea{resize:vertical;min-height:100px}
 .field select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6b85' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
-.photo-upload{border:2px dashed var(--border);border-radius:var(--rm);padding:28px 20px;text-align:center;cursor:pointer;transition:all .15s}
+.photo-upload{border:2px dashed var(--border);border-radius:var(--rm);padding:28px 20px;text-align:center;cursor:pointer;transition:all .15s;display:block;position:relative}
 .photo-upload:hover{border-color:var(--orange);background:var(--orange-light)}
 .photo-upload input{display:none}
 .photo-upload-icon{font-size:32px;margin-bottom:8px}
@@ -7019,12 +7019,12 @@ async function loadExpressOffers() {
 // ── ONBOARDING (4 steps) ──────────────────────────────────────
 const OB_STEPS = ['Vehicle','Personal','Safety','Agree'];
 
-function startRiderOnboarding() {
+async function startRiderOnboarding() {
   _exStep = 1; _exData = {};
-  renderObStep();
+  await renderObStep();
 }
 
-function renderObStep() {
+async function renderObStep() {
   const app = document.getElementById('app');
   // Step bar
   const stepBar = OB_STEPS.map((lbl, i) => {
@@ -7041,7 +7041,7 @@ function renderObStep() {
   }).join('');
 
   const bodies = { 1: obStep1, 2: obStep2, 3: obStep3, 4: obStep4 };
-  const content = (bodies[_exStep] || obStep1)();
+  const content = await (bodies[_exStep] || obStep1)();
 
   app.innerHTML = `
     <div class="express-topbar" style="background:var(--blue)">
@@ -7139,7 +7139,7 @@ function obStep2() {
       </div>
     </div>
     <div style="display:flex;gap:8px">
-      <button class="btn btn-outline" style="flex:1" onclick="_exStep=1;renderObStep()">← Back</button>
+      <button class="btn btn-outline" style="flex:1" onclick="(async()=>{_exStep=1;await renderObStep()})()">← Back</button>
       <button class="btn btn-orange" style="flex:2" onclick="submitOb2()">Continue →</button>
     </div>`;
 }
@@ -7178,7 +7178,7 @@ function obStep3() {
       </label>
     </div>
     <div style="display:flex;gap:8px">
-      <button class="btn btn-outline" style="flex:1" onclick="_exStep=2;renderObStep()">← Back</button>
+      <button class="btn btn-outline" style="flex:1" onclick="(async()=>{_exStep=2;await renderObStep()})()">← Back</button>
       <button class="btn btn-orange" style="flex:2" onclick="submitOb3()">Continue →</button>
     </div>`;
 }
@@ -7202,7 +7202,7 @@ async function obStep4() {
       </label>
     </div>
     <div style="display:flex;gap:8px">
-      <button class="btn btn-outline" style="flex:1" onclick="_exStep=3;renderObStep()">← Back</button>
+      <button class="btn btn-outline" style="flex:1" onclick="(async()=>{_exStep=3;await renderObStep()})()">← Back</button>
       <button class="btn btn-orange" style="flex:2" id="exSubmitBtn" onclick="submitApplication()">🚀 Submit Application</button>
     </div>`;
 }
@@ -7251,16 +7251,16 @@ window.exRemoveVehiclePhoto = (idx) => {
     </div>`).join('');
 };
 
-window.submitOb1 = () => {
+window.submitOb1 = async () => {
   if (!_exData.vehicle_type) { showToast('Please select your vehicle type'); return; }
   if (!(_exData.vehicle_photos||[]).length) { showToast('Please add at least one vehicle photo'); return; }
   _exData.plate_number = document.getElementById('ex_plate')?.value.trim().toUpperCase() || '';
   _exData.vehicle_model = document.getElementById('ex_model')?.value.trim() || '';
   _exData.vehicle_color = document.getElementById('ex_color')?.value.trim() || '';
   _exData.vehicle_year = document.getElementById('ex_year')?.value || '';
-  _exStep = 2; renderObStep();
+  _exStep = 2; await renderObStep();
 };
-window.submitOb2 = () => {
+window.submitOb2 = async () => {
   const n = document.getElementById('ex_name')?.value.trim();
   const nid = document.getElementById('ex_nid')?.value.trim();
   const ph = document.getElementById('ex_phone')?.value.trim();
@@ -7270,14 +7270,14 @@ window.submitOb2 = () => {
   _exData.phone = '256' + ph.replace(/^0/, '');
   _exData.working_area = document.getElementById('ex_area')?.value.trim() || 'Kampala';
   _exData.working_radius_km = parseInt(document.getElementById('ex_radius')?.value) || 10;
-  _exStep = 3; renderObStep();
+  _exStep = 3; await renderObStep();
 };
-window.submitOb3 = () => {
+window.submitOb3 = async () => {
   if (!document.getElementById('ex_comm_ack')?.checked) { showToast('Please acknowledge the commission policy'); return; }
   _exData.has_helmet = document.getElementById('ex_helmet')?.checked || false;
   _exData.has_reflector = document.getElementById('ex_reflector')?.checked || false;
   _exData.has_extinguisher = document.getElementById('ex_extinguisher')?.checked || false;
-  _exStep = 4; renderObStep();
+  _exStep = 4; await renderObStep();
 };
 window.submitApplication = async () => {
   if (!document.getElementById('ex_agree')?.checked) { showToast('Please agree to the terms'); return; }
@@ -7293,12 +7293,44 @@ window.submitApplication = async () => {
     if (!res.ok) throw new Error(d.error || 'Submission failed');
     _exRider = d.rider;
     renderExpressPending();
-    showToast('Application submitted! Review within 24–48h 🎉', 4000);
+    showToast('Application submitted! We\'ll review within 24–48h 🎉', 4000);
+    // Start polling for status changes (check every 30s for up to 10 min)
+    exStartStatusPolling();
   } catch(e) {
     showToast('Error: ' + e.message, 4000);
     btn.textContent = '🚀 Submit Application'; btn.disabled = false;
   }
 };
+
+let _exStatusPollTimer = null;
+function exStartStatusPolling() {
+  if (_exStatusPollTimer) clearInterval(_exStatusPollTimer);
+  let attempts = 0;
+  _exStatusPollTimer = setInterval(async () => {
+    attempts++;
+    if (attempts > 20) { clearInterval(_exStatusPollTimer); return; } // stop after 10 min
+    try {
+      const res = await fetch(`${EX_API}/rider/me`, {
+        headers: { Authorization: `Bearer ${getToken()}` }
+      });
+      if (!res.ok) return;
+      const d = await res.json();
+      const rider = d.rider;
+      if (!rider) return;
+      if (rider.status === 'approved') {
+        clearInterval(_exStatusPollTimer);
+        _exRider = rider;
+        showToast('🎉 Congratulations! Your application was approved! You can now go online.', 6000);
+        setTimeout(() => renderRiderDashboard(), 1500);
+      } else if (rider.status === 'rejected') {
+        clearInterval(_exStatusPollTimer);
+        _exRider = rider;
+        showToast('Your application was not approved. Tap to see details.', 5000);
+        setTimeout(() => renderExpressRejected(), 1500);
+      }
+    } catch {}
+  }, 30000);
+}
 
 // ── Status screens ────────────────────────────────────────────
 function renderExpressPending() {
