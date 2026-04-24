@@ -66,6 +66,7 @@ input,select,textarea{font-family:var(--fb)}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes slideDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
 .fu{animation:fadeUp .45s ease both}
 .fu2{animation:fadeUp .45s .08s ease both}
 .fu3{animation:fadeUp .45s .16s ease both}
@@ -6828,11 +6829,9 @@ async function renderDuukaExpress() {
 
   // Everyone sees the customer Express page first
   renderExpressHome();
-  // Now _exRider is loaded — update the earn section button and show overlays
+  // Now _exRider is loaded — just update the earn section button. No overlays.
   if (_exRider) {
     injectRiderDashboardButton();
-    if (_exRider.status === 'pending') renderExpressPendingOverlay();
-    else if (_exRider.status === 'rejected') renderExpressRejectedOverlay();
   }
 }
 
@@ -7451,34 +7450,67 @@ function exStartStatusPolling() {
 
 // ── Status screens ────────────────────────────────────────────
 // Delegate to overlay versions so polling callbacks work correctly
-function renderExpressPending() {
-  const appEl = document.getElementById('app');
-  if (appEl) appEl.innerHTML = `
-    <div style="padding:40px 20px;text-align:center">
-      <div style="font-size:60px;margin-bottom:16px">⏳</div>
-      <div style="font-family:var(--fd);font-size:22px;font-weight:900;margin-bottom:8px">Under Review</div>
-      <div style="color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:24px">Your application is being reviewed by our team.<br>We'll notify you within 24–48 hours.</div>
-      <span class="xbadge pending" style="font-size:13px;padding:6px 18px">⏳ Pending Review</span>
-      <div class="card" style="text-align:left;margin-top:24px">
-        <div style="font-weight:700;margin-bottom:12px">What happens next?</div>
-        ${['Admin reviews your documents & details','You receive an approval notification','Go online and start earning!'].map((s,i)=>`<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border2)"><span style="width:22px;height:22px;background:var(--orange);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0">${i+1}</span><span style="font-size:13px">${s}</span></div>`).join('')}
+function renderExpressPendingOverlay() {
+  // Remove any existing overlay
+  document.getElementById('ex-status-overlay')?.remove();
+  const ov = document.createElement('div');
+  ov.id = 'ex-status-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;display:flex;align-items:flex-end;justify-content:center';
+  ov.innerHTML = `
+    <div style="background:#fff;border-radius:24px 24px 0 0;padding:28px 20px 36px;width:100%;max-width:480px;animation:slideUp .3s ease">
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:52px;margin-bottom:10px">⏳</div>
+        <div style="font-family:var(--fd);font-size:20px;font-weight:900;color:var(--ink);margin-bottom:6px">Application Under Review</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.6">Your application is being reviewed by our team.<br>We'll notify you within 24–48 hours.</div>
+      </div>
+      <div style="background:var(--bg);border-radius:var(--rm);padding:14px;margin-bottom:20px">
+        ${['Admin reviews your documents & details','You receive an approval notification','Go online and start earning!'].map((s,i)=>`
+        <div style="display:flex;gap:10px;align-items:center;padding:8px 0;${i<2?'border-bottom:1px solid var(--border2)':''}">
+          <span style="width:22px;height:22px;background:var(--orange);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0">${i+1}</span>
+          <span style="font-size:13px;color:var(--ink2)">${s}</span>
+        </div>`).join('')}
+      </div>
+      <button class="btn btn-outline btn-full" onclick="document.getElementById('ex-status-overlay')?.remove()" style="font-size:14px;padding:13px">OK, got it</button>
+    </div>`;
+  ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+  document.body.appendChild(ov);
+}
+
+function renderExpressRejectedOverlay() {
+  document.getElementById('ex-status-overlay')?.remove();
+  const ov = document.createElement('div');
+  ov.id = 'ex-status-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;display:flex;align-items:flex-end;justify-content:center';
+  ov.innerHTML = `
+    <div style="background:#fff;border-radius:24px 24px 0 0;padding:28px 20px 36px;width:100%;max-width:480px;animation:slideUp .3s ease">
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:52px;margin-bottom:10px">❌</div>
+        <div style="font-family:var(--fd);font-size:20px;font-weight:900;color:var(--ink);margin-bottom:6px">Application Not Approved</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.6">${_exRider?.rejection_reason || 'Your application did not meet our current requirements.'}</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline" style="flex:1;padding:12px" onclick="document.getElementById('ex-status-overlay')?.remove()">Dismiss</button>
+        <button class="btn btn-orange" style="flex:2;padding:12px;font-weight:800" onclick="document.getElementById('ex-status-overlay')?.remove();startRiderOnboarding()">🔄 Re-apply →</button>
       </div>
     </div>`;
+  ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+  document.body.appendChild(ov);
+}
+
+// After successful submission — go back to home, update button, show modal
+function renderExpressPending() {
+  _exRider = _exRider || {};
+  _exRider.status = 'pending';
+  renderExpressHome();
+  injectRiderDashboardButton();
+  renderExpressPendingOverlay();
 }
 
 function renderExpressRejected() {
-  const appEl = document.getElementById('app');
-  if (appEl) appEl.innerHTML = `
-    <div style="padding:40px 20px;text-align:center">
-      <div style="font-size:60px;margin-bottom:16px">❌</div>
-      <div style="font-family:var(--fd);font-size:22px;font-weight:900;margin-bottom:8px">Not Approved</div>
-      <div style="color:var(--muted);font-size:14px;margin-bottom:8px">${_exRider?.rejection_reason || 'Your application did not meet our current requirements.'}</div>
-      <button class="btn btn-orange" style="margin-top:16px" onclick="startRiderOnboarding()">Re-apply →</button>
-    </div>`;
+  renderExpressHome();
+  injectRiderDashboardButton();
+  renderExpressRejectedOverlay();
 }
-
-function renderExpressPendingOverlay() { renderExpressPending(); }
-function renderExpressRejectedOverlay() { renderExpressRejected(); }
 
 // ── RIDER DASHBOARD ───────────────────────────────────────────
 async function renderRiderDashboard() {
