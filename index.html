@@ -7246,19 +7246,33 @@ window.exRemoveVehiclePhoto = (idx) => {
   _exRenderVehiclePreviews();
 };
 
+// Fetch with automatic retry on network failure (handles mobile radio idle drops)
+async function fetchWithRetry(url, options = {}, retries = 3) {
+  let lastErr;
+  for (let i = 1; i <= retries; i++) {
+    try {
+      return await fetch(url, options);
+    } catch (e) {
+      lastErr = e;
+      if (i < retries) await new Promise(r => setTimeout(r, 800 * i));
+    }
+  }
+  throw lastErr;
+}
+
 // Upload a single File to B2 via Worker proxy — avoids browser CORS on direct B2 URLs
 async function exUploadPhotoToB2(file, onProgress) {
-  // 1. Get presigned upload URL from express worker
-  const urlRes = await fetch(
+  // 1. Get presigned upload URL from express worker (with retry)
+  const urlRes = await fetchWithRetry(
     `${EX_API}/upload-url?fileName=${encodeURIComponent(file.name || 'photo.jpg')}&fileType=${encodeURIComponent(file.type || 'image/jpeg')}`,
     { headers: { Authorization: `Bearer ${getToken()}` } }
   );
   if (!urlRes.ok) throw new Error('Could not get upload URL');
   const urlData = await urlRes.json();
 
-  // 2. Upload via Worker proxy (Worker forwards to B2 server-side, no CORS issue)
+  // 2. Upload via Worker proxy (with retry)
   if (onProgress) onProgress(10);
-  const proxyRes = await fetch(`${EX_API}/upload-proxy`, {
+  const proxyRes = await fetchWithRetry(`${EX_API}/upload-proxy`, {
     method: 'POST',
     headers: {
       Authorization:       `Bearer ${getToken()}`,
@@ -7327,28 +7341,13 @@ window.submitApplication = async () => {
       photoUrls.push(url);
     }
 
-    // ── Step 2: Submit application — retry up to 3x (mobile radio can drop after upload) ──
+    // ── Step 2: Submit application with photo URLs (with retry) ──
     btn.textContent = 'Submitting…';
-    const applyPayload = JSON.stringify({ ..._exData, vehicle_photos: photoUrls, agreed_to_terms: true });
-    let res, lastErr;
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      try {
-        if (attempt > 1) {
-          btn.textContent = `Retrying… (${attempt}/3)`;
-          await new Promise(r => setTimeout(r, 1000 * attempt));
-        }
-        res = await fetch(`${EX_API}/rider/apply`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-          body: applyPayload,
-        });
-        lastErr = null;
-        break;
-      } catch (fetchErr) {
-        lastErr = fetchErr;
-      }
-    }
-    if (lastErr) throw new Error('Network error — check your connection and try again');
+    const res = await fetchWithRetry(`${EX_API}/rider/apply`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify({ ..._exData, vehicle_photos: photoUrls, agreed_to_terms: true }),
+    });
     const d = await res.json();
     if (!res.ok) throw new Error(d.error || 'Submission failed');
 
