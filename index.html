@@ -7261,25 +7261,15 @@ async function fetchWithRetry(url, options = {}, retries = 3) {
 }
 
 // Upload a single File via Worker proxy (streams body directly to B2)
-async function exUploadPhotoToB2(file, onProgress) {
-  // 1. Get upload credentials from express worker
-  const urlRes = await fetchWithRetry(
-    `${EX_API}/upload-url?fileName=${encodeURIComponent(file.name || 'photo.jpg')}&fileType=${encodeURIComponent(file.type || 'image/jpeg')}`,
-    { headers: { Authorization: `Bearer ${getToken()}` } }
-  );
-  if (!urlRes.ok) throw new Error('Could not get upload URL');
-  const urlData = await urlRes.json();
-
-  // 2. Upload via worker proxy (streams to B2 — avoids dynamic pod CORS issues)
+// Upload one file directly to B2 using pre-fetched credentials
+function exUploadOneToB2(file, urlData, onProgress) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', `${EX_API}/upload-proxy`);
-    xhr.setRequestHeader('Authorization',      `Bearer ${getToken()}`);
-    xhr.setRequestHeader('X-B2-Upload-Url',    urlData.uploadUrl);
-    xhr.setRequestHeader('X-B2-Auth-Token',    urlData.authorizationToken);
-    xhr.setRequestHeader('X-B2-File-Name',     urlData.fileName);
-    xhr.setRequestHeader('X-B2-Content-Type',  file.type || 'image/jpeg');
-    xhr.setRequestHeader('X-B2-Sha1',          'do_not_verify');
+    xhr.open('POST', urlData.uploadUrl);
+    xhr.setRequestHeader('Authorization',    urlData.authorizationToken);
+    xhr.setRequestHeader('X-Bz-File-Name',  urlData.fileName);
+    xhr.setRequestHeader('Content-Type',     file.type || 'image/jpeg');
+    xhr.setRequestHeader('X-Bz-Content-Sha1', 'do_not_verify');
     xhr.upload.onprogress = e => {
       if (e.lengthComputable && onProgress) onProgress(Math.round(e.loaded / e.total * 100));
     };
@@ -7294,6 +7284,27 @@ async function exUploadPhotoToB2(file, onProgress) {
     xhr.onerror = () => reject(new Error('Upload network error'));
     xhr.send(file);
   });
+}
+
+// Get upload credentials for one file from the worker
+async function exGetUploadUrl(file) {
+  const res = await fetch(
+    `${EX_API}/upload-url?fileName=${encodeURIComponent(file.name || 'photo.jpg')}&fileType=${encodeURIComponent(file.type || 'image/jpeg')}`,
+    { headers: { Authorization: `Bearer ${getToken()}` } }
+  );
+  if (!res.ok) throw new Error('Could not get upload URL');
+  return res.json();
+}
+
+// Upload all files in parallel — get all URLs first, then upload simultaneously
+async function exUploadAllPhotos(files, onCount) {
+  // Step A: get all upload tokens in parallel (fast — just KV reads)
+  const urlDatas = await Promise.all(files.map(f => exGetUploadUrl(f)));
+  // Step B: upload all files in parallel directly to B2 (no proxy, no sequential bottleneck)
+  const urls = await Promise.all(files.map((file, i) =>
+    exUploadOneToB2(file, urlDatas[i], pct => { if (onCount) onCount(i, pct); })
+  ));
+  return urls;
 }
 
 window.submitOb1 = async () => {
@@ -7333,15 +7344,11 @@ window.submitApplication = async () => {
   btn.disabled = true;
 
   try {
-    // ── Step 1: Upload photos to B2 ─────────────────────────
-    const photoUrls = [];
-    for (let i = 0; i < files.length; i++) {
-      btn.textContent = `Uploading photo ${i + 1}/${files.length}…`;
-      const url = await exUploadPhotoToB2(files[i], pct => {
-        btn.textContent = `Photo ${i + 1}/${files.length}: ${pct}%`;
-      });
-      photoUrls.push(url);
-    }
+    // ── Step 1: Upload all photos in parallel to B2 ──────────
+    btn.textContent = `Uploading ${files.length} photo${files.length>1?'s':''}…`;
+    const photoUrls = await exUploadAllPhotos(files, (i, pct) => {
+      btn.textContent = `Uploading ${files.length} photo${files.length>1?'s':''}… ${pct}%`;
+    });
 
     // ── Step 2: Submit application ───────────────────────────
     btn.textContent = 'Submitting…';
