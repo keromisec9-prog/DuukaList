@@ -6949,15 +6949,19 @@ function renderExpressHome() {
 
 function injectRiderDashboardButton() {
   const btns = document.getElementById('ex-earn-btns');
-  if (!btns) return; // DOM not ready yet
-  if (_exRider && _exRider.status === 'approved') {
-    const isOnline = _exRider.is_online || _exRider.online;
+  if (!btns || !_exRider) return;
+  const st = (_exRider.status || '').trim().toLowerCase();
+  const isOnline = _exRider.is_online || _exRider.online;
+  if (st === 'approved') {
     btns.innerHTML = '<button class="btn btn-orange" style="width:100%;font-size:14px;padding:13px;font-weight:800;border-radius:100px" onclick="renderRiderDashboard()">'
       + (isOnline ? '🟢 My Rider Dashboard — Online' : '🚀 My Rider Dashboard') + '</button>';
-  } else if (_exRider && _exRider.status === 'pending') {
-    btns.innerHTML = '<button class="btn" style="width:100%;font-size:13px;padding:12px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:100px" onclick="renderExpressPendingOverlay()">⏳ Check Application Status</button>';
-  } else if (_exRider && _exRider.status === 'rejected') {
+  } else if (st === 'pending') {
+    btns.innerHTML = '<button class="btn" style="width:100%;font-size:13px;padding:12px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:100px" onclick="renderExpressPendingOverlay()">⏳ Application Under Review</button>';
+  } else if (st === 'rejected') {
     btns.innerHTML = '<button class="btn btn-orange" style="width:100%;font-size:13px;padding:12px;border-radius:100px" onclick="renderExpressRejectedOverlay()">🔄 Re-apply as Rider</button>';
+  } else {
+    // Any other status — always show dashboard button so rider is never locked out
+    btns.innerHTML = '<button class="btn btn-orange" style="width:100%;font-size:14px;padding:13px;font-weight:800;border-radius:100px" onclick="renderRiderDashboard()">🚀 My Rider Dashboard (status: ' + st + ')</button>';
   }
 }
 
