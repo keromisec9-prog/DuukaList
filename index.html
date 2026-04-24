@@ -6933,7 +6933,7 @@ function renderExpressHome() {
         <div style="font-size:10px;font-weight:700;letter-spacing:.1em;color:rgba(255,255,255,.55);text-transform:uppercase;margin-bottom:4px">For Riders & Fleets</div>
         <div style="font-family:var(--fd);font-size:18px;font-weight:700;color:#fff;margin-bottom:5px">Earn with DuukaExpress</div>
         <div style="font-size:12px;color:rgba(255,255,255,.65);margin-bottom:14px">Use your boda, car, van or truck. Set your own hours. Earn on every delivery.</div>
-        <div style="display:flex;gap:8px">
+        <div style="display:flex;gap:8px" id="ex-earn-btns">
           <button class="btn btn-orange" style="flex:1;font-size:12px;padding:10px" onclick="startRiderOnboarding()">🛵 Join as Rider</button>
           <button class="btn" style="flex:1;background:rgba(255,255,255,.12);color:#fff;font-size:12px;padding:10px;border:1px solid rgba(255,255,255,.2)" onclick="renderFleetDashboard()">🏢 Register Fleet</button>
         </div>
@@ -6943,6 +6943,17 @@ function renderExpressHome() {
   // Load real stores from DuukaList (businesses with delivery_available)
   loadExpressStores();
   loadExpressOffers();
+  // If rider is approved, replace earn buttons with dashboard shortcut
+  if (_exRider && _exRider.status === 'approved') {
+    const btns = document.getElementById('ex-earn-btns');
+    if (btns) {
+      const isOnline = _exRider.is_online || _exRider.online;
+      btns.innerHTML = `
+        <button class="btn btn-orange" style="flex:1;font-size:13px;padding:12px;font-weight:700" onclick="renderRiderDashboard()">
+          ${isOnline ? '🟢' : '🚀'} My Rider Dashboard
+        </button>`;
+    }
+  }
 }
 
 async function loadExpressStores() {
