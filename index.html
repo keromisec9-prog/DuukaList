@@ -6826,12 +6826,13 @@ async function renderDuukaExpress() {
     _exRider = d.rider || null;
   } catch { _exRider = null; }
 
-  // Everyone sees the customer Express page first — riders get a floating button
+  // Everyone sees the customer Express page first
   renderExpressHome();
+  // Now _exRider is loaded — update the earn section button and show overlays
   if (_exRider) {
+    injectRiderDashboardButton();
     if (_exRider.status === 'pending') renderExpressPendingOverlay();
     else if (_exRider.status === 'rejected') renderExpressRejectedOverlay();
-    else if (_exRider.status === 'approved') renderRiderModeFAB();
   }
 }
 
@@ -6943,16 +6944,20 @@ function renderExpressHome() {
   // Load real stores from DuukaList (businesses with delivery_available)
   loadExpressStores();
   loadExpressOffers();
-  // If rider is approved, replace earn buttons with dashboard shortcut
+  injectRiderDashboardButton();
+}
+
+function injectRiderDashboardButton() {
+  const btns = document.getElementById('ex-earn-btns');
+  if (!btns) return; // DOM not ready yet
   if (_exRider && _exRider.status === 'approved') {
-    const btns = document.getElementById('ex-earn-btns');
-    if (btns) {
-      const isOnline = _exRider.is_online || _exRider.online;
-      btns.innerHTML = `
-        <button class="btn btn-orange" style="flex:1;font-size:13px;padding:12px;font-weight:700" onclick="renderRiderDashboard()">
-          ${isOnline ? '🟢' : '🚀'} My Rider Dashboard
-        </button>`;
-    }
+    const isOnline = _exRider.is_online || _exRider.online;
+    btns.innerHTML = '<button class="btn btn-orange" style="width:100%;font-size:14px;padding:13px;font-weight:800;border-radius:100px" onclick="renderRiderDashboard()">'
+      + (isOnline ? '🟢 My Rider Dashboard — Online' : '🚀 My Rider Dashboard') + '</button>';
+  } else if (_exRider && _exRider.status === 'pending') {
+    btns.innerHTML = '<button class="btn" style="width:100%;font-size:13px;padding:12px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:100px" onclick="renderExpressPendingOverlay()">⏳ Check Application Status</button>';
+  } else if (_exRider && _exRider.status === 'rejected') {
+    btns.innerHTML = '<button class="btn btn-orange" style="width:100%;font-size:13px;padding:12px;border-radius:100px" onclick="renderExpressRejectedOverlay()">🔄 Re-apply as Rider</button>';
   }
 }
 
