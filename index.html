@@ -7322,8 +7322,11 @@ async function exGetUploadUrl(file) {
     `${EX_API}/upload-url?fileName=${encodeURIComponent(file.name || 'photo.jpg')}&fileType=${encodeURIComponent(file.type || 'image/jpeg')}`,
     { headers: { Authorization: `Bearer ${getToken()}` } }
   );
-  if (!res.ok) throw new Error('Could not get upload URL');
-  return res.json();
+  const raw = await res.text();
+  let d;
+  try { d = JSON.parse(raw); } catch { throw new Error(`Upload URL error (${res.status}): ${raw.slice(0, 200)}`); }
+  if (!res.ok) throw new Error(d.error || d.message || `Could not get upload URL (${res.status})`);
+  return d;
 }
 
 // Upload all files in parallel — get all URLs first, then upload simultaneously
@@ -7402,7 +7405,7 @@ window.submitApplication = async () => {
     console.log('[Express] /rider/apply response:', raw);
 
     let d;
-    try { d = JSON.parse(raw); } catch { throw new Error(`Non-JSON response (${res.status}): ${raw.slice(0, 300)}`); }
+    try { d = JSON.parse(raw); } catch { throw new Error(`Server returned non-JSON (${res.status}): ${raw.slice(0, 150)}`); }
 
     if (!res.ok) throw new Error(`[${res.status}] ${d.error || d.message || JSON.stringify(d)}`);
 
