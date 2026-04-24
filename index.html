@@ -7420,8 +7420,8 @@ function exStartStatusPolling() {
 
 // ── Status screens ────────────────────────────────────────────
 function renderExpressPending() {
-  document.getElementById('app').innerHTML = `
-    <div class="express-topbar"><div class="express-topbar-logo">Duuka<span>Express</span></div></div>
+  const appEl = document.getElementById('app');
+  if (appEl) appEl.innerHTML = `
     <div style="padding:40px 20px;text-align:center">
       <div style="font-size:60px;margin-bottom:16px">⏳</div>
       <div style="font-family:var(--fd);font-size:22px;font-weight:900;margin-bottom:8px">Under Review</div>
@@ -7432,11 +7432,13 @@ function renderExpressPending() {
         ${['Admin reviews your documents & details','You receive an approval notification','Go online and start earning!'].map((s,i)=>`<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border2)"><span style="width:22px;height:22px;background:var(--orange);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0">${i+1}</span><span style="font-size:13px">${s}</span></div>`).join('')}
       </div>
     </div>`;
+  // Keep polling — user can navigate away using bottom nav
+  exStartStatusPolling();
 }
 
 function renderExpressRejected() {
-  document.getElementById('app').innerHTML = `
-    <div class="express-topbar"><div class="express-topbar-logo">Duuka<span>Express</span></div></div>
+  const appEl = document.getElementById('app');
+  if (appEl) appEl.innerHTML = `
     <div style="padding:40px 20px;text-align:center">
       <div style="font-size:60px;margin-bottom:16px">❌</div>
       <div style="font-family:var(--fd);font-size:22px;font-weight:900;margin-bottom:8px">Not Approved</div>
@@ -7456,8 +7458,7 @@ async function renderRiderDashboard() {
   app.innerHTML = `
     <div class="express-topbar">
       <div class="express-topbar-logo">
-        <svg width="20" height="17" viewBox="0 0 24 20" fill="none"><rect x="0" y="7" width="14" height="9" rx="1.5" fill="white" opacity=".9"/><path d="M14 9h4l2.5 3.5V16h-6.5V9z" fill="white" opacity=".9"/><circle cx="4.5" cy="17" r="2.2" fill="white"/><circle cx="4.5" cy="17" r="1" fill="#FF6A00"/><circle cx="17.5" cy="17" r="2.2" fill="white"/><circle cx="17.5" cy="17" r="1" fill="#FF6A00"/></svg>
-        Duuka<span>Express</span>
+        <span class="ex-rocket">🚀</span>Duuka<span>Express</span>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         <span class="xbadge ${r.account_state||'active'}" style="font-size:10px">${(r.account_state||'active').toUpperCase()}</span>
@@ -7568,19 +7569,65 @@ async function loadRiderJobs() {
 window.toggleOnlineStatus = async () => {
   const btn = document.getElementById('exOnlineBtn');
   const isNowOnline = btn?.classList.contains('on');
+  const goingOnline = !isNowOnline;
+
+  // Going online requires location permission first
+  if (goingOnline) {
+    if (!navigator.geolocation) { showToast('Location not supported on this device'); return; }
+    showToast('Getting your location…');
+    try {
+      const pos = await new Promise((resolve, reject) =>
+        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000, maximumAge: 0 })
+      );
+      // Store location so it can be sent to worker
+      window._exLastLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    } catch (geoErr) {
+      showToast('Please enable location to go online — customers need to find you');
+      return; // Block going online without location
+    }
+  }
+
   try {
+    const body = { online: goingOnline };
+    if (goingOnline && window._exLastLocation) {
+      body.lat = window._exLastLocation.lat;
+      body.lng = window._exLastLocation.lng;
+    }
     const res = await fetch(`${EX_API}/rider/online`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-      body: JSON.stringify({ online: !isNowOnline }),
+      body: JSON.stringify(body),
     });
     const d = await res.json();
     if (!res.ok) { showToast(d.error || 'Failed to update status'); return; }
-    if (_exRider) _exRider.is_online = d.is_online;
+    if (_exRider) { _exRider.is_online = d.is_online; _exRider.online = d.is_online; }
     renderRiderDashboard();
     showToast(d.is_online ? '🟢 You are now Online!' : '⚫ You are Offline');
+    // Start background location updates while online
+    if (d.is_online) exStartLocationUpdates();
+    else exStopLocationUpdates();
   } catch { showToast('Connection error'); }
 };
+
+// Background location ping every 2 minutes while online
+let _exLocTimer = null;
+function exStartLocationUpdates() {
+  exStopLocationUpdates();
+  _exLocTimer = setInterval(() => {
+    if (!_exRider?.is_online) { exStopLocationUpdates(); return; }
+    navigator.geolocation?.getCurrentPosition(pos => {
+      window._exLastLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      fetch(`${EX_API}/rider/location`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      }).catch(() => {});
+    }, () => {}, { maximumAge: 30000 });
+  }, 120000); // every 2 min
+}
+function exStopLocationUpdates() {
+  if (_exLocTimer) { clearInterval(_exLocTimer); _exLocTimer = null; }
+}
 
 window.openRecordJobModal = () => {
   const ov = document.createElement('div');
