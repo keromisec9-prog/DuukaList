@@ -7260,7 +7260,7 @@ async function fetchWithRetry(url, options = {}, retries = 3) {
   throw lastErr;
 }
 
-// Upload a single File directly to B2 (bucket CORS configured — no proxy needed)
+// Upload a single File via Worker proxy (streams body directly to B2)
 async function exUploadPhotoToB2(file, onProgress) {
   // 1. Get upload credentials from express worker
   const urlRes = await fetchWithRetry(
@@ -7270,14 +7270,16 @@ async function exUploadPhotoToB2(file, onProgress) {
   if (!urlRes.ok) throw new Error('Could not get upload URL');
   const urlData = await urlRes.json();
 
-  // 2. Upload directly to B2 (DuukaExpress bucket has CORS enabled for all origins)
+  // 2. Upload via worker proxy (streams to B2 — avoids dynamic pod CORS issues)
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', urlData.uploadUrl);
-    xhr.setRequestHeader('Authorization',     urlData.authorizationToken);
-    xhr.setRequestHeader('X-Bz-File-Name',    urlData.fileName);
-    xhr.setRequestHeader('Content-Type',      file.type || 'image/jpeg');
-    xhr.setRequestHeader('X-Bz-Content-Sha1', 'do_not_verify');
+    xhr.open('POST', `${EX_API}/upload-proxy`);
+    xhr.setRequestHeader('Authorization',      `Bearer ${getToken()}`);
+    xhr.setRequestHeader('X-B2-Upload-Url',    urlData.uploadUrl);
+    xhr.setRequestHeader('X-B2-Auth-Token',    urlData.authorizationToken);
+    xhr.setRequestHeader('X-B2-File-Name',     urlData.fileName);
+    xhr.setRequestHeader('X-B2-Content-Type',  file.type || 'image/jpeg');
+    xhr.setRequestHeader('X-B2-Sha1',          'do_not_verify');
     xhr.upload.onprogress = e => {
       if (e.lengthComputable && onProgress) onProgress(Math.round(e.loaded / e.total * 100));
     };
@@ -7285,11 +7287,11 @@ async function exUploadPhotoToB2(file, onProgress) {
       if (xhr.status >= 200 && xhr.status < 300) resolve(urlData.downloadUrl);
       else {
         let m = 'Upload failed (' + xhr.status + ')';
-        try { m = JSON.parse(xhr.responseText).message || m; } catch {}
+        try { m = JSON.parse(xhr.responseText).error || JSON.parse(xhr.responseText).message || m; } catch {}
         reject(new Error(m));
       }
     };
-    xhr.onerror = () => reject(new Error('Direct B2 upload failed'));
+    xhr.onerror = () => reject(new Error('Upload network error'));
     xhr.send(file);
   });
 }
