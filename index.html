@@ -7055,10 +7055,10 @@ async function renderObStep() {
 
 function obStep1() {
   const vtypes = [['bicycle','🚴','Bicycle'],['boda','🛵','Boda Boda'],['car','🚗','Car'],['van','🚐','Van'],['truck','🚚','Truck']];
-  const prevPhotos = (_exData.vehicle_photos||[]).map((src,i)=>`
-    <div class="photo-preview" style="width:80px;height:80px">
-      <img src="${src}">
-      <div class="photo-remove" onclick="exRemoveVehiclePhoto(${i})">✕</div>
+  const prevPhotos = (window._exVehicleFiles||[]).map((f,i)=>`
+    <div class="photo-preview" style="width:80px;height:80px;position:relative">
+      <img src="${URL.createObjectURL(f)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">
+      <div class="photo-remove" onclick="exRemoveVehiclePhoto(${i})" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer">✕</div>
     </div>`).join('');
   return `
     <div class="form-section">
@@ -7214,46 +7214,74 @@ window.selectVtype = (id, el) => {
   el.classList.add('active');
 };
 
-window.exHandleVehiclePhotos = async (input) => {
+window._exVehicleFiles = []; // actual File objects for B2 upload
+
+window.exHandleVehiclePhotos = (input) => {
   const files = Array.from(input.files);
   if (!files.length) return;
-  const existing = _exData.vehicle_photos || [];
+  const existing = window._exVehicleFiles || [];
   if (existing.length + files.length > 4) { showToast('Maximum 4 photos allowed'); return; }
-  showToast('Processing photos…');
   for (const file of files) {
     if (file.size > 5 * 1024 * 1024) { showToast(`${file.name} exceeds 5MB`); continue; }
-    const base64 = await new Promise(res => {
-      const reader = new FileReader();
-      reader.onload = e => res(e.target.result);
-      reader.readAsDataURL(file);
-    });
-    existing.push(base64);
+    existing.push(file);
   }
-  _exData.vehicle_photos = existing;
-  // Re-render previews
-  const wrap = document.getElementById('exVehiclePhotoPreviews');
-  if (wrap) wrap.innerHTML = existing.map((src,i)=>`
-    <div class="photo-preview" style="width:80px;height:80px">
-      <img src="${src}">
-      <div class="photo-remove" onclick="exRemoveVehiclePhoto(${i})">✕</div>
-    </div>`).join('');
+  window._exVehicleFiles = existing;
+  _exRenderVehiclePreviews();
   input.value = '';
-  showToast(`${existing.length} photo${existing.length>1?'s':''} added ✓`, 2000);
+  showToast(`${existing.length} photo${existing.length > 1 ? 's' : ''} added ✓`, 2000);
 };
 
-window.exRemoveVehiclePhoto = (idx) => {
-  _exData.vehicle_photos = (_exData.vehicle_photos||[]).filter((_,i)=>i!==idx);
+function _exRenderVehiclePreviews() {
   const wrap = document.getElementById('exVehiclePhotoPreviews');
-  if (wrap) wrap.innerHTML = (_exData.vehicle_photos).map((src,i)=>`
-    <div class="photo-preview" style="width:80px;height:80px">
-      <img src="${src}">
-      <div class="photo-remove" onclick="exRemoveVehiclePhoto(${i})">✕</div>
+  if (!wrap) return;
+  wrap.innerHTML = (window._exVehicleFiles || []).map((f, i) => `
+    <div class="photo-preview" style="width:80px;height:80px;position:relative">
+      <img src="${URL.createObjectURL(f)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">
+      <div class="photo-remove" onclick="exRemoveVehiclePhoto(${i})" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer">✕</div>
     </div>`).join('');
+}
+
+window.exRemoveVehiclePhoto = (idx) => {
+  window._exVehicleFiles = (window._exVehicleFiles || []).filter((_, i) => i !== idx);
+  _exRenderVehiclePreviews();
 };
+
+// Upload a single File to B2 via presigned URL — returns public CDN URL
+async function exUploadPhotoToB2(file, onProgress) {
+  // 1. Get presigned URL from express worker
+  const urlRes = await fetch(
+    `${EX_API}/upload-url?fileName=${encodeURIComponent(file.name || 'photo.jpg')}&fileType=${encodeURIComponent(file.type || 'image/jpeg')}`,
+    { headers: { Authorization: `Bearer ${getToken()}` } }
+  );
+  if (!urlRes.ok) throw new Error('Could not get upload URL');
+  const urlData = await urlRes.json();
+
+  // 2. Compute SHA1
+  const sha1 = await computeFileSHA1(file);
+
+  // 3. Upload directly to B2
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', urlData.uploadUrl);
+    xhr.setRequestHeader('Authorization', urlData.authorizationToken);
+    xhr.setRequestHeader('X-Bz-File-Name', encodeURIComponent(urlData.fileName));
+    xhr.setRequestHeader('Content-Type', file.type || 'image/jpeg');
+    xhr.setRequestHeader('X-Bz-Content-Sha1', sha1);
+    xhr.upload.onprogress = e => {
+      if (e.lengthComputable && onProgress) onProgress(Math.round(e.loaded / e.total * 100));
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) resolve(urlData.downloadUrl);
+      else { let m = 'Upload failed'; try { m = JSON.parse(xhr.responseText).message || m; } catch {} reject(new Error(m)); }
+    };
+    xhr.onerror = () => reject(new Error('Network error during upload'));
+    xhr.send(file);
+  });
+}
 
 window.submitOb1 = async () => {
   if (!_exData.vehicle_type) { showToast('Please select your vehicle type'); return; }
-  if (!(_exData.vehicle_photos||[]).length) { showToast('Please add at least one vehicle photo'); return; }
+  if (!(window._exVehicleFiles||[]).length) { showToast('Please add at least one vehicle photo'); return; }
   _exData.plate_number = document.getElementById('ex_plate')?.value.trim().toUpperCase() || '';
   _exData.vehicle_model = document.getElementById('ex_model')?.value.trim() || '';
   _exData.vehicle_color = document.getElementById('ex_color')?.value.trim() || '';
@@ -7281,20 +7309,37 @@ window.submitOb3 = async () => {
 };
 window.submitApplication = async () => {
   if (!document.getElementById('ex_agree')?.checked) { showToast('Please agree to the terms'); return; }
+  const files = window._exVehicleFiles || [];
+  if (!files.length) { showToast('Please add at least one vehicle photo'); return; }
+
   const btn = document.getElementById('exSubmitBtn');
-  btn.textContent = 'Submitting…'; btn.disabled = true;
+  btn.disabled = true;
+
   try {
+    // ── Step 1: Upload photos to B2 ─────────────────────────
+    const photoUrls = [];
+    for (let i = 0; i < files.length; i++) {
+      btn.textContent = `Uploading photo ${i + 1}/${files.length}…`;
+      const url = await exUploadPhotoToB2(files[i], pct => {
+        btn.textContent = `Photo ${i + 1}/${files.length}: ${pct}%`;
+      });
+      photoUrls.push(url);
+    }
+
+    // ── Step 2: Submit application with photo URLs ───────────
+    btn.textContent = 'Submitting…';
     const res = await fetch(`${EX_API}/rider/apply`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-      body: JSON.stringify({ ..._exData, agreed_to_terms: true }),
+      body: JSON.stringify({ ..._exData, vehicle_photos: photoUrls, agreed_to_terms: true }),
     });
     const d = await res.json();
     if (!res.ok) throw new Error(d.error || 'Submission failed');
+
     _exRider = d.rider;
+    window._exVehicleFiles = [];
     renderExpressPending();
     showToast('Application submitted! We\'ll review within 24–48h 🎉', 4000);
-    // Start polling for status changes (check every 30s for up to 10 min)
     exStartStatusPolling();
   } catch(e) {
     showToast('Error: ' + e.message, 4000);
