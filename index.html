@@ -7423,7 +7423,7 @@ window.submitApplication = async () => {
     showToast('Application submitted! We\'ll review within 24–48h 🎉', 4000);
     exStartStatusPolling();
   } catch(e) {
-    console.error('[Express] submitApplication failed:', e);
+    console.warn('[Express] submitApplication:', e.message);
     showToast('Error: ' + e.message, 6000);
     btn.textContent = '🚀 Submit Application'; btn.disabled = false;
   }
