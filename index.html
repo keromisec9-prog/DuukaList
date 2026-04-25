@@ -7339,14 +7339,12 @@ async function exGetUploadUrl(file) {
   return data;
 }
 
-// Upload all files sequentially (safer on mobile — avoids parallel B2 token exhaustion)
+// Upload all files in parallel — get all URLs first, then upload simultaneously
 async function exUploadAllPhotos(files, onCount) {
-  const urls = [];
-  for (let i = 0; i < files.length; i++) {
-    const urlData = await exGetUploadUrl(files[i]);
-    const url = await exUploadOneToB2(files[i], urlData, pct => { if (onCount) onCount(i, pct); });
-    urls.push(url);
-  }
+  const urlDatas = await Promise.all(files.map(f => exGetUploadUrl(f)));
+  const urls = await Promise.all(files.map((file, i) =>
+    exUploadOneToB2(file, urlDatas[i], pct => { if (onCount) onCount(i, pct); })
+  ));
   return urls;
 }
 
