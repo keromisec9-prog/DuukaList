@@ -7291,19 +7291,29 @@ async function fetchWithRetry(url, options = {}, retries = 3) {
   throw lastErr;
 }
 
-// Upload a single vehicle photo through the Express worker proxy.
-// Routing through /upload-proxy avoids direct B2 CORS issues and ensures
-// all errors come back as proper JSON (not B2 HTML error pages).
+// Get upload credentials for one file from the worker
+async function exGetUploadUrl(file) {
+  const res = await fetchWithRetry(
+    `${EX_API}/upload-url?fileName=${encodeURIComponent(file.name || 'photo.jpg')}&fileType=${encodeURIComponent(file.type || 'image/jpeg')}`,
+    { headers: { Authorization: `Bearer ${getToken()}` } }
+  );
+  const raw = await res.text();
+  let data;
+  try { data = JSON.parse(raw); } catch { throw new Error(`Worker non-JSON on upload-url (${res.status}): ${raw.slice(0,100)}`); }
+  if (!res.ok) throw new Error(data.error || `Could not get upload URL (${res.status})`);
+  return data;
+}
+
+// Upload directly to B2 (CORS enabled on DuukaExpress bucket — no proxy needed)
+// XHR gives real upload progress; B2 upload URLs are single-use per file
 function exUploadOneToB2(file, urlData, onProgress) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', `${EX_API}/upload-proxy`);
-    xhr.setRequestHeader('Authorization',    `Bearer ${getToken()}`);
-    xhr.setRequestHeader('X-B2-Upload-Url',  urlData.uploadUrl);
-    xhr.setRequestHeader('X-B2-Auth-Token',  urlData.authorizationToken);
-    xhr.setRequestHeader('X-B2-File-Name',   urlData.fileName);
-    xhr.setRequestHeader('X-B2-Content-Type', file.type || 'image/jpeg');
-    xhr.setRequestHeader('X-B2-Sha1',        'do_not_verify');
+    xhr.open('POST', urlData.uploadUrl);
+    xhr.setRequestHeader('Authorization',       urlData.authorizationToken);
+    xhr.setRequestHeader('X-Bz-File-Name',      urlData.fileName);
+    xhr.setRequestHeader('Content-Type',        file.type || 'image/jpeg');
+    xhr.setRequestHeader('X-Bz-Content-Sha1',  'do_not_verify');
     xhr.upload.onprogress = e => {
       if (e.lengthComputable && onProgress) onProgress(Math.round(e.loaded / e.total * 100));
     };
@@ -7312,48 +7322,25 @@ function exUploadOneToB2(file, urlData, onProgress) {
         resolve(urlData.downloadUrl);
       } else {
         let m = `Upload failed (${xhr.status})`;
-        try {
-          const parsed = JSON.parse(xhr.responseText);
-          m = parsed.error || parsed.message || m;
-        } catch { /* response wasn't JSON — keep the status-code message */ }
+        try { const p = JSON.parse(xhr.responseText); m = p.message || p.error || m; } catch {}
         reject(new Error(m));
       }
     };
-    xhr.onerror = () => reject(new Error('Upload network error — check your connection'));
+    xhr.onerror = () => reject(new Error('Upload network error — check connection'));
     xhr.ontimeout = () => reject(new Error('Upload timed out — try a smaller photo'));
-    xhr.timeout = 60000; // 60s per photo
+    xhr.timeout = 90000;
     xhr.send(file);
   });
 }
 
-// Get upload credentials for one file from the worker
-async function exGetUploadUrl(file) {
-  const res = await fetch(
-    `${EX_API}/upload-url?fileName=${encodeURIComponent(file.name || 'photo.jpg')}&fileType=${encodeURIComponent(file.type || 'image/jpeg')}`,
-    { headers: { Authorization: `Bearer ${getToken()}` } }
-  );
-  const raw = await res.text();
-  let data;
-  try { data = JSON.parse(raw); } catch { throw new Error(`Worker returned non-JSON on upload-url (${res.status})`); }
-  if (!res.ok) throw new Error(data.error || `Could not get upload URL (${res.status})`);
-  return data;
-}
-
-// Upload files sequentially — parallel hits CF Worker CPU limits with 3+ photos
+// Upload files sequentially — one at a time, each compressed first
 async function exUploadAllPhotos(files, onCount) {
   const urls = [];
   for (let i = 0; i < files.length; i++) {
-    // Compress each photo to max 900px / 0.78 quality before upload
     let file = files[i];
-    try { file = await compressImage(file, 900, 0.78); } catch { /* use original if compress fails */ }
-
-    // Fresh upload URL per photo (B2 URLs are single-use)
+    try { file = await compressImage(file, 900, 0.78); } catch {}
     const urlData = await exGetUploadUrl(file);
-
-    // Upload this one photo
-    const url = await exUploadOneToB2(file, urlData, pct => {
-      if (onCount) onCount(i, pct);
-    });
+    const url = await exUploadOneToB2(file, urlData, pct => { if (onCount) onCount(i, pct); });
     urls.push(url);
   }
   return urls;
@@ -7396,10 +7383,10 @@ window.submitApplication = async () => {
   btn.disabled = true;
 
   try {
-    // ── Step 1: Upload photos one by one (sequential avoids CF CPU limits) ──
-    btn.textContent = `Uploading photo 1/${files.length}…`;
+    // ── Step 1: Upload all photos in parallel to B2 ──────────
+    btn.textContent = `Uploading ${files.length} photo${files.length>1?'s':''}…`;
     const photoUrls = await exUploadAllPhotos(files, (i, pct) => {
-      btn.textContent = `Photo ${i+1}/${files.length}: ${pct}%`;
+      btn.textContent = `Uploading ${files.length} photo${files.length>1?'s':''}… ${pct}%`;
     });
 
     // ── Step 2: Submit application ───────────────────────────
