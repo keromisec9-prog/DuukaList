@@ -66,7 +66,6 @@ input,select,textarea{font-family:var(--fb)}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes slideDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
-@keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
 .fu{animation:fadeUp .45s ease both}
 .fu2{animation:fadeUp .45s .08s ease both}
 .fu3{animation:fadeUp .45s .16s ease both}
@@ -6829,9 +6828,11 @@ async function renderDuukaExpress() {
 
   // Everyone sees the customer Express page first
   renderExpressHome();
-  // Now _exRider is loaded — just update the earn section button. No overlays.
+  // Now _exRider is loaded — update the earn section button and show overlays
   if (_exRider) {
     injectRiderDashboardButton();
+    if (_exRider.status === 'pending') renderExpressPendingOverlay();
+    else if (_exRider.status === 'rejected') renderExpressRejectedOverlay();
   }
 }
 
@@ -7322,11 +7323,8 @@ async function exGetUploadUrl(file) {
     `${EX_API}/upload-url?fileName=${encodeURIComponent(file.name || 'photo.jpg')}&fileType=${encodeURIComponent(file.type || 'image/jpeg')}`,
     { headers: { Authorization: `Bearer ${getToken()}` } }
   );
-  const raw = await res.text();
-  let d;
-  try { d = JSON.parse(raw); } catch { throw new Error(`Upload URL error (${res.status}): ${raw.slice(0, 200)}`); }
-  if (!res.ok) throw new Error(d.error || d.message || `Could not get upload URL (${res.status})`);
-  return d;
+  if (!res.ok) throw new Error('Could not get upload URL');
+  return res.json();
 }
 
 // Upload all files in parallel — get all URLs first, then upload simultaneously
@@ -7405,7 +7403,7 @@ window.submitApplication = async () => {
     console.log('[Express] /rider/apply response:', raw);
 
     let d;
-    try { d = JSON.parse(raw); } catch { throw new Error(`Server returned non-JSON (${res.status}): ${raw.slice(0, 150)}`); }
+    try { d = JSON.parse(raw); } catch { throw new Error(`Non-JSON response (${res.status}): ${raw.slice(0, 300)}`); }
 
     if (!res.ok) throw new Error(`[${res.status}] ${d.error || d.message || JSON.stringify(d)}`);
 
@@ -7452,15 +7450,13 @@ function exStartStatusPolling() {
 }
 
 // ── Status screens ────────────────────────────────────────────
-// Delegate to overlay versions so polling callbacks work correctly
 function renderExpressPendingOverlay() {
-  // Remove any existing overlay
   document.getElementById('ex-status-overlay')?.remove();
   const ov = document.createElement('div');
   ov.id = 'ex-status-overlay';
   ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;display:flex;align-items:flex-end;justify-content:center';
   ov.innerHTML = `
-    <div style="background:#fff;border-radius:24px 24px 0 0;padding:28px 20px 36px;width:100%;max-width:480px;animation:slideUp .3s ease">
+    <div style="background:#fff;border-radius:24px 24px 0 0;padding:28px 20px 36px;width:100%;max-width:480px">
       <div style="text-align:center;margin-bottom:20px">
         <div style="font-size:52px;margin-bottom:10px">⏳</div>
         <div style="font-family:var(--fd);font-size:20px;font-weight:900;color:var(--ink);margin-bottom:6px">Application Under Review</div>
@@ -7485,7 +7481,7 @@ function renderExpressRejectedOverlay() {
   ov.id = 'ex-status-overlay';
   ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;display:flex;align-items:flex-end;justify-content:center';
   ov.innerHTML = `
-    <div style="background:#fff;border-radius:24px 24px 0 0;padding:28px 20px 36px;width:100%;max-width:480px;animation:slideUp .3s ease">
+    <div style="background:#fff;border-radius:24px 24px 0 0;padding:28px 20px 36px;width:100%;max-width:480px">
       <div style="text-align:center;margin-bottom:20px">
         <div style="font-size:52px;margin-bottom:10px">❌</div>
         <div style="font-family:var(--fd);font-size:20px;font-weight:900;color:var(--ink);margin-bottom:6px">Application Not Approved</div>
@@ -7500,17 +7496,14 @@ function renderExpressRejectedOverlay() {
   document.body.appendChild(ov);
 }
 
-// After successful submission — go back to home, update button, show modal
+// After submit: update button, show modal — no page hijack
 function renderExpressPending() {
-  _exRider = _exRider || {};
-  _exRider.status = 'pending';
-  renderExpressHome();
+  if (_exRider) _exRider.status = 'pending';
   injectRiderDashboardButton();
   renderExpressPendingOverlay();
 }
 
 function renderExpressRejected() {
-  renderExpressHome();
   injectRiderDashboardButton();
   renderExpressRejectedOverlay();
 }
