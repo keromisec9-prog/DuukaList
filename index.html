@@ -7291,28 +7291,37 @@ async function fetchWithRetry(url, options = {}, retries = 3) {
   throw lastErr;
 }
 
-// Upload a single File via Worker proxy (streams body directly to B2)
-// Upload one file directly to B2 using pre-fetched credentials
+// Upload a single vehicle photo through the Express worker proxy.
+// Routing through /upload-proxy avoids direct B2 CORS issues and ensures
+// all errors come back as proper JSON (not B2 HTML error pages).
 function exUploadOneToB2(file, urlData, onProgress) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', urlData.uploadUrl);
-    xhr.setRequestHeader('Authorization',    urlData.authorizationToken);
-    xhr.setRequestHeader('X-Bz-File-Name',  urlData.fileName);
-    xhr.setRequestHeader('Content-Type',     file.type || 'image/jpeg');
-    xhr.setRequestHeader('X-Bz-Content-Sha1', 'do_not_verify');
+    xhr.open('POST', `${EX_API}/upload-proxy`);
+    xhr.setRequestHeader('Authorization',    `Bearer ${getToken()}`);
+    xhr.setRequestHeader('X-B2-Upload-Url',  urlData.uploadUrl);
+    xhr.setRequestHeader('X-B2-Auth-Token',  urlData.authorizationToken);
+    xhr.setRequestHeader('X-B2-File-Name',   urlData.fileName);
+    xhr.setRequestHeader('X-B2-Content-Type', file.type || 'image/jpeg');
+    xhr.setRequestHeader('X-B2-Sha1',        'do_not_verify');
     xhr.upload.onprogress = e => {
       if (e.lengthComputable && onProgress) onProgress(Math.round(e.loaded / e.total * 100));
     };
     xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) resolve(urlData.downloadUrl);
-      else {
-        let m = 'Upload failed (' + xhr.status + ')';
-        try { m = JSON.parse(xhr.responseText).error || JSON.parse(xhr.responseText).message || m; } catch {}
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(urlData.downloadUrl);
+      } else {
+        let m = `Upload failed (${xhr.status})`;
+        try {
+          const parsed = JSON.parse(xhr.responseText);
+          m = parsed.error || parsed.message || m;
+        } catch { /* response wasn't JSON — keep the status-code message */ }
         reject(new Error(m));
       }
     };
-    xhr.onerror = () => reject(new Error('Upload network error'));
+    xhr.onerror = () => reject(new Error('Upload network error — check your connection'));
+    xhr.ontimeout = () => reject(new Error('Upload timed out — try a smaller photo'));
+    xhr.timeout = 60000; // 60s per photo
     xhr.send(file);
   });
 }
@@ -7323,18 +7332,21 @@ async function exGetUploadUrl(file) {
     `${EX_API}/upload-url?fileName=${encodeURIComponent(file.name || 'photo.jpg')}&fileType=${encodeURIComponent(file.type || 'image/jpeg')}`,
     { headers: { Authorization: `Bearer ${getToken()}` } }
   );
-  if (!res.ok) throw new Error('Could not get upload URL');
-  return res.json();
+  const raw = await res.text();
+  let data;
+  try { data = JSON.parse(raw); } catch { throw new Error(`Worker returned non-JSON on upload-url (${res.status})`); }
+  if (!res.ok) throw new Error(data.error || `Could not get upload URL (${res.status})`);
+  return data;
 }
 
-// Upload all files in parallel — get all URLs first, then upload simultaneously
+// Upload all files sequentially (safer on mobile — avoids parallel B2 token exhaustion)
 async function exUploadAllPhotos(files, onCount) {
-  // Step A: get all upload tokens in parallel (fast — just KV reads)
-  const urlDatas = await Promise.all(files.map(f => exGetUploadUrl(f)));
-  // Step B: upload all files in parallel directly to B2 (no proxy, no sequential bottleneck)
-  const urls = await Promise.all(files.map((file, i) =>
-    exUploadOneToB2(file, urlDatas[i], pct => { if (onCount) onCount(i, pct); })
-  ));
+  const urls = [];
+  for (let i = 0; i < files.length; i++) {
+    const urlData = await exGetUploadUrl(files[i]);
+    const url = await exUploadOneToB2(files[i], urlData, pct => { if (onCount) onCount(i, pct); });
+    urls.push(url);
+  }
   return urls;
 }
 
