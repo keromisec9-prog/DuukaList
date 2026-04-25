@@ -5532,23 +5532,30 @@ window.openMIM = (ci, ii) => {
   };
 
   async function handlePhotoChange(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+    const raw = e.target.files[0];
+    if (!raw) return;
+    if (raw.size > 10 * 1024 * 1024) { showToast('Photo must be under 10MB'); return; }
     uploading = true;
     const sp = document.getElementById('mimSpin');
-    if (sp) { sp.style.display = 'flex'; }
+    if (sp) sp.style.display = 'flex';
     try {
+      showToast('Compressing…');
+      let file = raw;
+      try { file = await compressImage(raw, 1200, 0.85); } catch(_) {}
+      showToast('Uploading photo…');
       const fd = new FormData();
       fd.append('file', file, file.name || 'menu.jpg');
-      const r = await fetch(API + '/upload-proxy?folder=listings', {
+      const r = await fetch(`${API}/upload`, {
         method: 'POST', headers: { Authorization: 'Bearer ' + getToken() }, body: fd,
       });
       const d = await r.json();
-      if (!r.ok || !d.url) throw new Error(d.error || 'Upload failed');
-      photoUrl = d.url;
+      if (!r.ok) throw new Error(d.error || 'Upload failed (' + r.status + ')');
+      const url = d.urls?.[0];
+      if (!url) throw new Error('No URL returned from server');
+      photoUrl = url;
       refreshZone();
       showToast('Photo uploaded ✓');
-    } catch (ex) { showToast('Upload error: ' + ex.message, 3000); }
+    } catch (ex) { showToast('Upload error: ' + ex.message, 3500); }
     finally { uploading = false; const sp2 = document.getElementById('mimSpin'); if (sp2) sp2.style.display = 'none'; }
   }
 
@@ -8174,18 +8181,28 @@ async function renderExpressFood() {
       <div class="spinner"></div>
     </div>`;
 
-  // Load food businesses from DuukaList
+  // Load cloud businesses with food & drinks profile
   try {
-    const res = await fetch(`${API}/listings?category=food-agriculture&limit=20&sort=boost`);
-    const d = await res.json();
-    const listings = d.listings || [];
-    const stores = {};
-    listings.forEach(l => { if (l.seller_id && !stores[l.seller_id]) stores[l.seller_id] = l; });
-    const storeList = Object.values(stores);
+    const res = await fetch(`${API}/cloud-businesses?type=food&limit=40`).catch(() => null);
+    let storeList = [];
+    if (res && res.ok) {
+      const d = await res.json();
+      storeList = d.businesses || [];
+    }
+    // Fallback: pull from listings and dedupe by seller
+    if (!storeList.length) {
+      const r2 = await fetch(`${API}/listings?limit=60&sort=boost`);
+      const d2 = await r2.json();
+      const seen = {};
+      (d2.listings || []).forEach(l => {
+        if (l.seller_id && !seen[l.seller_id]) seen[l.seller_id] = l;
+      });
+      storeList = Object.values(seen);
+    }
     window._foodStores = storeList;
     renderFoodStoreCards(storeList);
-  } catch {
-    document.getElementById('foodStoresList').innerHTML = `<div class="empty-state"><div class="empty-icon">🍔</div><div class="empty-title">No restaurants yet</div><div class="empty-sub">Food businesses will appear here once they join DuukaExpress</div></div>`;
+  } catch(e) {
+    document.getElementById('foodStoresList').innerHTML = `<div class="empty-state"><div class="empty-icon">🍔</div><div class="empty-title">No restaurants yet</div><div class="empty-sub">Be the first food business to join!</div></div>`;
   }
 }
 
@@ -8197,22 +8214,20 @@ window.renderFoodStoreCards = function(stores) {
     return;
   }
   el.innerHTML = stores.map(s => `
-    <div onclick="navigate('/seller/${s.seller_id}')" style="background:var(--white);border:1px solid var(--border);border-radius:var(--rm);overflow:hidden;margin-bottom:12px;cursor:pointer;transition:transform .15s" ontouchstart="this.style.transform='scale(.98)'" ontouchend="this.style.transform=''">
-      <div style="height:130px;background:${s.images?.[0]?`url(${s.images[0]}) center/cover`:'linear-gradient(135deg,#f59e0b,#ef4444)'};position:relative">
+    <div onclick="renderFoodStoreDetail('${s.seller_id}')" style="background:var(--white);border:1px solid var(--border);border-radius:var(--rm);overflow:hidden;margin-bottom:12px;cursor:pointer;transition:transform .15s" ontouchstart="this.style.transform='scale(.98)'" ontouchend="this.style.transform=''">
+      <div style="height:150px;background:${s.images?.[0]?`url(${s.images[0]}) center/cover`:'linear-gradient(135deg,#f59e0b,#ef4444)'};position:relative">
         ${s.boost_tier&&s.boost_tier!=='none'?'<span style="position:absolute;top:8px;left:8px;background:var(--orange);color:#fff;font-size:9px;font-weight:700;padding:3px 8px;border-radius:100px">★ Featured</span>':''}
-        <div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:100px;backdrop-filter:blur(4px)">✓ Free Delivery</div>
+        <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 12px;background:linear-gradient(to top,rgba(0,0,0,.7),transparent)">
+          <div style="font-weight:800;font-size:16px;color:#fff">${s.seller_name||'Restaurant'}</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.8)">📍 ${(s.location||'Kampala').split(',')[0]}</div>
+        </div>
       </div>
-      <div style="padding:12px 14px">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
-          <div style="font-weight:800;font-size:15px">${s.seller_name||'Restaurant'}</div>
-          <div style="display:flex;align-items:center;gap:3px;font-size:12px;color:#f59e0b;font-weight:700">★ 4.5</div>
-        </div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:6px">📍 ${(s.location||'Kampala').split(',')[0]} · 1.2 km</div>
-        <div style="display:flex;gap:8px;font-size:11px;color:var(--muted)">
+      <div style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;gap:12px;font-size:12px;color:var(--muted)">
           <span>🕐 25–40 min</span>
-          <span>·</span>
-          <span style="color:var(--green);font-weight:700">Open Now</span>
+          <span style="color:var(--green);font-weight:700">✓ Open</span>
         </div>
+        <div style="font-size:12px;color:#f59e0b;font-weight:700">★ 4.5</div>
       </div>
     </div>`).join('');
 };
@@ -8231,6 +8246,98 @@ window.filterFoodCategory = function(el, cat) {
   });
   el.style.background = 'var(--orange)'; el.style.color = '#fff';
   renderFoodStoreCards(window._foodStores || []);
+};
+// ── Food Store Detail — Glovo-style menu page ─────────────────
+window.renderFoodStoreDetail = async function(sellerId) {
+  const app = document.getElementById('app');
+  app.innerHTML = `<div style="padding:20px;text-align:center"><div class="spinner"></div></div>`;
+  try {
+    const res = await fetch(`${API}/storefront/${sellerId}`);
+    if (!res.ok) throw new Error('Store not found');
+    const d = await res.json();
+    const s = d.seller || {};
+    const isOpen = cbIsOpenNow(s);
+    const menuData = s.menu_data || [];
+    const storeName = s.store_name || s.name || 'Restaurant';
+    const heroImg = s.banner_image || (d.listings?.[0]?.images?.[0]) || '';
+    const cuisine = s.food_cuisine || '';
+    const orderTypes = (s.food_order_types||[]).join(' · ');
+
+    // Build category tab strip
+    const tabs = menuData.length
+      ? menuData.map((cat, i) =>
+          `<div class="gv-cat-tab${i===0?' active':''}" onclick="gvTab(this,${i})">${cat.name}</div>`
+        ).join('')
+      : '';
+
+    // Build menu sections
+    const sections = menuData.map((cat, ci) => `
+      <div id="gvS_${ci}">
+        <div class="gv-section-title">${cat.name}</div>
+        ${(cat.items||[]).length === 0
+          ? '<div style="padding:12px 16px;font-size:13px;color:var(--muted)">No items in this category yet.</div>'
+          : (cat.items||[]).map(item => `
+          <div class="gv-item" style="${item.available===false?'opacity:.5':''}">
+            <div class="gv-item-info">
+              <div class="gv-item-name">${item.name}</div>
+              ${item.description?`<div class="gv-item-desc">${item.description}</div>`:''}
+              <div class="gv-item-price">UGX ${parseInt(item.price||0).toLocaleString()}</div>
+            </div>
+            ${item.photo
+              ?`<img class="gv-item-photo" src="${item.photo}" alt="${item.name}" loading="lazy">`
+              :`<div class="gv-item-photo-ph">🍽️</div>`}
+            ${item.available===false
+              ?`<div class="gv-unavail-badge">Unavail.</div>`
+              :`<div class="gv-item-add">+</div>`}
+          </div>`).join('')}
+      </div>`).join('');
+
+    app.innerHTML = `
+      <!-- Back -->
+      <div onclick="renderExpressFood()" class="detail-back">← Restaurants</div>
+
+      <!-- Hero banner -->
+      <div style="height:200px;background:${heroImg?`url('${heroImg}') center/cover`:'linear-gradient(135deg,#f59e0b,#b45309)'};position:relative">
+        <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.72) 0%,transparent 55%)"></div>
+        <div style="position:absolute;bottom:0;left:0;right:0;padding:14px 16px">
+          <div style="font-family:var(--fd);font-size:22px;font-weight:900;color:#fff;line-height:1.2;margin-bottom:4px">${storeName}</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            ${cuisine?`<span style="background:rgba(255,255,255,.15);color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:100px;backdrop-filter:blur(4px)">${cuisine}</span>`:''}
+            ${orderTypes?`<span style="background:rgba(255,255,255,.12);color:rgba(255,255,255,.9);font-size:11px;padding:3px 9px;border-radius:100px">${orderTypes}</span>`:''}
+            <span style="background:${isOpen?'#0dab5b':'rgba(0,0,0,.45)'};color:#fff;font-size:11px;font-weight:800;padding:3px 9px;border-radius:100px">${isOpen?'🟢 Open Now':'🔴 Closed'}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick info bar -->
+      <div style="background:var(--white);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;gap:20px;font-size:12px;color:var(--muted)">
+        <span>🕐 25–45 min</span>
+        ${s.delivery_available?'<span style="color:var(--green);font-weight:700">✓ Delivers</span>':''}
+        ${s.food_table_reservation?'<span>🪑 Reservations</span>':''}
+        ${s.store_whatsapp?`<span onclick="window.open('https://wa.me/${(s.store_whatsapp||'').replace(/[^0-9]/g,'')}?text=Hi, I saw your menu on DuukaList+','_blank')" style="color:var(--green);font-weight:700;cursor:pointer">💬 WhatsApp</span>`:''}
+      </div>
+
+      ${menuData.length ? `
+        <!-- Category tabs -->
+        <div class="gv-cats">${tabs}</div>
+        <!-- Menu sections -->
+        <div>${sections}</div>
+      ` : `
+        <div class="empty-state" style="padding:40px 20px">
+          <div class="empty-icon">🍽️</div>
+          <div class="empty-title">Menu coming soon</div>
+          <div class="empty-sub">This restaurant hasn't added their menu yet.</div>
+          ${s.store_whatsapp?`<button class="btn btn-orange" style="margin-top:16px" onclick="window.open('https://wa.me/${(s.store_whatsapp||'').replace(/[^0-9]/g,'')}?text=Hi, I want to order from ${encodeURIComponent(storeName)}','_blank')">💬 Order via WhatsApp</button>`:''}
+        </div>
+      `}`;
+
+    // Init map if location set and menu short
+    if (s.store_lat && !menuData.length) {
+      // no-op for now; map shown on full seller profile
+    }
+  } catch(e) {
+    app.innerHTML = `<div class="empty-state"><div class="empty-icon">❌</div><div class="empty-title">Couldn't load restaurant</div><button class="btn btn-orange" onclick="renderExpressFood()">← Back</button></div>`;
+  }
 };
 
 // ── Express: All Stores ────────────────────────────────────────
