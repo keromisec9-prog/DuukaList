@@ -7069,6 +7069,17 @@ function renderExpressHome() {
       </div>
     </div>
 
+    <!-- Food & Goods -->
+    <div style="padding:0 12px 14px;background:var(--bg)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-weight:800;font-size:16px;color:var(--ink)">🍽️ Food & Goods</div>
+        <span style="font-size:13px;font-weight:700;color:var(--blue-mid);cursor:pointer" onclick="requireAuth(()=>navigate('/express/food'))">See all ›</span>
+      </div>
+      <div id="homeFoodMenus">
+        ${[1,2].map(()=>`<div style="height:130px;border-radius:var(--rm);background:var(--border2);margin-bottom:10px;animation:shimmer 1.4s infinite;background-size:400px 100%"></div>`).join('')}
+      </div>
+    </div>
+
     <!-- Offers & Promotions -->
     <div style="padding:0 12px 14px;background:var(--bg)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
@@ -7097,7 +7108,51 @@ function renderExpressHome() {
   // Load real stores from DuukaList (businesses with delivery_available)
   loadExpressStores();
   loadExpressOffers();
+  loadHomeFoodMenus();
   injectRiderDashboardButton();
+}
+
+async function loadHomeFoodMenus() {
+  const el = document.getElementById('homeFoodMenus');
+  if (!el) return;
+  try {
+    const res = await fetch(`${API}/food-menus`);
+    const d = await res.json();
+    const restaurants = (d.restaurants || []).slice(0, 4); // show max 4 on home
+    if (!restaurants.length) {
+      el.innerHTML = `<div style="text-align:center;padding:20px;font-size:13px;color:var(--muted)">
+        No food menus yet — be the first to add yours!</div>`;
+      return;
+    }
+    el.innerHTML = restaurants.map(s => {
+      const hero    = s.banner_image || '';
+      const name    = s.store_name || s.name || 'Restaurant';
+      const cuisine = s.food_cuisine || '';
+      const totalItems = (s.menu_data||[]).reduce((n,c)=>n+(c.items||[]).length,0);
+      const isOpen  = cbIsOpenNow(s);
+      return `
+      <div onclick="requireAuth(()=>renderFoodStoreDetail('${s.id}'))"
+        style="display:flex;align-items:center;gap:12px;background:var(--white);border:1px solid var(--border);
+               border-radius:var(--rm);padding:10px;margin-bottom:10px;cursor:pointer"
+        ontouchstart="this.style.opacity='.8'" ontouchend="this.style.opacity='1'">
+        <div style="width:80px;height:80px;border-radius:10px;flex-shrink:0;background:${hero?`url('${hero}') center/cover`:'linear-gradient(135deg,#f59e0b,#ef4444)'}"></div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:800;font-size:14px;color:var(--ink);margin-bottom:2px;
+                      white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</div>
+          ${cuisine?`<div style="font-size:12px;color:var(--muted);margin-bottom:3px">🍴 ${cuisine}</div>`:''}
+          <div style="font-size:11px;color:var(--muted)">📋 ${totalItems} item${totalItems===1?'':'s'} on menu</div>
+          <div style="margin-top:4px;display:inline-block;font-size:10px;font-weight:700;
+                      padding:2px 8px;border-radius:100px;
+                      background:${isOpen?'var(--green-light)':'var(--border2)'};
+                      color:${isOpen?'var(--green)':'var(--muted)'}">${isOpen?'🟢 Open':'🔴 Closed'}</div>
+        </div>
+        <div style="font-size:18px;color:var(--border);flex-shrink:0">›</div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    const el2 = document.getElementById('homeFoodMenus');
+    if (el2) el2.innerHTML = '';
+  }
 }
 
 function injectRiderDashboardButton() {
