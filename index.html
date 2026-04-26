@@ -8156,187 +8156,326 @@ window.submitExpressRide = async function() {
   } catch { showToast('Network error'); btn.textContent = 'Request Ride →'; btn.disabled = false; }
 };
 
-// ── Express: Order Food & Goods ────────────────────────────────
+// ── Express: Order Food & Goods ─────────────────────────────────
 async function renderExpressFood() {
   const app = document.getElementById('app');
   app.innerHTML = `
-    <div onclick="navigate('/express')" class="detail-back">← Back</div>
-    <div style="background:#1a6e34;padding:20px 16px 28px">
-      <div style="font-family:var(--fd);font-size:22px;font-weight:900;color:#fff;margin-bottom:4px">🍔 Food & Goods</div>
-      <div style="font-size:13px;color:rgba(255,255,255,.75)">Order from restaurants & stores near you</div>
-    </div>
-    <!-- Search -->
-    <div style="padding:12px 14px;background:var(--white);border-bottom:1px solid var(--border)">
-      <div style="background:var(--bg);border:1.5px solid var(--border);border-radius:100px;display:flex;align-items:center;padding:0 14px;height:40px;gap:8px">
-        <span style="color:var(--muted)">🔍</span>
-        <input type="search" placeholder="Search restaurants, cuisine…" style="flex:1;border:none;outline:none;background:transparent;font-size:14px;font-family:var(--fb)" oninput="filterFoodStores(this.value)">
+    <!-- Header -->
+    <div style="background:#1a6e34;padding:0">
+      <div style="display:flex;align-items:center;padding:12px 14px 0;gap:10px">
+        <button onclick="navigate('/express')" style="background:rgba(255,255,255,.15);border:none;width:34px;height:34px;border-radius:50%;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">←</button>
+        <div style="flex:1">
+          <div style="font-family:var(--fd);font-size:20px;font-weight:900;color:#fff;line-height:1.1">Food & Goods</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.7)">Order anything, we deliver</div>
+        </div>
+      </div>
+      <!-- Search bar -->
+      <div style="padding:12px 14px 14px">
+        <div style="background:rgba(255,255,255,.95);border-radius:100px;display:flex;align-items:center;padding:0 14px;height:42px;gap:8px">
+          <span style="color:#aaa;font-size:15px">🔍</span>
+          <input type="search" id="foodSearchInput" placeholder="Search food, restaurants, groceries…"
+            style="flex:1;border:none;outline:none;background:transparent;font-size:14px;font-family:var(--fb);color:var(--ink)"
+            oninput="filterFoodStores(this.value)">
+        </div>
       </div>
     </div>
-    <!-- Category chips -->
-    <div style="padding:10px 12px;background:var(--white);border-bottom:1px solid var(--border);display:flex;gap:8px;overflow-x:auto;scrollbar-width:none">
-      ${['🍽️ All','🍗 Chicken','🍕 Pizza','🥗 Healthy','🍜 Local','🥤 Drinks','🥐 Bakery','🌯 Fast Food'].map((c,i)=>`
-        <div onclick="filterFoodCategory(this,'${c}')" style="flex-shrink:0;padding:5px 14px;border-radius:100px;font-size:12px;font-weight:700;cursor:pointer;background:${i===0?'var(--orange)':'var(--border2)'};color:${i===0?'#fff':'var(--ink2)'};">${c}</div>`).join('')}
+
+    <!-- Category filter chips -->
+    <div id="foodCatBar" style="background:var(--white);border-bottom:1px solid var(--border);padding:10px 12px;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none">
+      ${[
+        {label:'🍽️ All',     val:'all'},
+        {label:'🍗 Chicken', val:'chicken'},
+        {label:'🍖 Pork',    val:'pork'},
+        {label:'🐟 Fish',    val:'fish'},
+        {label:'🥘 Local',   val:'local'},
+        {label:'🍕 Fast Food',val:'fastfood'},
+        {label:'🥗 Healthy', val:'healthy'},
+        {label:'🥤 Drinks',  val:'drinks'},
+        {label:'🥐 Bakery',  val:'bakery'},
+      ].map((c,i) => `
+        <div onclick="filterFoodCat(this,'${c.val}')"
+          style="flex-shrink:0;padding:6px 16px;border-radius:100px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;
+          background:${i===0?'var(--orange)':'var(--border2)'};color:${i===0?'#fff':'var(--ink2)'};transition:all .15s">${c.label}</div>`
+      ).join('')}
     </div>
-    <div style="padding:14px 12px" id="foodStoresList">
+
+    <!-- Promo banner -->
+    <div style="margin:14px 14px 0;background:linear-gradient(135deg,#f59e0b,#ef4444);border-radius:var(--rm);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;overflow:hidden;position:relative">
+      <div style="position:absolute;right:-10px;top:-10px;font-size:80px;opacity:.15">🛵</div>
+      <div>
+        <div style="font-size:10px;font-weight:800;color:rgba(255,255,255,.8);text-transform:uppercase;letter-spacing:.06em">SUPER SAVER</div>
+        <div style="font-family:var(--fd);font-size:18px;font-weight:900;color:#fff;line-height:1.2">Free delivery on<br>your first order!</div>
+        <div style="background:rgba(255,255,255,.2);display:inline-block;padding:3px 10px;border-radius:6px;margin-top:6px;font-size:11px;font-weight:700;color:#fff;border:1px dashed rgba(255,255,255,.6)">DUUKA10</div>
+      </div>
+      <div style="font-size:52px;flex-shrink:0">🛵</div>
+    </div>
+
+    <!-- Restaurant list -->
+    <div style="padding:14px 14px 80px" id="foodStoresList">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="font-weight:800;font-size:16px">🔥 Restaurants Near You</div>
+      </div>
       <div class="spinner"></div>
     </div>`;
 
-  // Load cloud businesses with food & drinks profile
+  await loadFoodStores();
+}
+
+async function loadFoodStores() {
+  const el = document.getElementById('foodStoresList');
+  const hd = el ? el.querySelector('div') : null;
+  if (!el) return;
+  // Keep the heading, replace only spinner
+  el.innerHTML = (hd ? hd.outerHTML : '<div style="font-weight:800;font-size:16px;margin-bottom:12px">🔥 Restaurants Near You</div>') +
+    '<div class="spinner"></div>';
+
   try {
-    const res = await fetch(`${API}/cloud-businesses?type=food&limit=40`).catch(() => null);
-    let storeList = [];
-    if (res && res.ok) {
-      const d = await res.json();
-      storeList = d.businesses || [];
-    }
-    // Fallback: pull from listings and dedupe by seller
-    if (!storeList.length) {
-      const r2 = await fetch(`${API}/listings?limit=60&sort=boost`);
-      const d2 = await r2.json();
-      const seen = {};
-      (d2.listings || []).forEach(l => {
-        if (l.seller_id && !seen[l.seller_id]) seen[l.seller_id] = l;
-      });
-      storeList = Object.values(seen);
-    }
-    window._foodStores = storeList;
-    renderFoodStoreCards(storeList);
+    // Fetch listings and dedupe by seller
+    const res = await fetch(`${API}/listings?limit=50&sort=boost`);
+    const d = await res.json();
+    const listings = d.listings || [];
+    const seenSellers = {};
+    listings.forEach(l => { if (l.seller_id && !seenSellers[l.seller_id]) seenSellers[l.seller_id] = l; });
+    const sellerIds = Object.keys(seenSellers);
+
+    // Fetch storefronts in parallel (max 20 to avoid hammering)
+    const storefronts = await Promise.all(
+      sellerIds.slice(0, 20).map(id =>
+        fetch(`${API}/storefront/${id}`).then(r => r.ok ? r.json() : null).catch(() => null)
+      )
+    );
+
+    // Keep only those with food business type OR with menu_data
+    const foodStores = storefronts
+      .filter(Boolean)
+      .map(sf => sf.seller)
+      .filter(s => s && (s.business_type === 'food' || (s.menu_data && s.menu_data.length > 0)));
+
+    // Fallback: if no food cloud businesses yet, show ALL stores
+    const allStores = foodStores.length > 0 ? foodStores
+      : storefronts.filter(Boolean).map(sf => sf.seller).filter(Boolean);
+
+    window._foodStores = allStores;
+    window._foodStoreFull = storefronts.filter(Boolean); // keep full data for detail page
+    renderFoodStoreCards(allStores);
   } catch(e) {
-    document.getElementById('foodStoresList').innerHTML = `<div class="empty-state"><div class="empty-icon">🍔</div><div class="empty-title">No restaurants yet</div><div class="empty-sub">Be the first food business to join!</div></div>`;
+    if (el) el.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">🍔</div>
+      <div class="empty-title">No restaurants yet</div>
+      <div class="empty-sub">Be the first food business to join DuukaExpress!</div>
+    </div>`;
   }
 }
 
 window.renderFoodStoreCards = function(stores) {
   const el = document.getElementById('foodStoresList');
   if (!el) return;
-  if (!stores.length) {
+  if (!stores || !stores.length) {
     el.innerHTML = `<div class="empty-state"><div class="empty-icon">🍽️</div><div class="empty-title">No stores found</div></div>`;
     return;
   }
-  el.innerHTML = stores.map(s => `
-    <div onclick="renderFoodStoreDetail('${s.seller_id}')" style="background:var(--white);border:1px solid var(--border);border-radius:var(--rm);overflow:hidden;margin-bottom:12px;cursor:pointer;transition:transform .15s" ontouchstart="this.style.transform='scale(.98)'" ontouchend="this.style.transform=''">
-      <div style="height:150px;background:${s.images?.[0]?`url(${s.images[0]}) center/cover`:'linear-gradient(135deg,#f59e0b,#ef4444)'};position:relative">
-        ${s.boost_tier&&s.boost_tier!=='none'?'<span style="position:absolute;top:8px;left:8px;background:var(--orange);color:#fff;font-size:9px;font-weight:700;padding:3px 8px;border-radius:100px">★ Featured</span>':''}
-        <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 12px;background:linear-gradient(to top,rgba(0,0,0,.7),transparent)">
-          <div style="font-weight:800;font-size:16px;color:#fff">${s.seller_name||'Restaurant'}</div>
-          <div style="font-size:11px;color:rgba(255,255,255,.8)">📍 ${(s.location||'Kampala').split(',')[0]}</div>
+
+  // Separate featured (boosted) — we don't have boost on seller level easily, just show all
+  el.innerHTML = `
+    <div style="font-weight:800;font-size:16px;margin-bottom:12px">🔥 Restaurants Near You</div>
+    ${stores.map(s => {
+      const isOpen = cbIsOpenNow(s);
+      const hero = s.banner_image || '';
+      const name = s.store_name || s.name || 'Restaurant';
+      const cuisine = s.food_cuisine ? `<span style="font-size:11px;color:var(--muted);margin-left:4px">· ${s.food_cuisine}</span>` : '';
+      const location = s.store_location || s.city || 'Kampala';
+      const hasMenu = s.menu_data && s.menu_data.length > 0;
+      const itemCount = hasMenu ? s.menu_data.reduce((acc, cat) => acc + (cat.items||[]).length, 0) : 0;
+
+      return `
+      <div onclick="renderFoodStoreDetail('${s.id}')"
+        style="background:var(--white);border:1px solid var(--border);border-radius:var(--rm);overflow:hidden;margin-bottom:14px;cursor:pointer"
+        ontouchstart="this.style.transform='scale(.98)'" ontouchend="this.style.transform=''">
+
+        <!-- Hero image -->
+        <div style="height:155px;background:${hero ? `url('${hero}') center/cover` : 'linear-gradient(135deg,#f59e0b 0%,#ef4444 100%)'};position:relative">
+          ${!isOpen ? `<div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;font-weight:700;padding:3px 9px;border-radius:100px;backdrop-filter:blur(4px)">🔴 Closed</div>` : ''}
+          ${hasMenu ? `<div style="position:absolute;bottom:8px;left:8px;background:rgba(0,0,0,.5);color:#fff;font-size:10px;font-weight:600;padding:3px 9px;border-radius:100px;backdrop-filter:blur(4px)">📋 ${itemCount} items on menu</div>` : ''}
+          <div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.5);color:#fff;font-size:10px;font-weight:700;padding:3px 9px;border-radius:100px;backdrop-filter:blur(4px)">✓ Free Delivery</div>
         </div>
-      </div>
-      <div style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
-        <div style="display:flex;gap:12px;font-size:12px;color:var(--muted)">
-          <span>🕐 25–40 min</span>
-          <span style="color:var(--green);font-weight:700">✓ Open</span>
+
+        <!-- Info row -->
+        <div style="padding:12px 14px">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px">
+            <div>
+              <span style="font-weight:800;font-size:15px">${name}</span>${cuisine}
+            </div>
+            <div style="font-size:12px;color:#f59e0b;font-weight:700;flex-shrink:0;margin-left:6px">★ 4.5</div>
+          </div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:8px">📍 ${location}</div>
+          <div style="display:flex;gap:10px;font-size:11px">
+            <span style="background:var(--border2);padding:3px 10px;border-radius:100px;font-weight:600">🕐 25–45 min</span>
+            ${s.food_order_types?.includes('Delivery') || s.delivery_available
+              ? `<span style="background:var(--green-light);color:var(--green);padding:3px 10px;border-radius:100px;font-weight:700">🛵 Delivers</span>`
+              : ''}
+            ${s.food_order_types?.includes('Takeaway')
+              ? `<span style="background:var(--border2);padding:3px 10px;border-radius:100px;font-weight:600">🥡 Takeaway</span>`
+              : ''}
+          </div>
         </div>
-        <div style="font-size:12px;color:#f59e0b;font-weight:700">★ 4.5</div>
-      </div>
-    </div>`).join('');
+      </div>`;
+    }).join('')}`;
 };
 
 window.filterFoodStores = function(q) {
-  const filtered = (window._foodStores||[]).filter(s =>
-    !q || (s.seller_name||'').toLowerCase().includes(q.toLowerCase()) ||
-    (s.title||'').toLowerCase().includes(q.toLowerCase())
+  q = (q || '').toLowerCase().trim();
+  const filtered = (window._foodStores || []).filter(s =>
+    !q ||
+    (s.store_name || s.name || '').toLowerCase().includes(q) ||
+    (s.food_cuisine || '').toLowerCase().includes(q) ||
+    (s.store_location || s.city || '').toLowerCase().includes(q)
   );
   renderFoodStoreCards(filtered);
 };
 
-window.filterFoodCategory = function(el, cat) {
-  document.querySelectorAll('[onclick*="filterFoodCategory"]').forEach(e => {
+window.filterFoodCat = function(el, val) {
+  document.querySelectorAll('#foodCatBar > div').forEach(e => {
     e.style.background = 'var(--border2)'; e.style.color = 'var(--ink2)';
   });
   el.style.background = 'var(--orange)'; el.style.color = '#fff';
-  renderFoodStoreCards(window._foodStores || []);
+  if (val === 'all') { renderFoodStoreCards(window._foodStores || []); return; }
+  const filtered = (window._foodStores || []).filter(s => {
+    const cuisine = (s.food_cuisine || '').toLowerCase();
+    const menuText = JSON.stringify(s.menu_data || '').toLowerCase();
+    return cuisine.includes(val) || menuText.includes(val);
+  });
+  renderFoodStoreCards(filtered.length ? filtered : (window._foodStores || []));
 };
+
 // ── Food Store Detail — Glovo-style menu page ─────────────────
 window.renderFoodStoreDetail = async function(sellerId) {
   const app = document.getElementById('app');
-  app.innerHTML = `<div style="padding:20px;text-align:center"><div class="spinner"></div></div>`;
+  app.innerHTML = `<div style="padding:40px;text-align:center"><div class="spinner"></div></div>`;
   try {
-    const res = await fetch(`${API}/storefront/${sellerId}`);
-    if (!res.ok) throw new Error('Store not found');
-    const d = await res.json();
-    const s = d.seller || {};
+    // Try cached data first, otherwise fetch
+    let sfData = (window._foodStoreFull || []).find(sf => sf && sf.seller && sf.seller.id === sellerId);
+    if (!sfData) {
+      const r = await fetch(`${API}/storefront/${sellerId}`);
+      if (!r.ok) throw new Error('Store not found');
+      sfData = await r.json();
+    }
+    const s = sfData.seller || {};
+    const listings = sfData.listings || [];
     const isOpen = cbIsOpenNow(s);
     const menuData = s.menu_data || [];
     const storeName = s.store_name || s.name || 'Restaurant';
-    const heroImg = s.banner_image || (d.listings?.[0]?.images?.[0]) || '';
+    const heroImg = s.banner_image || '';
     const cuisine = s.food_cuisine || '';
-    const orderTypes = (s.food_order_types||[]).join(' · ');
+    const hasMenu = menuData.length > 0;
 
-    // Build category tab strip
-    const tabs = menuData.length
-      ? menuData.map((cat, i) =>
-          `<div class="gv-cat-tab${i===0?' active':''}" onclick="gvTab(this,${i})">${cat.name}</div>`
-        ).join('')
-      : '';
+    // Build category tabs
+    const tabs = hasMenu ? menuData.map((cat, i) =>
+      `<div class="gv-cat-tab${i===0?' active':''}" onclick="gvTab(this,${i})">${cat.name}
+        <span style="font-size:10px;color:var(--muted);margin-left:3px">(${(cat.items||[]).length})</span>
+      </div>`
+    ).join('') : '';
 
-    // Build menu sections
-    const sections = menuData.map((cat, ci) => `
+    // Build menu sections — show ALL items (unavailable ones dimmed)
+    const sections = menuData.map((cat, ci) => {
+      const items = cat.items || [];
+      return `
       <div id="gvS_${ci}">
-        <div class="gv-section-title">${cat.name}</div>
-        ${(cat.items||[]).length === 0
-          ? '<div style="padding:12px 16px;font-size:13px;color:var(--muted)">No items in this category yet.</div>'
-          : (cat.items||[]).map(item => `
+        <div class="gv-section-title">${cat.name}
+          <span style="font-size:12px;color:var(--muted);font-weight:500;margin-left:6px">${items.length} item${items.length===1?'':'s'}</span>
+        </div>
+        ${!items.length
+          ? `<div style="padding:14px 16px;font-size:13px;color:var(--muted)">No items in this category yet.</div>`
+          : items.map(item => `
           <div class="gv-item" style="${item.available===false?'opacity:.5':''}">
             <div class="gv-item-info">
               <div class="gv-item-name">${item.name}</div>
-              ${item.description?`<div class="gv-item-desc">${item.description}</div>`:''}
+              ${item.description ? `<div class="gv-item-desc">${item.description}</div>` : ''}
               <div class="gv-item-price">UGX ${parseInt(item.price||0).toLocaleString()}</div>
             </div>
             ${item.photo
-              ?`<img class="gv-item-photo" src="${item.photo}" alt="${item.name}" loading="lazy">`
-              :`<div class="gv-item-photo-ph">🍽️</div>`}
+              ? `<img class="gv-item-photo" src="${item.photo}" alt="${item.name}" loading="lazy">`
+              : `<div class="gv-item-photo-ph">🍽️</div>`}
             ${item.available===false
-              ?`<div class="gv-unavail-badge">Unavail.</div>`
-              :`<div class="gv-item-add">+</div>`}
+              ? `<div class="gv-unavail-badge">Unavailable</div>`
+              : `<div class="gv-item-add" title="Add to order">+</div>`}
           </div>`).join('')}
-      </div>`).join('');
+      </div>`;
+    }).join('');
 
     app.innerHTML = `
-      <!-- Back -->
-      <div onclick="renderExpressFood()" class="detail-back">← Restaurants</div>
+      <!-- Back button -->
+      <div onclick="renderExpressFood()"
+        style="display:flex;align-items:center;gap:8px;padding:12px 14px;background:var(--white);border-bottom:1px solid var(--border);cursor:pointer;position:sticky;top:0;z-index:200">
+        <span style="font-size:20px;color:var(--muted)">←</span>
+        <span style="font-size:13px;font-weight:700;color:var(--ink2)">Restaurants</span>
+      </div>
 
       <!-- Hero banner -->
-      <div style="height:200px;background:${heroImg?`url('${heroImg}') center/cover`:'linear-gradient(135deg,#f59e0b,#b45309)'};position:relative">
-        <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.72) 0%,transparent 55%)"></div>
-        <div style="position:absolute;bottom:0;left:0;right:0;padding:14px 16px">
-          <div style="font-family:var(--fd);font-size:22px;font-weight:900;color:#fff;line-height:1.2;margin-bottom:4px">${storeName}</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-            ${cuisine?`<span style="background:rgba(255,255,255,.15);color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:100px;backdrop-filter:blur(4px)">${cuisine}</span>`:''}
-            ${orderTypes?`<span style="background:rgba(255,255,255,.12);color:rgba(255,255,255,.9);font-size:11px;padding:3px 9px;border-radius:100px">${orderTypes}</span>`:''}
-            <span style="background:${isOpen?'#0dab5b':'rgba(0,0,0,.45)'};color:#fff;font-size:11px;font-weight:800;padding:3px 9px;border-radius:100px">${isOpen?'🟢 Open Now':'🔴 Closed'}</span>
+      <div style="height:210px;background:${heroImg?`url('${heroImg}') center/cover`:'linear-gradient(135deg,#f59e0b,#ef4444)'};position:relative">
+        <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.78) 0%,rgba(0,0,0,.1) 55%)"></div>
+        <div style="position:absolute;bottom:0;left:0;right:0;padding:16px">
+          <div style="font-family:var(--fd);font-size:24px;font-weight:900;color:#fff;line-height:1.2;margin-bottom:6px">${storeName}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+            ${cuisine ? `<span style="background:rgba(255,255,255,.18);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;backdrop-filter:blur(4px)">${cuisine}</span>` : ''}
+            <span style="background:${isOpen?'#0dab5b':'rgba(0,0,0,.5)'};color:#fff;font-size:11px;font-weight:800;padding:3px 10px;border-radius:100px">
+              ${isOpen ? '🟢 Open Now' : '🔴 Closed'}
+            </span>
+            ${s.delivery_available ? `<span style="background:rgba(255,255,255,.15);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;backdrop-filter:blur(4px)">🛵 Delivers</span>` : ''}
           </div>
         </div>
       </div>
 
-      <!-- Quick info bar -->
-      <div style="background:var(--white);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;gap:20px;font-size:12px;color:var(--muted)">
-        <span>🕐 25–45 min</span>
-        ${s.delivery_available?'<span style="color:var(--green);font-weight:700">✓ Delivers</span>':''}
-        ${s.food_table_reservation?'<span>🪑 Reservations</span>':''}
-        ${s.store_whatsapp?`<span onclick="window.open('https://wa.me/${(s.store_whatsapp||'').replace(/[^0-9]/g,'')}?text=Hi, I saw your menu on DuukaList+','_blank')" style="color:var(--green);font-weight:700;cursor:pointer">💬 WhatsApp</span>`:''}
+      <!-- Info bar -->
+      <div style="background:var(--white);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+        <span style="font-size:12px;color:var(--muted)">🕐 25–45 min</span>
+        <span style="font-size:12px;color:#f59e0b;font-weight:700">★ 4.5</span>
+        ${s.store_location ? `<span style="font-size:12px;color:var(--muted)">📍 ${s.store_location}</span>` : ''}
+        ${s.food_table_reservation ? `<span style="font-size:12px;color:var(--muted)">🪑 Reservations</span>` : ''}
+        ${s.store_whatsapp ? `
+          <span onclick="window.open('https://wa.me/${(s.store_whatsapp||'').replace(/[^0-9]/g,'')}?text=Hi, I saw your menu on DuukaList+','_blank')"
+            style="font-size:12px;color:var(--green);font-weight:700;cursor:pointer;margin-left:auto">💬 WhatsApp Order</span>` : ''}
       </div>
 
-      ${menuData.length ? `
-        <!-- Category tabs -->
-        <div class="gv-cats">${tabs}</div>
-        <!-- Menu sections -->
-        <div>${sections}</div>
+      ${hasMenu ? `
+        <!-- Category tabs (sticky) -->
+        <div class="gv-cats" id="gvCatStrip">${tabs}</div>
+        <!-- Menu items -->
+        <div style="padding-bottom:80px">${sections}</div>
       ` : `
-        <div class="empty-state" style="padding:40px 20px">
+        <!-- No menu yet -->
+        <div class="empty-state" style="padding:50px 24px">
           <div class="empty-icon">🍽️</div>
           <div class="empty-title">Menu coming soon</div>
-          <div class="empty-sub">This restaurant hasn't added their menu yet.</div>
-          ${s.store_whatsapp?`<button class="btn btn-orange" style="margin-top:16px" onclick="window.open('https://wa.me/${(s.store_whatsapp||'').replace(/[^0-9]/g,'')}?text=Hi, I want to order from ${encodeURIComponent(storeName)}','_blank')">💬 Order via WhatsApp</button>`:''}
+          <div class="empty-sub">${storeName} hasn't added their menu yet.</div>
+          ${s.store_whatsapp ? `
+            <button class="btn btn-orange btn-lg" style="margin-top:20px"
+              onclick="window.open('https://wa.me/${(s.store_whatsapp||'').replace(/[^0-9]/g,'')}?text=Hi, I want to order from ${encodeURIComponent(storeName)}','_blank')">
+              💬 Order via WhatsApp
+            </button>` : ''}
+          ${listings.length ? `
+            <div style="margin-top:24px;text-align:left;width:100%">
+              <div style="font-weight:700;font-size:14px;margin-bottom:10px">📦 Their Listings</div>
+              ${listings.slice(0,4).map(l => `
+                <div onclick="navigate('/listing/${l.id}')"
+                  style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border2);cursor:pointer">
+                  <div style="width:48px;height:48px;border-radius:var(--r);background:${l.images?.[0]?`url('${l.images[0]}') center/cover`:'var(--border2)'};flex-shrink:0"></div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.title}</div>
+                    <div style="font-size:12px;color:var(--orange);font-weight:700">UGX ${Number(l.price||0).toLocaleString()}</div>
+                  </div>
+                </div>`).join('')}
+            </div>` : ''}
         </div>
       `}`;
 
-    // Init map if location set and menu short
-    if (s.store_lat && !menuData.length) {
-      // no-op for now; map shown on full seller profile
-    }
   } catch(e) {
-    app.innerHTML = `<div class="empty-state"><div class="empty-icon">❌</div><div class="empty-title">Couldn't load restaurant</div><button class="btn btn-orange" onclick="renderExpressFood()">← Back</button></div>`;
+    app.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">❌</div>
+        <div class="empty-title">Couldn't load restaurant</div>
+        <div class="empty-sub">${e.message}</div>
+        <button class="btn btn-orange" onclick="renderExpressFood()">← Back to Restaurants</button>
+      </div>`;
   }
 };
 
