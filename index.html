@@ -515,6 +515,41 @@ input,select,textarea{font-family:var(--fb)}
 .gv-cat-tab.active{color:var(--orange);border-bottom-color:var(--orange)}
 .gv-section-title{font-weight:800;font-size:16px;color:var(--ink);padding:14px 16px 10px;border-bottom:1px solid var(--border2)}
 .gv-item{display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--border2);position:relative}
+/* Food ordering extras */
+.gv-item-photo,.gv-item-photo-ph{cursor:pointer;transition:transform .15s}
+.gv-item-photo:active,.gv-item-photo-ph:active{transform:scale(.93)}
+.gv-qty-row{display:flex;align-items:center;gap:8px;margin-top:6px}
+.gv-qty-btn{width:28px;height:28px;border-radius:50%;border:2px solid var(--orange);color:var(--orange);background:var(--white);font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;line-height:1}
+.gv-qty-num{font-weight:800;font-size:15px;min-width:20px;text-align:center}
+.gv-add-btn{flex:1;background:var(--orange);color:#fff;border:none;border-radius:100px;padding:7px 0;font-size:13px;font-weight:800;cursor:pointer;font-family:var(--fb)}
+/* Cart FAB */
+.cart-fab{position:fixed;bottom:calc(64px + 14px);left:16px;right:16px;background:var(--orange);color:#fff;border-radius:100px;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;font-weight:800;font-size:15px;cursor:pointer;box-shadow:0 4px 20px rgba(255,106,0,.45);z-index:300;animation:fadeUp .22s ease}
+.cart-fab-count{background:rgba(255,255,255,.25);padding:2px 10px;border-radius:100px;font-size:13px}
+/* Photo viewer */
+.photo-viewer-ov{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:center;justify-content:center;animation:fadeIn .18s ease}
+.photo-viewer-ov img{max-width:100%;max-height:90vh;border-radius:10px;object-fit:contain}
+.photo-viewer-close{position:absolute;top:16px;right:16px;font-size:28px;color:#fff;cursor:pointer;width:40px;height:40px;display:flex;align-items:center;justify-content:center}
+/* Checkout & tracking sheets */
+.food-sheet-ov{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:8000;display:flex;align-items:flex-end;justify-content:center;animation:fadeIn .18s ease}
+.food-sheet{background:var(--white);border-radius:var(--rl) var(--rl) 0 0;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom,16px);animation:fadeUp .22s ease}
+.food-sheet-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 12px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--white);z-index:1}
+.food-sheet-title{font-weight:800;font-size:17px;color:var(--ink)}
+.food-sheet-close{width:32px;height:32px;border-radius:50%;background:var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:17px;border:none;font-family:var(--fb);color:var(--muted2)}
+.food-sheet-body{padding:16px 18px}
+/* Order tracking timeline */
+.track-step{display:flex;gap:12px;align-items:flex-start;padding-bottom:20px;position:relative}
+.track-step:not(:last-child)::before{content:'';position:absolute;left:14px;top:28px;width:2px;bottom:0;background:var(--border2)}
+.track-dot{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;z-index:1}
+.track-dot.done{background:var(--green);color:#fff}
+.track-dot.active{background:var(--orange);color:#fff;box-shadow:0 0 0 4px rgba(255,106,0,.2)}
+.track-dot.pending{background:var(--border2);color:var(--muted)}
+.track-info{flex:1;padding-top:4px}
+.track-label{font-weight:700;font-size:14px;color:var(--ink)}
+.track-sub{font-size:12px;color:var(--muted);margin-top:2px}
+/* Schedule toggle */
+.sched-toggle{display:flex;gap:8px;margin-bottom:14px}
+.sched-opt{flex:1;padding:10px;border-radius:var(--r);border:2px solid var(--border);text-align:center;cursor:pointer;font-size:13px;font-weight:700;color:var(--muted2);transition:all .15s}
+.sched-opt.active{border-color:var(--orange);background:rgba(255,106,0,.06);color:var(--orange)}
 .gv-item:last-child{border-bottom:none}
 .gv-item-info{flex:1;min-width:0}
 .gv-item-name{font-weight:700;font-size:15px;color:var(--ink);margin-bottom:3px;line-height:1.3}
@@ -4015,6 +4050,7 @@ async function renderDashboard() {
           <button class="btn btn-outline btn-sm" onclick="navigate('/seller/' + currentUser.id)">🏪 My Store</button>
           <button class="btn btn-outline btn-sm" onclick="navigate('/setup-store')">⚙️ Edit Store</button>
           <button class="btn btn-outline btn-sm" onclick="navigate('/orders')">My Orders</button>
+          <button class="btn btn-outline btn-sm" onclick="renderSellerFoodOrders()">🍽️ Food Orders</button>
           <button class="btn btn-outline btn-sm" onclick="navigate('/gigs')">Browse Gigs</button>
           <button class="btn btn-outline btn-sm" onclick="navigate('/resources')">Resources</button>
         </div>
@@ -8352,6 +8388,530 @@ window.foodCatFilter = function(el, val) {
   renderFoodStoreCards(filtered.length ? filtered : (window._foodStores||[]));
 };
 
+// ══════════════════════════════════════════════════════════════
+// FOOD CART + CHECKOUT + ORDERING + TRACKING
+// ══════════════════════════════════════════════════════════════
+
+// ── Photo Viewer ──────────────────────────────────────────────
+window.viewPhoto = function(src, caption) {
+  const ov = document.createElement('div');
+  ov.className = 'photo-viewer-ov';
+  ov.innerHTML = `
+    <div class="photo-viewer-close" onclick="this.parentElement.remove()">✕</div>
+    <div style="text-align:center;padding:0 16px">
+      <img src="${src}" alt="${caption}" style="max-width:100%;max-height:80vh;border-radius:10px">
+      ${caption?`<div style="color:rgba(255,255,255,.8);font-size:13px;font-weight:600;margin-top:10px">${caption}</div>`:''}
+    </div>`;
+  ov.onclick = (e) => { if (e.target === ov) ov.remove(); };
+  document.body.appendChild(ov);
+};
+
+// ── Cart Logic ────────────────────────────────────────────────
+window.toggleCartRow = function(ikey) {
+  const row  = document.getElementById('gvQtyRow_' + ikey);
+  const plus = document.getElementById('gvAdd_' + ikey);
+  if (!row) return;
+  const showing = row.style.display !== 'none';
+  row.style.display  = showing ? 'none' : 'flex';
+  if (plus) plus.style.display = showing ? 'flex' : 'none';
+};
+
+window.cartQty = function(ikey, delta) {
+  const el = document.getElementById('gvQty_' + ikey);
+  if (!el) return;
+  let q = parseInt(el.textContent) + delta;
+  if (q < 1) q = 1;
+  el.textContent = q;
+};
+
+window.cartAdd = function(ikey) {
+  const qEl = document.getElementById('gvQty_' + ikey);
+  const qty  = qEl ? parseInt(qEl.textContent) : 1;
+
+  // Parse item from menu data using ikey = "ci_ii"
+  const [ci, ii] = ikey.split('_').map(Number);
+  const item = window._foodMenuData?.[ci]?.items?.[ii];
+  if (!item) return;
+
+  window._foodCart = window._foodCart || {};
+  if (window._foodCart[ikey]) {
+    window._foodCart[ikey].quantity += qty;
+  } else {
+    window._foodCart[ikey] = { ...item, quantity: qty, ikey };
+  }
+  toggleCartRow(ikey);
+  renderCartFab();
+  showToast(`${item.name} added to cart 🛒`);
+};
+
+function renderCartFab() {
+  const existing = document.getElementById('cartFab');
+  const cart  = window._foodCart || {};
+  const items = Object.values(cart);
+  const total = items.reduce((s, it) => s + it.price * it.quantity, 0);
+  const count = items.reduce((s, it) => s + it.quantity, 0);
+
+  if (!count) { if (existing) existing.remove(); return; }
+
+  if (!existing) {
+    const fab = document.createElement('div');
+    fab.id        = 'cartFab';
+    fab.className = 'cart-fab';
+    fab.onclick   = openCheckout;
+    document.body.appendChild(fab);
+  }
+  document.getElementById('cartFab').innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px">
+      <span class="cart-fab-count">${count}</span>
+      <span>View Cart</span>
+    </div>
+    <span>UGX ${total.toLocaleString()} →</span>`;
+}
+
+// ── Checkout Sheet ────────────────────────────────────────────
+window.openCheckout = function() {
+  if (!currentUser) { openAuth(); return; }
+  const cart   = window._foodCart || {};
+  const items  = Object.values(cart);
+  if (!items.length) return;
+  const total  = items.reduce((s, it) => s + it.price * it.quantity, 0);
+
+  const ov = document.createElement('div');
+  ov.className = 'food-sheet-ov';
+  ov.id = 'checkoutOv';
+  ov.innerHTML = `
+    <div class="food-sheet">
+      <div class="food-sheet-head">
+        <div class="food-sheet-title">🛒 Your Order</div>
+        <button class="food-sheet-close" onclick="document.getElementById('checkoutOv').remove()">✕</button>
+      </div>
+      <div class="food-sheet-body">
+
+        <!-- Order summary -->
+        <div style="margin-bottom:14px">
+          ${items.map(it => `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border2)">
+              <div>
+                <div style="font-weight:700;font-size:14px">${it.name}</div>
+                <div style="font-size:12px;color:var(--muted)">x${it.quantity}</div>
+              </div>
+              <div style="font-weight:700;font-size:14px">UGX ${(it.price*it.quantity).toLocaleString()}</div>
+            </div>`).join('')}
+          <div style="display:flex;justify-content:space-between;padding:10px 0;font-weight:800;font-size:16px">
+            <span>Total</span><span style="color:var(--orange)">UGX ${total.toLocaleString()}</span>
+          </div>
+        </div>
+
+        <!-- Schedule -->
+        <div style="font-weight:700;font-size:13px;margin-bottom:8px">When do you want it?</div>
+        <div class="sched-toggle">
+          <div class="sched-opt active" id="schedASAP" onclick="setSchedule('asap')">⚡ ASAP</div>
+          <div class="sched-opt" id="schedLater" onclick="setSchedule('later')">🕐 Schedule</div>
+        </div>
+        <div id="schedTimeRow" style="display:none;margin-bottom:14px">
+          <input type="datetime-local" id="schedInput"
+            style="width:100%;border:1.5px solid var(--border);border-radius:var(--r);padding:9px 12px;font-size:14px;font-family:var(--fb)">
+        </div>
+
+        <!-- Delivery location -->
+        <div style="font-weight:700;font-size:13px;margin-bottom:8px">📍 Delivery Location</div>
+        <div id="checkoutMapBox" style="height:200px;border-radius:var(--rm);border:1.5px solid var(--border);overflow:hidden;margin-bottom:8px"></div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Tap the map to set your delivery pin</div>
+        <input id="delivNote" placeholder="Delivery note (gate number, landmark…)"
+          style="width:100%;border:1.5px solid var(--border);border-radius:var(--r);padding:9px 12px;
+                 font-size:13px;font-family:var(--fb);margin-bottom:16px">
+
+        <!-- Place order -->
+        <button onclick="placeOrder()"
+          style="width:100%;padding:15px;border-radius:100px;background:var(--orange);color:#fff;
+                 font-size:15px;font-weight:800;border:none;cursor:pointer;font-family:var(--fb);
+                 box-shadow:var(--sho)">
+          🛵 Place Order — UGX ${total.toLocaleString()}
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+
+  // Init Leaflet map for delivery pin
+  setTimeout(() => {
+    const map = L.map('checkoutMapBox').setView([0.3476, 32.5825], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    let pin = null;
+    window._deliveryPin = null;
+    map.on('click', (e) => {
+      if (pin) map.removeLayer(pin);
+      pin = L.marker(e.latlng).addTo(map);
+      window._deliveryPin = { lat: e.latlng.lat, lng: e.latlng.lng };
+    });
+    // Try get user GPS
+    navigator.geolocation?.getCurrentPosition(pos => {
+      map.setView([pos.coords.latitude, pos.coords.longitude], 15);
+    });
+  }, 100);
+};
+
+window.setSchedule = function(mode) {
+  const asap  = document.getElementById('schedASAP');
+  const later = document.getElementById('schedLater');
+  const row   = document.getElementById('schedTimeRow');
+  if (mode === 'asap') {
+    asap.className  = 'sched-opt active';
+    later.className = 'sched-opt';
+    row.style.display = 'none';
+    window._schedMode = 'asap';
+  } else {
+    later.className = 'sched-opt active';
+    asap.className  = 'sched-opt';
+    row.style.display = 'block';
+    window._schedMode = 'later';
+  }
+};
+window._schedMode = 'asap';
+
+window.placeOrder = async function() {
+  if (!window._deliveryPin) { showToast('Please tap the map to set your delivery location'); return; }
+  const cart  = window._foodCart || {};
+  const items = Object.values(cart).map(it => ({
+    name: it.name, price: it.price, quantity: it.quantity, photo: it.photo || null,
+  }));
+  if (!items.length) return;
+
+  const schedTime = window._schedMode === 'later'
+    ? document.getElementById('schedInput')?.value || null
+    : null;
+  const note = document.getElementById('delivNote')?.value || '';
+
+  const btn = document.querySelector('#checkoutOv button[onclick="placeOrder()"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Placing order…'; }
+
+  try {
+    const res = await fetch(`${API}/food-orders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+      body: JSON.stringify({
+        seller_id: window._foodSellerId,
+        items,
+        delivery_location: window._deliveryPin,
+        delivery_note: note,
+        schedule_time: schedTime,
+      }),
+    });
+    const d = await res.json();
+    if (!res.ok || !d.success) throw new Error(d.error || 'Order failed');
+
+    // Clear cart
+    window._foodCart = {};
+    document.getElementById('cartFab')?.remove();
+    document.getElementById('checkoutOv')?.remove();
+
+    // Show confirmation
+    showOrderConfirmation(d.order);
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = '🛵 Place Order'; }
+    showToast('Error: ' + e.message, 3500);
+  }
+};
+
+// ── Order Placed Confirmation ─────────────────────────────────
+function showOrderConfirmation(order) {
+  const app = document.getElementById('app');
+  const isASAP = order.is_asap;
+  app.innerHTML = `
+    <div style="min-height:100vh;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center">
+      <div style="font-size:72px;margin-bottom:16px">🎉</div>
+      <div style="font-family:var(--fd);font-size:26px;font-weight:900;color:var(--ink);margin-bottom:8px">Order Placed!</div>
+      <div style="font-size:15px;color:var(--muted);margin-bottom:32px;line-height:1.5">
+        ${isASAP
+          ? 'The restaurant has been notified and will prepare your order as soon as possible.'
+          : `Your order is scheduled for <strong>${order.schedule_time}</strong>. The restaurant will confirm shortly.`}
+      </div>
+
+      <!-- Timeline -->
+      <div style="width:100%;max-width:360px;text-align:left;margin-bottom:32px">
+        <div class="track-step">
+          <div class="track-dot done">✓</div>
+          <div class="track-info"><div class="track-label">Order Placed</div><div class="track-sub">Waiting for restaurant to accept</div></div>
+        </div>
+        <div class="track-step">
+          <div class="track-dot pending">2</div>
+          <div class="track-info"><div class="track-label">Accepted & Preparing</div><div class="track-sub">Restaurant confirms and cooks</div></div>
+        </div>
+        <div class="track-step">
+          <div class="track-dot pending">3</div>
+          <div class="track-info"><div class="track-label">Out for Delivery</div><div class="track-sub">Rider is on the way</div></div>
+        </div>
+        <div class="track-step">
+          <div class="track-dot pending">4</div>
+          <div class="track-info"><div class="track-label">Delivered 🎉</div><div class="track-sub">Enjoy your meal!</div></div>
+        </div>
+      </div>
+
+      <button onclick="trackFoodOrder('${order.id}')"
+        style="width:100%;padding:14px;border-radius:100px;background:var(--orange);color:#fff;
+               font-size:15px;font-weight:800;border:none;cursor:pointer;font-family:var(--fb);
+               box-shadow:var(--sho);margin-bottom:12px">
+        📍 Track My Order
+      </button>
+      <button onclick="renderExpressFood()"
+        style="width:100%;padding:13px;border-radius:100px;background:var(--border2);color:var(--ink2);
+               font-size:14px;font-weight:700;border:none;cursor:pointer;font-family:var(--fb)">
+        ← Back to Restaurants
+      </button>
+    </div>`;
+}
+
+// ── Order Tracking ────────────────────────────────────────────
+window.trackFoodOrder = async function(orderId) {
+  const app = document.getElementById('app');
+  app.innerHTML = `<div style="padding:60px;text-align:center"><div class="spinner"></div></div>`;
+  try {
+    const res = await fetch(`${API}/food-orders/${orderId}`, {
+      headers: { Authorization: 'Bearer ' + getToken() }
+    });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.error || 'Not found');
+    const order = d.order;
+    renderOrderTracking(order);
+  } catch(e) {
+    app.innerHTML = `<div class="empty-state"><div class="empty-icon">❌</div>
+      <div class="empty-title">${e.message}</div>
+      <button class="btn btn-orange" onclick="renderExpressFood()">← Back</button></div>`;
+  }
+};
+
+function renderOrderTracking(order) {
+  const app = document.getElementById('app');
+  const steps = [
+    { key: 'food_placed',           label: 'Order Placed',        sub: 'Waiting for restaurant',     icon: '📋' },
+    { key: 'food_accepted',         label: 'Accepted & Preparing', sub: 'Restaurant is cooking',     icon: '👨‍🍳' },
+    { key: 'food_out_for_delivery', label: 'Out for Delivery',    sub: 'Rider is on the way',        icon: '🛵' },
+    { key: 'food_delivered',        label: 'Delivered!',          sub: 'Enjoy your meal',            icon: '🎉' },
+  ];
+  const statusOrder = steps.map(s => s.key);
+  const curIdx = statusOrder.indexOf(order.status);
+
+  const total = (order.items||[]).reduce((s, it) => s + it.price * (it.quantity||1), 0);
+  const isOutForDelivery = order.status === 'food_out_for_delivery';
+  const isRejected = order.status === 'food_rejected';
+  const isCancelled = order.status === 'cancelled';
+
+  app.innerHTML = `
+    <div onclick="trackFoodOrder('${order.id}')"
+      style="display:flex;align-items:center;gap:8px;padding:12px 14px;background:var(--white);
+             border-bottom:1px solid var(--border);cursor:pointer;position:sticky;top:0;z-index:200">
+      <span style="font-size:20px;color:var(--muted)">←</span>
+      <span style="font-weight:700;font-size:13px;color:var(--ink2)">Refresh</span>
+      <span style="font-weight:800;font-size:14px;color:var(--ink);margin-left:auto">Order #${order.id.slice(-6).toUpperCase()}</span>
+    </div>
+
+    <div style="padding:16px 16px 100px">
+
+      ${(isRejected||isCancelled) ? `
+        <div style="text-align:center;padding:24px 0">
+          <div style="font-size:48px;margin-bottom:12px">${isRejected?'😔':'❌'}</div>
+          <div style="font-weight:800;font-size:18px;color:var(--ink);margin-bottom:6px">
+            ${isRejected?'Order Rejected':'Order Cancelled'}
+          </div>
+          <div style="font-size:13px;color:var(--muted)">
+            ${(order.activities||[]).slice(-1)[0]?.message || 'Sorry, this order could not be fulfilled.'}
+          </div>
+        </div>` : `
+        <!-- Status timeline -->
+        <div style="font-weight:800;font-size:16px;margin-bottom:16px">Order Status</div>
+        ${steps.map((step, i) => {
+          const isDone   = i < curIdx;
+          const isActive = i === curIdx;
+          return `
+          <div class="track-step">
+            <div class="track-dot ${isDone?'done':isActive?'active':'pending'}">${isDone?'✓':step.icon}</div>
+            <div class="track-info">
+              <div class="track-label" style="color:${isActive?'var(--orange)':'var(--ink)'}">${step.label}</div>
+              <div class="track-sub">${isActive&&order.eta_minutes?`ETA: ${order.eta_minutes} min`:step.sub}</div>
+            </div>
+          </div>`;
+        }).join('')}
+
+        ${order.schedule_time && order.status==='food_placed' ? `
+          <div style="background:rgba(255,106,0,.06);border:1px solid var(--orange);border-radius:var(--r);
+                      padding:10px 14px;margin-top:4px;margin-bottom:16px;font-size:13px;color:var(--orange);font-weight:700">
+            🕐 Scheduled for: ${order.schedule_time}
+          </div>` : ''}
+
+        ${isOutForDelivery ? `
+          <div style="margin:16px 0;font-weight:700;font-size:14px">📍 Rider Location</div>
+          <div id="trackMapBox" style="height:220px;border-radius:var(--rm);border:1px solid var(--border);overflow:hidden;margin-bottom:16px"></div>` : ''}
+      `}
+
+      <!-- Order summary -->
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--rm);padding:14px;margin-top:16px">
+        <div style="font-weight:800;font-size:14px;margin-bottom:10px">Your Items</div>
+        ${(order.items||[]).map(it => `
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0">
+            <span>${it.name} x${it.quantity||1}</span>
+            <span style="font-weight:700">UGX ${(it.price*(it.quantity||1)).toLocaleString()}</span>
+          </div>`).join('')}
+        <div style="display:flex;justify-content:space-between;font-weight:800;font-size:15px;
+                    border-top:1px solid var(--border2);margin-top:8px;padding-top:8px">
+          <span>Total</span><span style="color:var(--orange)">UGX ${total.toLocaleString()}</span>
+        </div>
+        ${order.delivery_note?`<div style="font-size:12px;color:var(--muted);margin-top:6px">📝 ${order.delivery_note}</div>`:''}
+      </div>
+
+      ${order.status==='food_delivered' ? `
+        <button onclick="confirmDelivery('${order.id}')"
+          style="width:100%;padding:14px;border-radius:100px;background:var(--green);color:#fff;
+                 font-size:15px;font-weight:800;border:none;cursor:pointer;font-family:var(--fb);
+                 box-shadow:var(--sho);margin-top:16px">✓ Confirm Received</button>` : ''}
+    </div>`;
+
+  // Show rider map if out for delivery
+  if (isOutForDelivery) {
+    setTimeout(() => {
+      const delivLat = order.delivery_location?.lat || 0.3476;
+      const delivLng = order.delivery_location?.lng || 32.5825;
+      const map = L.map('trackMapBox').setView([delivLat, delivLng], 14);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+      // Delivery pin
+      L.marker([delivLat, delivLng], { icon: L.divIcon({
+        html:'<div style="font-size:24px">📍</div>', iconSize:[30,30], className:''
+      })}).addTo(map).bindPopup('Your location');
+      // Rider pin if available
+      if (order.rider_location?.lat) {
+        L.marker([order.rider_location.lat, order.rider_location.lng], { icon: L.divIcon({
+          html:'<div style="font-size:24px">🛵</div>', iconSize:[30,30], className:''
+        })}).addTo(map).bindPopup('Rider');
+      }
+    }, 100);
+  }
+
+  // Auto-refresh every 20 seconds while active
+  if (!isCancelled && !isRejected && order.status !== 'food_delivered' && order.status !== 'completed') {
+    clearTimeout(window._trackTimer);
+    window._trackTimer = setTimeout(() => trackFoodOrder(order.id), 20000);
+  }
+}
+
+window.confirmDelivery = async function(orderId) {
+  try {
+    await fetch(`${API}/food-orders/${orderId}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+      body: JSON.stringify({ status: 'completed', message: 'Buyer confirmed delivery' }),
+    });
+    showToast('Order completed! Thank you 🎉');
+    trackFoodOrder(orderId);
+  } catch(e) { showToast('Error: ' + e.message); }
+};
+
+// ── Seller: Incoming Food Orders Dashboard ────────────────────
+window.renderSellerFoodOrders = async function() {
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;padding:12px 14px;background:var(--white);
+                border-bottom:1px solid var(--border);position:sticky;top:0;z-index:200">
+      <button onclick="navigate('/dashboard')"
+        style="background:var(--border2);border:none;padding:6px 12px;border-radius:100px;
+               font-weight:700;font-size:13px;cursor:pointer;font-family:var(--fb)">← Dashboard</button>
+      <span style="font-weight:800;font-size:16px;margin-left:4px">🍽️ Food Orders</span>
+    </div>
+    <div id="sellerOrdersList" style="padding:14px 14px 80px"><div class="spinner"></div></div>`;
+
+  try {
+    const res = await fetch(`${API}/food-orders?role=seller`, {
+      headers: { Authorization: 'Bearer ' + getToken() }
+    });
+    const d = await res.json();
+    const orders = (d.orders || []);
+    const el = document.getElementById('sellerOrdersList');
+    if (!orders.length) {
+      el.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div>
+        <div class="empty-title">No food orders yet</div>
+        <div class="empty-sub">When customers order from your menu, they'll appear here.</div></div>`;
+      return;
+    }
+    el.innerHTML = orders.map(o => {
+      const total = (o.items||[]).reduce((s,it)=>s+it.price*(it.quantity||1),0);
+      const statusColors = {
+        food_placed:'#f59e0b', food_accepted:'#0dab5b',
+        food_out_for_delivery:'#3b82f6', food_delivered:'#8b5cf6',
+        completed:'var(--muted)', cancelled:'var(--red)', food_rejected:'var(--red)',
+      };
+      const statusLabels = {
+        food_placed:'New Order 🔔', food_accepted:'Accepted ✓',
+        food_out_for_delivery:'Out for Delivery 🛵', food_delivered:'Delivered ✓',
+        completed:'Completed', cancelled:'Cancelled', food_rejected:'Rejected',
+      };
+      const actions = {
+        food_placed: `
+          <button onclick="sellerUpdateOrder('${o.id}','food_accepted')"
+            style="flex:1;padding:10px;border-radius:100px;background:var(--green);color:#fff;
+                   font-weight:800;font-size:13px;border:none;cursor:pointer;font-family:var(--fb)">✓ Accept</button>
+          <button onclick="sellerRejectOrder('${o.id}')"
+            style="flex:1;padding:10px;border-radius:100px;background:var(--red);color:#fff;
+                   font-weight:800;font-size:13px;border:none;cursor:pointer;font-family:var(--fb)">✕ Reject</button>`,
+        food_accepted: `
+          <button onclick="sellerStartDelivery('${o.id}')"
+            style="width:100%;padding:10px;border-radius:100px;background:var(--orange);color:#fff;
+                   font-weight:800;font-size:13px;border:none;cursor:pointer;font-family:var(--fb)">🛵 Start Delivery</button>`,
+        food_out_for_delivery: `
+          <button onclick="sellerUpdateOrder('${o.id}','food_delivered')"
+            style="width:100%;padding:10px;border-radius:100px;background:var(--green);color:#fff;
+                   font-weight:800;font-size:13px;border:none;cursor:pointer;font-family:var(--fb)">✓ Mark Delivered</button>`,
+      };
+      return `
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--rm);
+                  margin-bottom:14px;overflow:hidden">
+        <div style="padding:12px 14px;border-bottom:1px solid var(--border2)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="font-weight:800;font-size:14px">Order #${o.id.slice(-6).toUpperCase()}</span>
+            <span style="font-size:11px;font-weight:800;padding:3px 10px;border-radius:100px;
+                         background:${statusColors[o.status]||'#888'}20;color:${statusColors[o.status]||'#888'}">
+              ${statusLabels[o.status]||o.status}
+            </span>
+          </div>
+          ${(o.items||[]).map(it=>`
+            <div style="font-size:13px;color:var(--muted)">${it.name} x${it.quantity||1}</div>`).join('')}
+          <div style="font-weight:800;color:var(--orange);font-size:15px;margin-top:6px">
+            UGX ${total.toLocaleString()}
+          </div>
+          ${o.delivery_note?`<div style="font-size:12px;color:var(--muted);margin-top:4px">📝 ${o.delivery_note}</div>`:''}
+          ${o.schedule_time?`<div style="font-size:12px;color:var(--orange);font-weight:700;margin-top:4px">🕐 Scheduled: ${o.schedule_time}</div>`:''}
+          ${o.is_asap?`<div style="font-size:12px;color:var(--green);font-weight:700;margin-top:4px">⚡ ASAP</div>`:''}
+        </div>
+        ${actions[o.status] ? `
+          <div style="padding:10px 14px;display:flex;gap:8px">${actions[o.status]}</div>` : ''}
+      </div>`;
+    }).join('');
+  } catch(e) {
+    document.getElementById('sellerOrdersList').innerHTML =
+      `<div class="empty-state"><div class="empty-title">Error: ${e.message}</div></div>`;
+  }
+};
+
+window.sellerUpdateOrder = async function(orderId, status, extra={}) {
+  try {
+    const res = await fetch(`${API}/food-orders/${orderId}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+      body: JSON.stringify({ status, ...extra }),
+    });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.error);
+    showToast('Updated ✓');
+    renderSellerFoodOrders();
+  } catch(e) { showToast('Error: ' + e.message); }
+};
+
+window.sellerRejectOrder = function(orderId) {
+  const reason = prompt('Reason for rejection (shown to customer):') || 'Unable to fulfil at this time';
+  sellerUpdateOrder(orderId, 'food_rejected', { message: reason });
+};
+
+window.sellerStartDelivery = function(orderId) {
+  const eta = prompt('ETA in minutes (e.g. 30):') || '30';
+  sellerUpdateOrder(orderId, 'food_out_for_delivery', { eta_minutes: parseInt(eta) });
+};
+
 // ── Food Store Detail — Glovo-style menu page ────────────────
 window.renderFoodStoreDetail = async function(sellerId) {
   const app = document.getElementById('app');
@@ -8377,6 +8937,10 @@ window.renderFoodStoreDetail = async function(sellerId) {
       </div>`
     ).join('') : '';
 
+    // Cart state for this store session
+    window._foodCart = window._foodCart || {};
+    window._foodCartSeller = sellerId;
+
     // Menu sections
     const sections = menuData.map((cat, ci) => {
       const items = cat.items || [];
@@ -8387,22 +8951,38 @@ window.renderFoodStoreDetail = async function(sellerId) {
         </div>
         ${!items.length
           ? `<div style="padding:14px 16px;font-size:13px;color:var(--muted)">No items in this category yet.</div>`
-          : items.map(item => `
-            <div class="gv-item" style="${item.available===false?'opacity:.45':''}">
+          : items.map((item, ii) => {
+              const ikey = ci+'_'+ii;
+              return `
+            <div class="gv-item" style="${item.available===false?'opacity:.45':''}" id="gvItem_${ikey}">
               <div class="gv-item-info">
                 <div class="gv-item-name">${item.name}</div>
                 ${item.description?`<div class="gv-item-desc">${item.description}</div>`:''}
                 <div class="gv-item-price">UGX ${parseInt(item.price||0).toLocaleString()}</div>
+                ${item.available!==false?`
+                <div class="gv-qty-row" id="gvQtyRow_${ikey}" style="display:none">
+                  <div class="gv-qty-btn" onclick="cartQty('${ikey}',-1)">−</div>
+                  <div class="gv-qty-num" id="gvQty_${ikey}">1</div>
+                  <div class="gv-qty-btn" onclick="cartQty('${ikey}',1)">+</div>
+                  <button class="gv-add-btn" onclick="cartAdd('${ikey}')">Add 🛒</button>
+                </div>`:''}
               </div>
               ${item.photo
-                ?`<img class="gv-item-photo" src="${item.photo}" alt="${item.name}" loading="lazy">`
+                ?`<img class="gv-item-photo" src="${item.photo}" alt="${(item.name||'').replace(/"/g,'&quot;')}" loading="lazy"
+                    onclick="viewPhoto('${item.photo}','${(item.name||'').replace(/'/g,'&#39;')}')">`
                 :`<div class="gv-item-photo-ph">🍽️</div>`}
               ${item.available===false
                 ?`<div class="gv-unavail-badge">Unavailable</div>`
-                :`<div class="gv-item-add">+</div>`}
-            </div>`).join('')}
+                :`<div class="gv-item-add" id="gvAdd_${ikey}" onclick="toggleCartRow('${ikey}')">+</div>`}
+            </div>`;
+            }).join('')}
       </div>`;
     }).join('');
+
+    // Store menu data on window for cart access
+    window._foodMenuData = menuData;
+    window._foodStoreName = name;
+    window._foodSellerId  = s.id;
 
     app.innerHTML = `
       <!-- Back -->
@@ -8440,7 +9020,7 @@ window.renderFoodStoreDetail = async function(sellerId) {
 
       ${hasMenu ? `
         <div class="gv-cats">${tabs}</div>
-        <div style="padding-bottom:80px">${sections}</div>
+        <div style="padding-bottom:140px">${sections}</div>
       ` : `
         <div class="empty-state" style="padding:50px 24px">
           <div class="empty-icon">🍽️</div>
