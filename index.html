@@ -5506,7 +5506,7 @@ window.openMIM = (ci, ii) => {
                  <div style="font-size:13px;color:var(--muted);font-weight:600">Tap to add a food photo</div>
                  <div style="font-size:11px;color:var(--muted2)">Great photos increase orders by 3×</div>
                </div>`}
-          <div class="mim-photo-spin" id="mimSpin">Uploading…</div>
+          <div class="mim-photo-spin" id="mimSpin" style="display:none">Uploading…</div>
           <input type="file" id="mimFileIn" accept="image/*" style="display:none">
         </div>
         <!-- Name -->
@@ -8515,8 +8515,14 @@ window.openCheckout = function() {
 
         <!-- Delivery location -->
         <div style="font-weight:700;font-size:13px;margin-bottom:8px">📍 Delivery Location</div>
-        <div id="checkoutMapBox" style="height:200px;border-radius:var(--rm);border:1.5px solid var(--border);overflow:hidden;margin-bottom:8px"></div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Tap the map to set your delivery pin</div>
+        <button onclick="useMyLocationCheckout()"
+          style="width:100%;padding:9px;border-radius:100px;border:1.5px solid var(--green);
+                 color:var(--green);background:var(--green-light);font-weight:700;font-size:13px;
+                 cursor:pointer;font-family:var(--fb);margin-bottom:8px">
+          🎯 Use My Current Location
+        </button>
+        <div id="checkoutMapBox" style="height:220px;border-radius:var(--rm);border:1.5px solid var(--border);overflow:hidden;margin-bottom:8px"></div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Or tap the map to set your delivery pin</div>
         <input id="delivNote" placeholder="Delivery note (gate number, landmark…)"
           style="width:100%;border:1.5px solid var(--border);border-radius:var(--r);padding:9px 12px;
                  font-size:13px;font-family:var(--fb);margin-bottom:16px">
@@ -8533,21 +8539,66 @@ window.openCheckout = function() {
   document.body.appendChild(ov);
 
   // Init Leaflet map for delivery pin
-  setTimeout(() => {
-    const map = L.map('checkoutMapBox').setView([0.3476, 32.5825], 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-    let pin = null;
+  const initCheckoutMap = () => {
+    const mapEl = document.getElementById('checkoutMapBox');
+    if (!mapEl || window._checkoutMap) return;
+    const defaultLat = 0.3476, defaultLng = 32.5825;
+    const map = L.map('checkoutMapBox').setView([defaultLat, defaultLng], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+    window._checkoutMap = map;
+    window._checkoutPin = null;
     window._deliveryPin = null;
-    map.on('click', (e) => {
-      if (pin) map.removeLayer(pin);
-      pin = L.marker(e.latlng).addTo(map);
-      window._deliveryPin = { lat: e.latlng.lat, lng: e.latlng.lng };
-    });
-    // Try get user GPS
+
+    const setPin = (latlng) => {
+      if (window._checkoutPin) map.removeLayer(window._checkoutPin);
+      window._checkoutPin = L.marker(latlng).addTo(map);
+      window._deliveryPin = { lat: latlng.lat, lng: latlng.lng };
+    };
+
+    map.on('click', (e) => setPin(e.latlng));
+
+    // Auto-locate on open
     navigator.geolocation?.getCurrentPosition(pos => {
-      map.setView([pos.coords.latitude, pos.coords.longitude], 15);
-    });
-  }, 100);
+      const latlng = L.latLng(pos.coords.latitude, pos.coords.longitude);
+      map.setView(latlng, 15);
+      setPin(latlng);
+    }, () => {});
+
+    window.useMyLocationCheckout = () => {
+      showToast('Getting your location…');
+      navigator.geolocation.getCurrentPosition(pos => {
+        const latlng = L.latLng(pos.coords.latitude, pos.coords.longitude);
+        map.setView(latlng, 16);
+        setPin(latlng);
+        showToast('Location set ✓');
+      }, () => showToast('Could not get location. Tap the map instead.'));
+    };
+  };
+
+  // Load Leaflet if not already loaded, then init map
+  if (window.L) {
+    setTimeout(initCheckoutMap, 80);
+  } else {
+    if (!document.getElementById('leafletCssChk')) {
+      const lnk = document.createElement('link');
+      lnk.id = 'leafletCssChk'; lnk.rel = 'stylesheet';
+      lnk.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(lnk);
+    }
+    const scr = document.createElement('script');
+    scr.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    scr.onload = () => setTimeout(initCheckoutMap, 80);
+    document.head.appendChild(scr);
+  }
+
+  // Clean up map instance when sheet closes
+  const origClose = document.getElementById('checkoutOv')?.querySelector('.food-sheet-close');
+  if (origClose) {
+    const oldOnclick = origClose.onclick;
+    origClose.onclick = () => { window._checkoutMap = null; window._checkoutPin = null; if (oldOnclick) oldOnclick(); };
+  }
 };
 
 window.setSchedule = function(mode) {
@@ -8567,6 +8618,7 @@ window.setSchedule = function(mode) {
   }
 };
 window._schedMode = 'asap';
+window.useMyLocationCheckout = () => showToast('Map still loading, please wait…');
 
 window.placeOrder = async function() {
   if (!window._deliveryPin) { showToast('Please tap the map to set your delivery location'); return; }
@@ -8877,7 +8929,14 @@ window.renderSellerFoodOrders = async function() {
           ${o.delivery_note?`<div style="font-size:12px;color:var(--muted);margin-top:4px">📝 ${o.delivery_note}</div>`:''}
           ${o.schedule_time?`<div style="font-size:12px;color:var(--orange);font-weight:700;margin-top:4px">🕐 Scheduled: ${o.schedule_time}</div>`:''}
           ${o.is_asap?`<div style="font-size:12px;color:var(--green);font-weight:700;margin-top:4px">⚡ ASAP</div>`:''}
-        </div>
+          ${o.delivery_location?.lat ? `
+            <a href="https://www.google.com/maps/dir/?api=1&destination=${o.delivery_location.lat},${o.delivery_location.lng}"
+              target="_blank"
+              style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:6px 14px;
+                     border-radius:100px;background:#e8f5e9;color:#1a6e34;font-size:12px;font-weight:700;
+                     text-decoration:none;border:1px solid #1a6e3440">
+              🗺️ Get Directions
+            </a>` : ''}        </div>
         ${actions[o.status] ? `
           <div style="padding:10px 14px;display:flex;gap:8px">${actions[o.status]}</div>` : ''}
       </div>`;
