@@ -8690,17 +8690,7 @@ window.placeOrder = async function() {
   if (!window._foodSellerId) { showToast('⚠️ Cannot identify restaurant — please go back and reopen the store', 5000); return; }
 
 
-  // Pre-check: verify token is valid before trying to place order
-  const tok = getToken();
-  if (!tok) { showToast('⚠️ Please log in to place an order'); requireAuth(() => {}); return; }
-  const authChk = await fetch(`${API}/me`, { headers: { Authorization: 'Bearer ' + tok } }).catch(() => null);
-  if (!authChk || !authChk.ok) {
-    clearToken();
-    showToast('⚠️ Your session expired — please log in again');
-    requireAuth(() => {});
-    return;
-  }
-  // Check if user is trying to order from their own store
+    // Check if user is trying to order from their own store
   if (currentUser && window._foodSellerId && window._foodSellerId === currentUser.sub) {
     showToast('⚠️ You cannot order from your own store', 5000);
     return;
