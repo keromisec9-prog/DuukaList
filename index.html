@@ -4301,7 +4301,7 @@ function renderStorefrontSectorInfo(s) {
                 <div class="gv-item-price">UGX ${parseInt(item.price||0).toLocaleString()}</div>
               </div>
               ${item.photo
-                ?`<img class="gv-item-photo" src="${item.photo}" alt="${item.name}" loading="lazy">`
+                ?`<img class="gv-item-photo" src="${item.photo}" alt="${item.name}" loading="lazy" style="cursor:zoom-in" onclick="viewPhoto(this.src,item.name||'')">`
                 :`<div class="gv-item-photo-ph">🍽️</div>`}
               ${item.available===false
                 ?`<div class="gv-unavail-badge">Unavail.</div>`
@@ -5822,37 +5822,42 @@ async function saveStore() {
   let bannerImgUrl = currentUser?.banner_image || null;
 
   try {
-    if (_cbProfileFile) {
-      btn.textContent = 'Optimising profile photo…';
-      _cbProfileFile = await compressImage(_cbProfileFile, 400, 0.88);
-      btn.textContent = 'Uploading profile photo…';
-      const fd = new FormData();
-      fd.append('file', _cbProfileFile, _cbProfileFile.name || 'profile.jpg');
-      const r = await fetch(`${API}/upload`, {
+    // Helper: compress → presigned URL → upload direct to B2 (no worker body limits)
+    async function uploadImageDirect(file, maxW, quality, folder, label) {
+      btn.textContent = `Optimising ${label}…`;
+      const compressed = await compressImage(file, maxW, quality);
+      btn.textContent = `Uploading ${label}…`;
+      const ct = compressed.type || 'image/jpeg';
+      const urlRes = await fetch(
+        `${API}/upload-url?fileName=photo.jpg&fileType=${encodeURIComponent(ct)}&folder=${folder}`,
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+      );
+      if (!urlRes.ok) throw new Error(`Could not get upload URL for ${label} (${urlRes.status})`);
+      const urlData = await urlRes.json();
+      if (!urlData.success) throw new Error(urlData.error || `Upload URL failed for ${label}`);
+      const b2Res = await fetch(urlData.uploadUrl, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${getToken()}` },
-        body: fd,
+        headers: {
+          'Authorization': urlData.authorizationToken,
+          'X-Bz-File-Name': encodeURIComponent(urlData.fileName),
+          'Content-Type': ct,
+          'Content-Length': String(compressed.size),
+          'X-Bz-Content-Sha1': 'do_not_verify',
+        },
+        body: compressed,
       });
-      if (!r.ok) throw new Error('Profile photo upload failed (' + r.status + ')');
-      const d = await r.json();
-      profilePicUrl = d.urls?.[0] || null;
-      if (!profilePicUrl) throw new Error('No profile photo URL returned');
+      if (!b2Res.ok) {
+        const b2Err = await b2Res.text();
+        throw new Error(`B2 upload failed for ${label}: ${b2Err.slice(0, 100)}`);
+      }
+      return urlData.downloadUrl;
+    }
+
+    if (_cbProfileFile) {
+      profilePicUrl = await uploadImageDirect(_cbProfileFile, 400, 0.88, 'listings', 'profile photo');
     }
     if (_cbBannerFile) {
-      btn.textContent = 'Optimising banner…';
-      _cbBannerFile = await compressImage(_cbBannerFile, 1200, 0.85);
-      btn.textContent = 'Uploading banner…';
-      const fd = new FormData();
-      fd.append('file', _cbBannerFile, _cbBannerFile.name || 'banner.jpg');
-      const r = await fetch(`${API}/upload`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${getToken()}` },
-        body: fd,
-      });
-      if (!r.ok) throw new Error('Banner upload failed (' + r.status + ')');
-      const d = await r.json();
-      bannerImgUrl = d.urls?.[0] || null;
-      if (!bannerImgUrl) throw new Error('No banner URL returned');
+      bannerImgUrl = await uploadImageDirect(_cbBannerFile, 1200, 0.85, 'listings', 'banner');
     }
   } catch(e) {
     showToast('Photo upload failed: ' + e.message, 4000);
@@ -8682,6 +8687,7 @@ window.useMyLocationCheckout = () => showToast('Map still loading, please wait�
 
 window.placeOrder = async function() {
   if (!window._deliveryPin) { showToast('Please tap the map to set your delivery location'); return; }
+  if (!window._foodSellerId) { showToast('⚠️ Cannot identify restaurant — please go back and reopen the store', 5000); return; }
   // Check if user is trying to order from their own store
   if (currentUser && window._foodSellerId && window._foodSellerId === currentUser.sub) {
     showToast('⚠️ You cannot order from your own store', 5000);
@@ -8713,8 +8719,11 @@ window.placeOrder = async function() {
         schedule_time: schedTime,
       }),
     });
-    const d = await res.json();
-    if (!res.ok || !d.success) throw new Error(d.error || 'Order failed');
+    let d;
+    try { d = await res.json(); } catch(jsonErr) {
+      throw new Error('Server returned non-JSON (' + res.status + ')');
+    }
+    if (!res.ok || !d.success) throw new Error(d.error || ('Order failed — server ' + res.status));
 
     // Clear cart
     window._foodCart = {};
