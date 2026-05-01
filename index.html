@@ -1813,14 +1813,6 @@ document.addEventListener('load', (e) => {
 
 function navigate(path) {
   if (window._chatPollInterval) { clearInterval(window._chatPollInterval); window._chatPollInterval = null; }
-  // Hide cart FAB when leaving the food/express flow
-  if (!path.startsWith('/express') && !path.startsWith('/food') && !path.startsWith('/restaurant')) {
-    const fab = document.getElementById('cartFab');
-    if (fab) fab.style.display = 'none';
-  } else {
-    const fab = document.getElementById('cartFab');
-    if (fab) fab.style.display = '';
-  }
   // Restore site header when leaving SpotDuuka
   const siteHeader = document.querySelector('.site-header');
   if (siteHeader) {
@@ -5600,29 +5592,45 @@ window.openMIM = (ci, ii) => {
     if (!raw) return;
     if (raw.size > 10 * 1024 * 1024) { showToast('Photo must be under 10MB'); return; }
     uploading = true;
-    // Disable the label so user can't re-tap while uploading
     const zone = document.getElementById('mimPhotoZone');
     if (zone) zone.style.pointerEvents = 'none';
     const sp = document.getElementById('mimSpin');
     if (sp) sp.style.display = 'flex';
     try {
-      showToast('Compressing…');
-      let file = raw;
-      try { file = await compressImage(raw, 1200, 0.85); } catch(_) {}
       showToast('Uploading photo…');
+      // Draw to canvas to force a proper image/jpeg blob regardless of source type
+      const blob = await new Promise((resolve, reject) => {
+        const img = new Image();
+        const objUrl = URL.createObjectURL(raw);
+        img.onload = () => {
+          URL.revokeObjectURL(objUrl);
+          let w = img.naturalWidth, h = img.naturalHeight;
+          const MAX = 1200;
+          if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          canvas.toBlob(b => b ? resolve(b) : reject(new Error('Canvas toBlob failed')), 'image/jpeg', 0.85);
+        };
+        img.onerror = () => { URL.revokeObjectURL(objUrl); reject(new Error('Image load failed')); };
+        img.src = objUrl;
+      });
       const fd = new FormData();
-      fd.append('file', file, file.name || 'menu.jpg');
+      // Explicitly name it .jpg with image/jpeg type — worker checks file.type
+      fd.append('file', new File([blob], 'menu-photo.jpg', { type: 'image/jpeg' }), 'menu-photo.jpg');
       const r = await fetch(`${API}/upload`, {
         method: 'POST', headers: { Authorization: 'Bearer ' + getToken() }, body: fd,
       });
-      const d = await r.json();
+      const txt = await r.text();
+      let d;
+      try { d = JSON.parse(txt); } catch { throw new Error('Server error (' + r.status + '): ' + txt.slice(0,80)); }
       if (!r.ok) throw new Error(d.error || 'Upload failed (' + r.status + ')');
       const url = d.urls?.[0];
-      if (!url) throw new Error('No URL returned from server');
+      if (!url) throw new Error('Upload error: ' + JSON.stringify(d).slice(0,120));
       photoUrl = url;
       refreshPhotoZone();
       showToast('Photo added ✓');
-    } catch (ex) { showToast('Upload error: ' + ex.message, 4000); }
+    } catch (ex) { showToast('Upload error: ' + ex.message, 5000); }
     finally {
       uploading = false;
       const zone2 = document.getElementById('mimPhotoZone');
@@ -8286,9 +8294,6 @@ window.submitExpressRide = async function() {
 
 // ── Express: Order Food & Goods ─────────────────────────────────
 async function renderExpressFood() {
-  // Hide cart FAB when on the restaurant listing page (not inside a restaurant)
-  const fab = document.getElementById('cartFab');
-  if (fab) fab.style.display = 'none';
   const app = document.getElementById('app');
   app.innerHTML = `
     <div style="background:#1a6e34">
@@ -8485,27 +8490,27 @@ window.cartAdd = function(ikey) {
 };
 
 function renderCartFab() {
-  const existing = document.getElementById('cartFab');
   const cart  = window._foodCart || {};
   const items = Object.values(cart);
   const total = items.reduce((s, it) => s + it.price * it.quantity, 0);
   const count = items.reduce((s, it) => s + it.quantity, 0);
 
-  if (!count) { if (existing) existing.remove(); return; }
-
-  if (!existing) {
-    const fab = document.createElement('div');
-    fab.id        = 'cartFab';
-    fab.className = 'cart-fab';
-    fab.onclick   = openCheckout;
-    document.body.appendChild(fab);
+  // Update the in-header cart button (no more floating FAB)
+  const hBtn = document.getElementById('headerCartBtn');
+  if (hBtn) {
+    if (count > 0) {
+      hBtn.style.display = 'flex';
+      const countEl = document.getElementById('headerCartCount');
+      const totalEl = document.getElementById('headerCartTotal');
+      if (countEl) countEl.textContent = count;
+      if (totalEl) totalEl.textContent = total.toLocaleString();
+    } else {
+      hBtn.style.display = 'none';
+    }
   }
-  document.getElementById('cartFab').innerHTML = `
-    <div style="display:flex;align-items:center;gap:10px">
-      <span class="cart-fab-count">${count}</span>
-      <span>View Cart</span>
-    </div>
-    <span>UGX ${total.toLocaleString()} →</span>`;
+
+  // Remove any old floating FAB if it somehow exists
+  document.getElementById('cartFab')?.remove();
 }
 
 // ── Checkout Sheet ────────────────────────────────────────────
@@ -8698,8 +8703,8 @@ window.placeOrder = async function() {
 
     // Clear cart
     window._foodCart = {};
-    document.getElementById('cartFab')?.remove();
     document.getElementById('checkoutOv')?.remove();
+    renderCartFab(); // clear header cart button
 
     showToast('🎉 Order placed successfully!');
     // Show confirmation
@@ -9099,12 +9104,17 @@ window.renderFoodStoreDetail = async function(sellerId) {
     window._foodSellerId  = s.id;
 
     app.innerHTML = `
-      <!-- Back -->
-      <div onclick="renderExpressFood()"
-        style="display:flex;align-items:center;gap:8px;padding:12px 14px;background:var(--white);
-               border-bottom:1px solid var(--border);cursor:pointer;position:sticky;top:0;z-index:200">
-        <span style="font-size:20px;color:var(--muted)">←</span>
-        <span style="font-size:13px;font-weight:700;color:var(--ink2)">Restaurants</span>
+      <!-- Back + Cart header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--white);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:200">
+        <div onclick="renderExpressFood()" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <span style="font-size:20px;color:var(--muted)">←</span>
+          <span style="font-size:13px;font-weight:700;color:var(--ink2)">Restaurants</span>
+        </div>
+        <div id="headerCartBtn" onclick="openCheckout()" style="display:none;align-items:center;gap:6px;background:var(--orange);color:#fff;border-radius:100px;padding:7px 14px;cursor:pointer;font-weight:800;font-size:13px">
+          <span>🛒</span>
+          <span id="headerCartCount">0</span>
+          <span style="font-size:11px;opacity:.85">· UGX <span id="headerCartTotal">0</span></span>
+        </div>
       </div>
 
       <!-- Hero -->
