@@ -8722,19 +8722,13 @@ window.placeOrder = async function() {
     const res = await fetch(`${API}/food-orders`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
-      body: JSON.stringify({
-        seller_id: window._foodSellerId,
-        items,
-        delivery_location: window._deliveryPin,
-        delivery_note: note,
-        schedule_time: schedTime,
-      }),
+      body: JSON.stringify({ seller_id: window._foodSellerId, items, delivery_location: window._deliveryPin, delivery_note: note, schedule_time: schedTime }),
     });
+    const rawText = await res.text();
+    console.log('[order] status:', res.status, 'body:', rawText.slice(0,200));
     let d;
-    try { d = await res.json(); } catch(jsonErr) {
-      throw new Error('Server returned non-JSON (' + res.status + ')');
-    }
-    if (!res.ok || !d.success) throw new Error(d.error || ('Order failed — server ' + res.status));
+    try { d = JSON.parse(rawText); } catch(e) { throw new Error('Server ' + res.status + ': ' + rawText.slice(0,100)); }
+    if (!res.ok || !d.success) throw new Error(d.error || ('Server ' + res.status));
 
     // Clear cart
     window._foodCart = {};
