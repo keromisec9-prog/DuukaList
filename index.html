@@ -9588,3 +9588,11 @@ async function submitAddDriver() {
 </script>
 </body>
 </html>
+<script>
+// TEMP DEBUG - remove after
+window._showToken = () => {
+  const t = localStorage.getItem('duuka_token');
+  if (!t) { alert('No token in localStorage'); return; }
+  alert('TOKEN (first 40 chars):\n' + t.slice(0,40) + '\n\nFull length: ' + t.length);
+};
+</script>
