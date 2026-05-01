@@ -5598,7 +5598,7 @@ window.openMIM = (ci, ii) => {
     if (sp) sp.style.display = 'flex';
     try {
       showToast('Uploading photo…');
-      // Draw to canvas to force a proper image/jpeg blob regardless of source type
+      // Compress via canvas first
       const blob = await new Promise((resolve, reject) => {
         const img = new Image();
         const objUrl = URL.createObjectURL(raw);
@@ -5615,19 +5615,34 @@ window.openMIM = (ci, ii) => {
         img.onerror = () => { URL.revokeObjectURL(objUrl); reject(new Error('Image load failed')); };
         img.src = objUrl;
       });
-      const fd = new FormData();
-      // Explicitly name it .jpg with image/jpeg type — worker checks file.type
-      fd.append('file', new File([blob], 'menu-photo.jpg', { type: 'image/jpeg' }), 'menu-photo.jpg');
-      const r = await fetch(`${API}/upload`, {
-        method: 'POST', headers: { Authorization: 'Bearer ' + getToken() }, body: fd,
+
+      // Get presigned upload URL from worker (direct-to-B2, bypasses worker body limits)
+      const urlRes = await fetch(
+        `${API}/upload-url?fileName=menu-photo.jpg&fileType=image%2Fjpeg&folder=listings`,
+        { headers: { Authorization: 'Bearer ' + getToken() } }
+      );
+      if (!urlRes.ok) throw new Error('Could not get upload URL (' + urlRes.status + ')');
+      const urlData = await urlRes.json();
+      if (!urlData.success) throw new Error(urlData.error || 'Upload URL failed');
+
+      // Upload directly to B2
+      const b2Res = await fetch(urlData.uploadUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': urlData.authorizationToken,
+          'X-Bz-File-Name': encodeURIComponent(urlData.fileName),
+          'Content-Type': 'image/jpeg',
+          'Content-Length': String(blob.size),
+          'X-Bz-Content-Sha1': 'do_not_verify',
+        },
+        body: blob,
       });
-      const txt = await r.text();
-      let d;
-      try { d = JSON.parse(txt); } catch { throw new Error('Server error (' + r.status + '): ' + txt.slice(0,80)); }
-      if (!r.ok) throw new Error(d.error || 'Upload failed (' + r.status + ')');
-      const url = d.urls?.[0];
-      if (!url) throw new Error('Upload error: ' + JSON.stringify(d).slice(0,120));
-      photoUrl = url;
+      if (!b2Res.ok) {
+        const b2Err = await b2Res.text();
+        throw new Error('B2 upload failed: ' + b2Err.slice(0, 100));
+      }
+
+      photoUrl = urlData.downloadUrl;
       refreshPhotoZone();
       showToast('Photo added ✓');
     } catch (ex) { showToast('Upload error: ' + ex.message, 5000); }
@@ -9101,7 +9116,7 @@ window.renderFoodStoreDetail = async function(sellerId) {
     // Store menu data on window for cart access
     window._foodMenuData = menuData;
     window._foodStoreName = name;
-    window._foodSellerId  = s.id;
+    window._foodSellerId  = s.id || sellerId; // fallback to URL param if s.id missing
 
     app.innerHTML = `
       <!-- Back + Cart header -->
