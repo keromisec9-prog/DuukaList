@@ -8688,11 +8688,7 @@ window.useMyLocationCheckout = () => showToast('Map still loading, please wait�
 window.placeOrder = async function() {
   if (!window._deliveryPin) { showToast('Please tap the map to set your delivery location'); return; }
   if (!window._foodSellerId) { showToast('⚠️ Cannot identify restaurant — please go back and reopen the store', 5000); return; }
-  // Verify token is alive
-  const tok = getToken();
-  if (!tok) { showToast('⚠️ Please log in first'); openAuth(); return; }
-  const meRes = await fetch(`${API}/me`, { headers: { Authorization: 'Bearer ' + tok } }).catch(() => null);
-  if (!meRes || !meRes.ok) { clearToken(); showToast('⚠️ Session expired — please log in again'); openAuth(); return; }
+
 
   // Pre-check: verify token is valid before trying to place order
   const tok = getToken();
