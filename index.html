@@ -5520,19 +5520,19 @@ window.openMIM = (ci, ii) => {
         <button class="mim-close" id="mimClose">✕</button>
       </div>
       <div class="mim-body">
-        <!-- Photo zone -->
-        <div class="mim-photo" id="mimPhotoZone">
-          ${photoUrl
-            ? `<img src="${photoUrl}" alt="food photo" id="mimPhotoImg">
+        <!-- Photo zone: label wraps input = reliable tap on Android -->
+        <label for="mimFileIn" class="mim-photo" id="mimPhotoZone" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center">
+          <span id="mimPhotoContent">${photoUrl
+            ? `<img src="${photoUrl}" alt="food photo" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;border-radius:inherit">
                <div class="mim-photo-chg"><span style="font-size:22px">📷</span><span>Change photo</span></div>`
-            : `<div style="display:flex;flex-direction:column;align-items:center;gap:6px" id="mimPhotoEmpty">
+            : `<div style="display:flex;flex-direction:column;align-items:center;gap:6px">
                  <div style="font-size:36px">📸</div>
                  <div style="font-size:13px;color:var(--muted);font-weight:600">Tap to add a food photo</div>
                  <div style="font-size:11px;color:var(--muted2)">Great photos increase orders by 3×</div>
-               </div>`}
+               </div>`}</span>
           <div class="mim-photo-spin" id="mimSpin" style="display:none">Uploading…</div>
-          <input type="file" id="mimFileIn" accept="image/*" style="display:none">
-        </div>
+          <input type="file" id="mimFileIn" accept="image/*" style="display:none;position:absolute">
+        </label>
         <!-- Name -->
         <label class="mf-lbl" for="mimName">Item name *</label>
         <input class="mf-inp" id="mimName" placeholder="e.g. Roasted Chicken 1kg" value="${(src.name||'').replace(/"/g,'&quot;')}">
@@ -5572,21 +5572,25 @@ window.openMIM = (ci, ii) => {
     document.getElementById('mimAvailSub').textContent = `Customers can${available ? '' : ' not'} order this item`;
   };
 
-  // Photo upload
+  // Photo upload — label handles tap natively, no JS click() needed
   let uploading = false;
-  const zone  = document.getElementById('mimPhotoZone');
-  const finp  = document.getElementById('mimFileIn');
-  const spin  = document.getElementById('mimSpin');
 
-  const refreshZone = () => {
-    if (photoUrl) {
-      zone.innerHTML = `
-        <img src="${photoUrl}" alt="food photo" style="width:100%;height:100%;object-fit:cover">
-        <div class="mim-photo-chg"><span style="font-size:22px">📷</span><span>Change photo</span></div>
-        <div class="mim-photo-spin" id="mimSpin" style="display:none">Uploading…</div>
-        <input type="file" id="mimFileIn" accept="image/*" style="display:none">`;
+  const refreshPhotoZone = () => {
+    const zone = document.getElementById('mimPhotoZone');
+    if (!zone) return;
+    // Update inner content while keeping the label+input structure intact
+    const content = document.getElementById('mimPhotoContent');
+    if (content) {
+      content.innerHTML = photoUrl
+        ? `<img src="${photoUrl}" alt="food photo" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;border-radius:inherit">
+           <div class="mim-photo-chg"><span style="font-size:22px">📷</span><span>Change photo</span></div>`
+        : `<div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+             <div style="font-size:36px">📸</div>
+             <div style="font-size:13px;color:var(--muted);font-weight:600">Tap to add a food photo</div>
+             <div style="font-size:11px;color:var(--muted2)">Great photos increase orders by 3×</div>
+           </div>`;
     }
-    document.getElementById('mimPhotoZone').onclick = () => { if (!uploading) document.getElementById('mimFileIn')?.click(); };
+    // Re-bind onchange to the (possibly same) input
     const fi = document.getElementById('mimFileIn');
     if (fi) fi.onchange = handlePhotoChange;
   };
@@ -5596,6 +5600,9 @@ window.openMIM = (ci, ii) => {
     if (!raw) return;
     if (raw.size > 10 * 1024 * 1024) { showToast('Photo must be under 10MB'); return; }
     uploading = true;
+    // Disable the label so user can't re-tap while uploading
+    const zone = document.getElementById('mimPhotoZone');
+    if (zone) zone.style.pointerEvents = 'none';
     const sp = document.getElementById('mimSpin');
     if (sp) sp.style.display = 'flex';
     try {
@@ -5613,14 +5620,19 @@ window.openMIM = (ci, ii) => {
       const url = d.urls?.[0];
       if (!url) throw new Error('No URL returned from server');
       photoUrl = url;
-      refreshZone();
-      showToast('Photo uploaded ✓');
-    } catch (ex) { showToast('Upload error: ' + ex.message, 3500); }
-    finally { uploading = false; const sp2 = document.getElementById('mimSpin'); if (sp2) sp2.style.display = 'none'; }
+      refreshPhotoZone();
+      showToast('Photo added ✓');
+    } catch (ex) { showToast('Upload error: ' + ex.message, 4000); }
+    finally {
+      uploading = false;
+      const zone2 = document.getElementById('mimPhotoZone');
+      if (zone2) zone2.style.pointerEvents = '';
+      const sp2 = document.getElementById('mimSpin');
+      if (sp2) sp2.style.display = 'none';
+    }
   }
 
-  // Always query fresh — refreshZone() replaces innerHTML so old finp is stale
-  zone.onclick = () => { if (!uploading) document.getElementById('mimFileIn')?.click(); };
+  // Bind initial onchange (label handles clicks — no .click() JS needed)
   document.getElementById('mimFileIn').onchange = handlePhotoChange;
 
   // Save
@@ -8274,6 +8286,9 @@ window.submitExpressRide = async function() {
 
 // ── Express: Order Food & Goods ─────────────────────────────────
 async function renderExpressFood() {
+  // Hide cart FAB when on the restaurant listing page (not inside a restaurant)
+  const fab = document.getElementById('cartFab');
+  if (fab) fab.style.display = 'none';
   const app = document.getElementById('app');
   app.innerHTML = `
     <div style="background:#1a6e34">
@@ -8647,6 +8662,11 @@ window.useMyLocationCheckout = () => showToast('Map still loading, please wait�
 
 window.placeOrder = async function() {
   if (!window._deliveryPin) { showToast('Please tap the map to set your delivery location'); return; }
+  // Check if user is trying to order from their own store
+  if (currentUser && window._foodSellerId && window._foodSellerId === currentUser.sub) {
+    showToast('⚠️ You cannot order from your own store', 5000);
+    return;
+  }
   const cart  = window._foodCart || {};
   const items = Object.values(cart).map(it => ({
     name: it.name, price: it.price, quantity: it.quantity, photo: it.photo || null,
@@ -8685,8 +8705,17 @@ window.placeOrder = async function() {
     // Show confirmation
     showOrderConfirmation(d.order);
   } catch(e) {
-    if (btn) { btn.disabled = false; btn.textContent = '🛵 Place Order'; }
-    showToast('Error: ' + e.message, 3500);
+    if (btn) { btn.disabled = false; btn.textContent = '🛵 Place Order'; btn.style.background = ''; }
+    const msg = e.message || 'Order failed';
+    // Show a persistent error banner, not just a brief toast
+    const existingErr = document.getElementById('orderErrorBanner');
+    if (existingErr) existingErr.remove();
+    const errBanner = document.createElement('div');
+    errBanner.id = 'orderErrorBanner';
+    errBanner.style.cssText = 'background:#d32f2f;color:#fff;font-weight:700;font-size:14px;padding:12px 16px;border-radius:10px;margin:12px 0;text-align:center;';
+    errBanner.textContent = '⚠️ ' + msg;
+    btn?.parentNode?.insertBefore(errBanner, btn);
+    showToast('⚠️ ' + msg, 6000);
   }
 };
 
