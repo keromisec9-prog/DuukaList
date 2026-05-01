@@ -1813,6 +1813,14 @@ document.addEventListener('load', (e) => {
 
 function navigate(path) {
   if (window._chatPollInterval) { clearInterval(window._chatPollInterval); window._chatPollInterval = null; }
+  // Hide cart FAB when leaving the food/express flow
+  if (!path.startsWith('/express') && !path.startsWith('/food') && !path.startsWith('/restaurant')) {
+    const fab = document.getElementById('cartFab');
+    if (fab) fab.style.display = 'none';
+  } else {
+    const fab = document.getElementById('cartFab');
+    if (fab) fab.style.display = '';
+  }
   // Restore site header when leaving SpotDuuka
   const siteHeader = document.querySelector('.site-header');
   if (siteHeader) {
@@ -3969,33 +3977,49 @@ function renderOrders() {
     if (!body) return;
     body.innerHTML = `<div class="spinner"></div>`;
     try {
-      const res = await fetch(`${API}/orders?role=${role}`, { headers: { Authorization: `Bearer ${getToken()}` } });
-      if (!res.ok) throw new Error();
-      const d = await res.json();
-      const orders = d.orders || d.items || (Array.isArray(d) ? d : []);
+      // Fetch both marketplace orders and food orders in parallel
+      const [res, foodRes] = await Promise.all([
+        fetch(`${API}/orders?role=${role}`, { headers: { Authorization: 'Bearer ' + getToken() } }),
+        fetch(`${API}/food-orders?role=${role}`, { headers: { Authorization: 'Bearer ' + getToken() } }),
+      ]);
+      const d = res.ok ? await res.json() : { orders: [] };
+      const fd = foodRes.ok ? await foodRes.json() : { orders: [] };
+      const marketplace = d.orders || d.items || (Array.isArray(d) ? d : []);
+      const food = fd.orders || fd.items || (Array.isArray(fd) ? fd : []);
+      // Merge and sort newest first
+      const orders = [...marketplace, ...food].sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
       if (!orders.length) {
         body.innerHTML = `<div class="empty-state"><div class="empty-icon">${role==='buyer'?'🛍️':'💼'}</div><div class="empty-title">No orders yet</div><div class="empty-sub">${role==='buyer'?'Browse listings and place your first order':'Start selling to see orders here'}</div><button class="btn btn-orange" onclick="navigate('${role==='buyer'?'/browse':'/post'}')">${role==='buyer'?'Browse Listings':'Post a Listing'}</button></div>`;
         return;
       }
       body.innerHTML = orders.map(o => {
-        const stageIdx = stages.findIndex(s => o.status?.toLowerCase().includes(s.toLowerCase()));
+        const isFood = o.type === 'food';
+        const foodStages = ['food_placed','food_accepted','food_out_for_delivery','food_delivered'];
+        const displayStages = isFood ? ['Placed','Accepted','On the way','Delivered'] : stages;
+        const stageIdx = isFood
+          ? foodStages.indexOf(o.status)
+          : stages.findIndex(s => o.status?.toLowerCase().includes(s.toLowerCase()));
         const curIdx = Math.max(0, stageIdx);
-        return `<div class="order-card">
-          <div class="order-card-header">
-            <span class="order-id">ORDER #${o.id?.slice(-6).toUpperCase()||'—'}</span>
-            <span class="status-pill ${o.status==='completed'?'status-active':o.status==='cancelled'?'status-expired':'status-sold'}">${o.status||'—'}</span>
+        const title = isFood
+          ? (o.items||[]).map(it => `${it.name} ×${it.quantity||1}`).join(', ') || 'Food Order'
+          : (o.title || o.listing_title || 'Order');
+        return `<div class=\"order-card\">
+          <div class=\"order-card-header\">
+            <span class=\"order-id\">${isFood?'🍽️':''} ORDER #${o.id?.slice(-6).toUpperCase()||'—'}</span>
+            <span class=\"status-pill ${o.status==='completed'||o.status==='food_delivered'?'status-active':o.status==='cancelled'||o.status==='food_rejected'?'status-expired':'status-sold'}\">${o.status?.replace(/_/g,' ')||'—'}</span>
           </div>
-          <div class="order-title">${o.title||o.listing_title||'Order'}</div>
-          <div class="order-meta">${fmtPrice(o.amount,'UGX')} · ${o.payment_method||'—'} · ${o.created_at?new Date(o.created_at).toLocaleDateString():'—'}</div>
-          <div class="order-progress">
-            ${stages.map((s,i) => `
-              <div class="prog-step${i<curIdx?' done':i===curIdx?' active':''}">
-                <div class="prog-dot">${i<curIdx?'✓':i+1}</div>
-                <div class="prog-lbl">${s}</div>
+          <div class=\"order-title\">${title}</div>
+          <div class=\"order-meta\">${fmtPrice(o.amount,'UGX')} · ${o.created_at?new Date(o.created_at).toLocaleDateString():'—'}</div>
+          <div class=\"order-progress\">
+            ${displayStages.map((s,i) => `
+              <div class=\"prog-step${i<curIdx?' done':i===curIdx?' active':''}\">
+                <div class=\"prog-dot\">${i<curIdx?'✓':i+1}</div>
+                <div class=\"prog-lbl\">${s}</div>
               </div>
-              ${i<stages.length-1?`<div class="prog-line${i<curIdx?' done':''}"></div>`:''}
+              ${i<displayStages.length-1?`<div class=\"prog-line${i<curIdx?' done':''}\"></div>`:''}
             `).join('')}
           </div>
+          ${isFood ? `<button class=\"btn btn-outline btn-sm\" style=\"margin-top:8px\" onclick=\"trackFoodOrder('${o.id}')\">📍 Track Order</button>` : ''}
         </div>`;
       }).join('');
     } catch {
@@ -5595,8 +5619,9 @@ window.openMIM = (ci, ii) => {
     finally { uploading = false; const sp2 = document.getElementById('mimSpin'); if (sp2) sp2.style.display = 'none'; }
   }
 
-  zone.onclick = () => { if (!uploading) finp.click(); };
-  finp.onchange = handlePhotoChange;
+  // Always query fresh — refreshZone() replaces innerHTML so old finp is stale
+  zone.onclick = () => { if (!uploading) document.getElementById('mimFileIn')?.click(); };
+  document.getElementById('mimFileIn').onchange = handlePhotoChange;
 
   // Save
   document.getElementById('mimSaveBtn').onclick = () => {
@@ -8656,6 +8681,7 @@ window.placeOrder = async function() {
     document.getElementById('cartFab')?.remove();
     document.getElementById('checkoutOv')?.remove();
 
+    showToast('🎉 Order placed successfully!');
     // Show confirmation
     showOrderConfirmation(d.order);
   } catch(e) {
