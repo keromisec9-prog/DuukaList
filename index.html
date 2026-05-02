@@ -3587,24 +3587,47 @@ async function submitListing() {
   let imageUrls = [];
   try {
     const filesToUpload = postPhotoFiles.filter(Boolean);
-    // Upload via Worker (avoids CORS issues with direct B2)
-    const formData = new FormData();
-    filesToUpload.forEach((f, i) => formData.append('file', f, f.name || `photo_${i}.jpg`));
     btn.textContent = `Uploading ${filesToUpload.length} photo${filesToUpload.length>1?'s':''}…`;
     if (progressLabel) progressLabel.textContent = 'Uploading photos…';
-    if (progressBar) progressBar.style.width = '50%';
 
-    const uploadRes = await fetch(`${API}/upload`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${getToken()}` },
-      body: formData,
-    });
-    if (!uploadRes.ok) {
-      const e = await uploadRes.json().catch(() => ({}));
-      throw new Error(e.error || `Upload failed (${uploadRes.status})`);
+    // Upload each photo directly to B2 via presigned URL (same pattern as menu/profile/banner)
+    for (let i = 0; i < filesToUpload.length; i++) {
+      const file = filesToUpload[i];
+      if (progressBar) progressBar.style.width = Math.round(((i) / filesToUpload.length) * 90) + '%';
+      if (progressPct) progressPct.textContent = Math.round(((i) / filesToUpload.length) * 90) + '%';
+
+      // Compress first
+      const ct = file.type || 'image/jpeg';
+      const compressed = await compressImage(file, 1200, 0.85);
+
+      // Get presigned URL
+      const urlRes = await fetch(
+        `${API}/upload-url?fileName=listing-photo.jpg&fileType=${encodeURIComponent(ct)}&folder=listings`,
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+      );
+      if (!urlRes.ok) throw new Error(`Upload URL failed (${urlRes.status})`);
+      const urlData = await urlRes.json();
+      if (!urlData.success) throw new Error(urlData.error || 'Upload URL failed');
+
+      // Upload directly to B2
+      const b2Res = await fetch(urlData.uploadUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': urlData.authorizationToken,
+          'X-Bz-File-Name': encodeURIComponent(urlData.fileName),
+          'Content-Type': ct,
+          'Content-Length': String(compressed.size),
+          'X-Bz-Content-Sha1': 'do_not_verify',
+        },
+        body: compressed,
+      });
+      if (!b2Res.ok) {
+        const b2Err = await b2Res.text();
+        throw new Error(`B2 upload failed: ${b2Err.slice(0, 80)}`);
+      }
+      imageUrls.push(urlData.downloadUrl);
     }
-    const uploadData = await uploadRes.json();
-    imageUrls = uploadData.urls || [];
+
     if (!imageUrls.length) throw new Error('No photos were uploaded');
     if (progressBar) progressBar.style.width = '100%';
     if (progressPct) progressPct.textContent = '100%';
@@ -8683,14 +8706,28 @@ window.setSchedule = function(mode) {
   }
 };
 window._schedMode = 'asap';
-window.useMyLocationCheckout = () => showToast('Map still loading, please wait…');
+window.useMyLocationCheckout = () => {
+  // If map is already ready, use the real handler; otherwise wait and retry
+  if (window._checkoutMap) {
+    showToast('Getting your location…');
+    navigator.geolocation?.getCurrentPosition(pos => {
+      const latlng = L?.latLng(pos.coords.latitude, pos.coords.longitude);
+      if (!latlng) { showToast('Map not ready yet, please wait…'); return; }
+      window._checkoutMap.setView(latlng, 16);
+      if (window._checkoutPin) window._checkoutMap.removeLayer(window._checkoutPin);
+      window._checkoutPin = L.marker(latlng).addTo(window._checkoutMap);
+      window._deliveryPin = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      showToast('Location set ✓');
+    }, () => showToast('Could not get location. Tap the map instead.'), { timeout: 10000 });
+  } else {
+    showToast('Map still loading, please try again in a moment…');
+  }
+};
 
 window.placeOrder = async function() {
   if (!window._deliveryPin) { showToast('Please tap the map to set your delivery location'); return; }
   if (!window._foodSellerId) { showToast('⚠️ Cannot identify restaurant — please go back and reopen the store', 5000); return; }
-
-
-    // Check if user is trying to order from their own store
+  // Check if user is trying to order from their own store
   if (currentUser && window._foodSellerId && window._foodSellerId === currentUser.sub) {
     showToast('⚠️ You cannot order from your own store', 5000);
     return;
@@ -8709,22 +8746,29 @@ window.placeOrder = async function() {
   const btn = document.querySelector('#checkoutOv button[onclick="placeOrder()"]');
   if (btn) { btn.disabled = true; btn.textContent = 'Placing order…'; }
 
+  const orderPayload = {
+    seller_id: window._foodSellerId,
+    items,
+    delivery_location: window._deliveryPin,
+    delivery_note: note,
+    schedule_time: schedTime,
+  };
+  const orderUrl = `${API}/food-orders`;
+  console.log('[placeOrder] POST', orderUrl, JSON.stringify(orderPayload));
+
   try {
-    const res = await fetch(`${API}/food-orders`, {
+    const res = await fetch(orderUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
-      body: JSON.stringify({
-        seller_id: window._foodSellerId,
-        items,
-        delivery_location: window._deliveryPin,
-        delivery_note: note,
-        schedule_time: schedTime,
-      }),
+      body: JSON.stringify(orderPayload),
     });
     const rawText = await res.text();
+    console.log('[placeOrder] status:', res.status, 'body:', rawText);
     let d;
-    try { d = JSON.parse(rawText); } catch(e) { throw new Error('Server ' + res.status + ': ' + rawText.slice(0,100)); }
-    if (!res.ok || !d.success) throw new Error('[' + res.status + '] ' + (d.error || rawText.slice(0,80)));
+    try { d = JSON.parse(rawText); } catch(jsonErr) {
+      throw new Error('Server error ' + res.status + ': ' + rawText.slice(0, 120));
+    }
+    if (!res.ok || !d.success) throw new Error(d.error || ('Order failed — server ' + res.status));
 
     // Clear cart
     window._foodCart = {};
@@ -9579,11 +9623,3 @@ async function submitAddDriver() {
 </script>
 </body>
 </html>
-<script>
-// TEMP DEBUG - remove after
-window._showToken = () => {
-  const t = localStorage.getItem('duuka_token');
-  if (!t) { alert('No token in localStorage'); return; }
-  alert('TOKEN (first 40 chars):\n' + t.slice(0,40) + '\n\nFull length: ' + t.length);
-};
-</script>
