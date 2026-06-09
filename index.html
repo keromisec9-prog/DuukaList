@@ -8724,7 +8724,7 @@ window.placeOrder = async function() {
     const rawText = await res.text();
     let d;
     try { d = JSON.parse(rawText); } catch(e) { throw new Error('Server ' + res.status + ': ' + rawText.slice(0,100)); }
-    if (!res.ok || !d.success) throw new Error('[' + res.status + '] ' + (d.error || rawText.slice(0,80)));
+    if (!res.ok || !d.success) throw new Error('[' + res.status + '] d=' + JSON.stringify(d).slice(0,120) + ' raw=' + rawText.slice(0,120));
 
     // Clear cart
     window._foodCart = {};
