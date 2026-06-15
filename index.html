@@ -1146,7 +1146,7 @@ async function checkAuth() {
       const d = await res.json();
       const user = d.user || d;
       updateAuthUI(user); // Overwrite with fresh data from server
-    } else {
+    } else if (res.status === 401) {
       clearToken();
       try { localStorage.removeItem('duuka_user'); } catch {}
     }
