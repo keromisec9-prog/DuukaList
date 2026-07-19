@@ -7094,6 +7094,20 @@ window.onGoogleLibraryLoad = function() {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Capture token from Google OAuth redirect flow (?token=...), used by the
+  // /auth/google -> /auth/google/callback server-side flow (app fallback + non-JS clients)
+  (function captureRedirectToken() {
+    const params = new URLSearchParams(window.location.search);
+    const redirectToken = params.get('token');
+    if (redirectToken) {
+      setToken(redirectToken);
+      // Clean the token out of the URL so it isn't left in history/bookmarks
+      const cleanUrl = window.location.origin + window.location.pathname + window.location.hash;
+      window.history.replaceState({}, document.title, cleanUrl);
+      showToast('Signed in ✓');
+    }
+  })();
+
   checkAuth().then(() => { checkPendingBoost(); checkPendingListingPost(); loadUnreadCount(); loadNotifCount(); });
   handleRoute();
   // Google One Tap — show after short delay so page renders first
