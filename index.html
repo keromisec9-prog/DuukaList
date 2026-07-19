@@ -1187,11 +1187,11 @@ function setGoogleBtnLoading(loading) {
 window.resetGoogleBtn = function() { setGoogleBtnLoading(false); };
 
 function handleGoogleSignIn() {
-  // Inside the DuukaList app, use the native Android account picker
-  // (Credential Manager) instead of a WebView redirect.
-  if (typeof window.PichaApp !== 'undefined' && typeof window.PichaApp.triggerNativeGoogleSignIn === 'function') {
+  // Inside the DuukaList app, Google blocks its own popup/One Tap flow in WebViews.
+  // Use Custom Tabs via a plain redirect to the server-side OAuth flow instead.
+  if (typeof window.PichaApp !== 'undefined') {
     setGoogleBtnLoading(true);
-    window.PichaApp.triggerNativeGoogleSignIn();
+    window.location.href = `${API}/auth/google?source=app`;
     return;
   }
   if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
