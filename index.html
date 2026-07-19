@@ -1169,6 +1169,12 @@ function requireAuth(cb) {
 }
 
 function handleGoogleSignIn() {
+  // Inside the DuukaList app, Google blocks its own popup/One Tap flow in WebViews.
+  // Use a plain redirect to the server-side OAuth flow instead (same as PichaPlus).
+  if (typeof window.PichaApp !== 'undefined') {
+    window.location.href = `${API}/auth/google?source=app`;
+    return;
+  }
   if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
     google.accounts.id.prompt(notification => {
       if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
@@ -7074,8 +7080,11 @@ document.addEventListener('DOMContentLoaded', () => {
   checkAuth().then(() => { checkPendingBoost(); checkPendingListingPost(); loadUnreadCount(); loadNotifCount(); });
   handleRoute();
   // Google One Tap — show after short delay so page renders first
+  // Skip entirely inside the DuukaList app: Google blocks its popup/One Tap UI
+  // in embedded WebViews, so this would silently fail there.
   setTimeout(() => {
-    if (!getToken() && typeof google !== 'undefined' && google.accounts?.id) {
+    if (!getToken() && typeof window.PichaApp === 'undefined' &&
+        typeof google !== 'undefined' && google.accounts?.id) {
       google.accounts.id.prompt();
     }
   }, 1500);
