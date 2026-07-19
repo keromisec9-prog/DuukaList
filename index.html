@@ -838,6 +838,9 @@ input,select,textarea{font-family:var(--fb)}
 .google-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:12px;background:#fff;border:1.5px solid var(--border);border-radius:var(--rm);padding:14px;font-weight:700;font-size:15px;color:var(--ink);cursor:pointer;transition:all .15s;box-shadow:var(--sh);margin-bottom:14px;font-family:var(--fb)}
 .google-btn:hover{border-color:var(--blue-mid);box-shadow:var(--shm);transform:translateY(-1px)}
 .google-btn svg{width:20px;height:20px;flex-shrink:0}
+.google-btn:disabled{opacity:0.7;cursor:default;transform:none}
+.google-spinner{width:18px;height:18px;border:2.5px solid #ddd;border-top-color:var(--blue-mid,#4285F4);border-radius:50%;animation:googleSpin 0.7s linear infinite;flex-shrink:0}
+@keyframes googleSpin{to{transform:rotate(360deg)}}
 .auth-divider{display:flex;align-items:center;gap:12px;margin:14px 0;color:var(--muted2);font-size:12px;font-weight:600}
 .auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border)}
 .auth-guest{width:100%;padding:13px;border-radius:var(--rm);border:1.5px solid var(--border);font-weight:700;font-size:14px;color:var(--muted);background:var(--bg);cursor:pointer;transition:all .15s;font-family:var(--fb)}
@@ -1168,10 +1171,26 @@ function requireAuth(cb) {
   else { openAuth(); pendingAuthCallback = cb; }
 }
 
+let googleBtnOriginalHTML = null;
+function setGoogleBtnLoading(loading) {
+  const btn = document.getElementById('mainGoogleBtn');
+  if (!btn) return;
+  if (loading) {
+    if (googleBtnOriginalHTML === null) googleBtnOriginalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<div class="google-spinner"></div>Signing in...';
+  } else {
+    btn.disabled = false;
+    if (googleBtnOriginalHTML !== null) btn.innerHTML = googleBtnOriginalHTML;
+  }
+}
+window.resetGoogleBtn = function() { setGoogleBtnLoading(false); };
+
 function handleGoogleSignIn() {
   // Inside the DuukaList app, use the native Android account picker
   // (Credential Manager) instead of a WebView redirect.
   if (typeof window.PichaApp !== 'undefined' && typeof window.PichaApp.triggerNativeGoogleSignIn === 'function') {
+    setGoogleBtnLoading(true);
     window.PichaApp.triggerNativeGoogleSignIn();
     return;
   }
