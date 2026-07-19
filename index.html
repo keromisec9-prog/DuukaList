@@ -1187,20 +1187,18 @@ function setGoogleBtnLoading(loading) {
 window.resetGoogleBtn = function() { setGoogleBtnLoading(false); };
 
 function handleGoogleSignIn() {
-  // Inside the DuukaList app, Google blocks its own popup/One Tap flow in WebViews.
-  // Use Custom Tabs via a plain redirect to the server-side OAuth flow instead.
   if (typeof window.PichaApp !== 'undefined') {
     setGoogleBtnLoading(true);
-    window.location.href = `${API}/auth/google?source=app`;
-    return;
   }
   if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
     google.accounts.id.prompt(notification => {
       if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+        setGoogleBtnLoading(false);
         renderGoogleBtn();
       }
     });
   } else {
+    setGoogleBtnLoading(false);
     showToast('Google Sign-In loading… try again in a moment.');
   }
 }
