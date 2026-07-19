@@ -1169,10 +1169,10 @@ function requireAuth(cb) {
 }
 
 function handleGoogleSignIn() {
-  // Inside the DuukaList app, Google blocks its own popup/One Tap flow in WebViews.
-  // Use a plain redirect to the server-side OAuth flow instead (same as PichaPlus).
-  if (typeof window.PichaApp !== 'undefined') {
-    window.location.href = `${API}/auth/google?source=app`;
+  // Inside the DuukaList app, use the native Android account picker
+  // (Credential Manager) instead of a WebView redirect.
+  if (typeof window.PichaApp !== 'undefined' && typeof window.PichaApp.triggerNativeGoogleSignIn === 'function') {
+    window.PichaApp.triggerNativeGoogleSignIn();
     return;
   }
   if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
